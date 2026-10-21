@@ -1,13 +1,13 @@
 .PHONY: check test run seed eval demo fmt
 
 check:
-	ruff check . && mypy hydromesh/ && pytest
+	python -m ruff check . && python -m mypy hydromesh/ && python -m pytest
 
 test:
-	pytest -v
+	python -m pytest -v
 
 run:
-	uvicorn hydromesh.api.app:create_app --factory --reload
+	python -m uvicorn hydromesh.api.app:create_app --factory --reload
 
 seed:
 	python scripts/train_triage.py && python scripts/ingest_sops.py
@@ -19,4 +19,4 @@ demo:
 	docker compose up -d redis && make seed && make run
 
 fmt:
-	ruff format .
+	python -m ruff format .
