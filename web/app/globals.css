@@ -1,26 +1,310 @@
 @import "tailwindcss";
 
+/* === HydroMesh Design Tokens === */
+/* Single source of truth for color, typography, spacing, and motion */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Sky */
+  --color-sky-deep:        #2A2C6B;   /* top of sky — deep indigo-navy */
+  --color-sky-mid:         #4B5499;   /* mid sky — periwinkle */
+  --color-sky-horizon:     #6B72B5;   /* sky near horizon — lighter periwinkle */
+
+  /* Clouds */
+  --color-cloud-body:      #5B6B80;   /* main cloud fill — blue-grey */
+  --color-cloud-shadow:    #3F4F60;   /* underside of cloud — deeper */
+  --color-cloud-rim:       #D4B94A;   /* golden-yellow rim light — top edge highlight */
+  --color-cloud-rim-soft:  #C9A93A;   /* secondary rim / falloff */
+
+  /* Architecture */
+  --color-arch-upper:      #7A5C48;   /* upper fortress — warm terracotta brown */
+  --color-arch-upper-dark: #5E4538;   /* shadow face of upper fortress */
+  --color-arch-lower:      #4A3830;   /* lower building body — darker, shadowed */
+  --color-arch-window-glow:#D4A830;   /* glowing amber window fill */
+  --color-arch-window-edge:#F0C860;   /* window glow bloom edge */
+  --color-arch-arch-void:  #1A1010;   /* dark inside of arched openings */
+
+  /* Cliff / Rock */
+  --color-cliff-main:      #2A3040;   /* main cliff face — dark slate */
+  --color-cliff-mid:       #353D50;   /* mid-lit cliff ledge */
+  --color-cliff-lit:       #D4B94A;   /* rim-lit cliff edge */
+
+  /* Waterfall — The Focal Point */
+  --color-waterfall:       #FFFFFF;   /* waterfall body — pure white */
+  --color-waterfall-mist:  #E8EEF4;   /* mist / spray at base — near white, cool blue */
+  --color-pool:            #D0D8E0;   /* splash pool — light grey-white */
+  --color-pool-deep:       #A8B4C0;   /* deeper pool areas */
+
+  /* Foreground */
+  --color-fg-tree:         #1A1F2E;   /* cypress silhouettes — near black navy */
+  --color-fg-bush:         #141820;   /* rounded bush silhouettes — darkest */
+  --color-fg-ground:       #0F1218;   /* ground strip at very bottom */
+
+  /* UI Semantic */
+  --color-bg:              var(--color-sky-deep);
+  --color-surface:         #1E2240;   /* cards, panels */
+  --color-surface-raised:  #252B4A;   /* elevated surface */
+  --color-border:          #3A4060;   /* subtle borders */
+  --color-border-glow:     var(--color-cloud-rim);
+  --color-text-primary:    #E8EAF6;   /* near white, cool tint */
+  --color-text-secondary:  #9FA8C2;   /* muted periwinkle-grey */
+  --color-text-dim:        #5B6480;   /* placeholder / disabled */
+
+  /* Alert Status */
+  --color-green:           #4CAF82;   /* GREEN alert */
+  --color-yellow:          var(--color-cloud-rim);     /* #D4B94A — YELLOW alert */
+  --color-red:             #E05050;   /* RED alert */
+  --color-green-bg:        rgba(76, 175, 130, 0.12);
+  --color-yellow-bg:       rgba(212, 185, 74, 0.12);
+  --color-red-bg:          rgba(224, 80, 80, 0.12);
+
+  /* Accent */
+  --color-accent:          var(--color-arch-window-glow); /* #D4A830 — warm amber */
+  --color-accent-hover:    var(--color-arch-window-edge); /* #F0C860 */
+  --color-accent-muted:    rgba(212, 168, 48, 0.15);
+
+  /* Highlights */
+  --color-highlight:       var(--color-waterfall);
+  --color-highlight-muted: var(--color-waterfall-mist);
+
+  /* Typography & Scale */
+  --font-ui:               'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:             'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+
+  --text-xs:               0.75rem;   /* 12px */
+  --text-sm:               0.875rem;  /* 14px */
+  --text-base:             1rem;      /* 16px */
+  --text-lg:               1.125rem;  /* 18px */
+  --text-xl:               1.25rem;   /* 20px */
+  --text-2xl:              1.5rem;    /* 24px */
+  --text-3xl:              1.875rem;  /* 30px */
+  --text-4xl:              2.25rem;   /* 36px */
+  --text-hero:             clamp(2.5rem, 6vw, 5rem);
+
+  /* Spacing */
+  --space-1:               0.25rem;  /* 4px */
+  --space-2:               0.5rem;   /* 8px */
+  --space-3:               0.75rem;  /* 12px */
+  --space-4:               1rem;     /* 16px */
+  --space-5:               1.25rem;  /* 20px */
+  --space-6:               1.5rem;   /* 24px */
+  --space-8:               2rem;     /* 32px */
+  --space-10:              2.5rem;   /* 40px */
+  --space-12:              3rem;     /* 48px */
+  --space-16:              4rem;     /* 64px */
+  --space-20:              5rem;     /* 80px */
+  --space-24:              6rem;     /* 96px */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme {
+  --color-sky-deep: var(--color-sky-deep);
+  --color-sky-mid: var(--color-sky-mid);
+  --color-sky-horizon: var(--color-sky-horizon);
+
+  --color-cloud-body: var(--color-cloud-body);
+  --color-cloud-shadow: var(--color-cloud-shadow);
+  --color-cloud-rim: var(--color-cloud-rim);
+  --color-cloud-rim-soft: var(--color-cloud-rim-soft);
+
+  --color-arch-upper: var(--color-arch-upper);
+  --color-arch-upper-dark: var(--color-arch-upper-dark);
+  --color-arch-lower: var(--color-arch-lower);
+  --color-arch-window-glow: var(--color-arch-window-glow);
+  --color-arch-window-edge: var(--color-arch-window-edge);
+  --color-arch-arch-void: var(--color-arch-arch-void);
+
+  --color-cliff-main: var(--color-cliff-main);
+  --color-cliff-mid: var(--color-cliff-mid);
+  --color-cliff-lit: var(--color-cliff-lit);
+
+  --color-waterfall: var(--color-waterfall);
+  --color-waterfall-mist: var(--color-waterfall-mist);
+  --color-pool: var(--color-pool);
+  --color-pool-deep: var(--color-pool-deep);
+
+  --color-fg-tree: var(--color-fg-tree);
+  --color-fg-bush: var(--color-fg-bush);
+  --color-fg-ground: var(--color-fg-ground);
+
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-border: var(--color-border);
+  --color-border-glow: var(--color-border-glow);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-dim: var(--color-text-dim);
+
+  --color-green: var(--color-green);
+  --color-yellow: var(--color-yellow);
+  --color-red: var(--color-red);
+  --color-green-bg: var(--color-green-bg);
+  --color-yellow-bg: var(--color-yellow-bg);
+  --color-red-bg: var(--color-red-bg);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-muted: var(--color-accent-muted);
+
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* === Base Styles === */
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-cloud-rim);
+  outline-offset: 2px;
+}
+
+/* === Named Keyframe Animations === */
+@keyframes waterfall-shimmer {
+  0%, 100% {
+    opacity: 0.85;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(1px);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes waterfall-flow {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(24px);
+  }
+}
+
+@keyframes mist-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes cloud-drift {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes window-glow {
+  0%, 100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px rgba(240, 200, 96, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 14px rgba(240, 200, 96, 0.8));
+  }
+}
+
+@keyframes rim-light-pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes agent-event-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes alert-flash {
+  0%, 100% {
+    background-color: var(--color-red-bg);
+  }
+  50% {
+    background-color: rgba(224, 80, 80, 0.28);
+  }
+}
+
+@keyframes gauge-fill {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: var(--target-dashoffset, 0);
+  }
+}
+
+@keyframes mist-float {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-30px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.animate-waterfall-shimmer {
+  animation: waterfall-shimmer 2.4s ease-in-out infinite;
+}
+
+.animate-waterfall-flow {
+  animation: waterfall-flow 1.2s linear infinite;
+}
+
+.animate-mist-pulse {
+  animation: mist-pulse 3s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.animate-cloud-drift {
+  animation: cloud-drift 12s ease-in-out infinite;
+}
+
+.animate-window-glow {
+  animation: window-glow 4s ease-in-out infinite;
+}
+
+.animate-rim-light-pulse {
+  animation: rim-light-pulse 3.5s ease-in-out infinite;
+}
+
+.animate-agent-event-in {
+  animation: agent-event-in 180ms ease-out forwards;
+}
+
+.animate-alert-flash {
+  animation: alert-flash 1s infinite;
+}
+
+.animate-mist-float {
+  animation: mist-float 4s ease-out infinite;
+}
+
+/* === Accessibility & Motion Gating === */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
