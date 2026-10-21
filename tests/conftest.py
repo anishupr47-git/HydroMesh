@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Generator
+from collections.abc import AsyncIterator
 from typing import Any
 
 import fakeredis.aioredis
@@ -123,7 +123,10 @@ def sample_agent_decision(sample_actions: list[dict[str, Any]]) -> dict[str, Any
         "decision_id": "dec_20260715_001",
         "actions": sample_actions,
         "confidence": 0.92,
-        "rationale": "Forecast indicates sediment spike above 3000 PPM within 4h; open desander 1 to scour silt.",
+        "rationale": (
+            "Forecast indicates sediment spike above 3000 PPM within 4h; "
+            "open desander 1 to scour silt."
+        ),
     }
 
 
@@ -135,8 +138,16 @@ def sample_twin_snapshot() -> dict[str, Any]:
         "timestamp": "2026-07-15T14:30:00Z",
         "intake_flow_m3s": 48.5,
         "desander_basins": {
-            "desander_basin_1": {"silt_depth_m": 2.1, "is_flushing": False, "last_flush_min_ago": 180},
-            "desander_basin_2": {"silt_depth_m": 0.8, "is_flushing": False, "last_flush_min_ago": 240},
+            "desander_basin_1": {
+                "silt_depth_m": 2.1,
+                "is_flushing": False,
+                "last_flush_min_ago": 180,
+            },
+            "desander_basin_2": {
+                "silt_depth_m": 0.8,
+                "is_flushing": False,
+                "last_flush_min_ago": 240,
+            },
         },
         "runner_wear_mm": 1.45,
         "current_generation_mw": 32.0,
@@ -164,7 +175,10 @@ def sample_sop_match() -> dict[str, Any]:
         "sop_id": "SOP-SILT-001",
         "title": "High Sediment Inflow Mitigation Protocol",
         "similarity_score": 0.93,
-        "prescribed_actions": ["Trigger desander flush when silt exceeds 1,200 PPM", "Throttle intake by 25%"],
+        "prescribed_actions": [
+            "Trigger desander flush when silt exceeds 1,200 PPM",
+            "Throttle intake by 25%",
+        ],
     }
 
 

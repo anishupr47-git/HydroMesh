@@ -8,7 +8,7 @@ slated for implementation in milestone T02.
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,12 +23,13 @@ class HydroMeshBaseModel(BaseModel):
 # Milestone T02: Enumerations & Core Discriminators
 # =============================================================================
 
+
 class AlertTier(StrEnum):
     """Operational alert tiers tied to IEC 62364 wear regimes and sediment levels."""
 
-    GREEN = "GREEN"      # < 1,200 PPM — Normal generation
-    YELLOW = "YELLOW"    # 1,200 – 3,000 PPM — Sluice gate flush advisory
-    RED = "RED"          # > 3,000 PPM — Critical alert; 10-min operator ACK window
+    GREEN = "GREEN"  # < 1,200 PPM — Normal generation
+    YELLOW = "YELLOW"  # 1,200 – 3,000 PPM — Sluice gate flush advisory
+    RED = "RED"  # > 3,000 PPM — Critical alert; 10-min operator ACK window
 
 
 class SafetyStatus(StrEnum):
@@ -52,6 +53,7 @@ class ExecutionStatus(StrEnum):
 # Milestone T02: Telemetry & Ingestion Contracts
 # =============================================================================
 
+
 class Telemetry(HydroMeshBaseModel):
     """Live sensor snapshot from digital twin or DHM SCADA proxy.
 
@@ -68,12 +70,15 @@ class Telemetry(HydroMeshBaseModel):
     suspended_sediment_ppm: float = Field(description="Quartz sediment concentration in PPM")
     turbine_vibration_rms: float = Field(description="Runner bearing vibration in mm/s RMS")
     grid_frequency_hz: float = Field(default=50.0, description="Grid synchronous frequency in Hz")
-    catchment_rainfall_mm_h: float = Field(default=0.0, description="Upstream catchment rainfall rate")
+    catchment_rainfall_mm_h: float = Field(
+        default=0.0, description="Upstream catchment rainfall rate"
+    )
 
 
 # =============================================================================
 # Milestone T02: Predictive & Triage Contracts
 # =============================================================================
+
 
 class Forecast(HydroMeshBaseModel):
     """Predicted peak discharge and suspended sediment over a 12–24h horizon.
@@ -95,27 +100,37 @@ class AnomalyVector(HydroMeshBaseModel):
     TODO(T02): Bind scikit-learn GradientBoosting triage output to normalized [0, 1] risk floats.
     """
 
-    silt_risk: float = Field(ge=0.0, le=1.0, description="Probability of silt abrasion threshold breach")
+    silt_risk: float = Field(
+        ge=0.0, le=1.0, description="Probability of silt abrasion threshold breach"
+    )
     flood_risk: float = Field(ge=0.0, le=1.0, description="Probability of flood discharge overflow")
-    cavitation_risk: float = Field(ge=0.0, le=1.0, description="Probability of turbine runner cavitation")
+    cavitation_risk: float = Field(
+        ge=0.0, le=1.0, description="Probability of turbine runner cavitation"
+    )
     severity: AlertTier = Field(description="Determined operational alert tier")
-    primary_factor: str = Field(default="suspended_sediment_ppm", description="Root metric driving anomaly")
+    primary_factor: str = Field(
+        default="suspended_sediment_ppm", description="Root metric driving anomaly"
+    )
 
 
 # =============================================================================
 # Milestone T02: Memory & SOP RAG Contracts
 # =============================================================================
 
+
 class SOPMatch(HydroMeshBaseModel):
     """Standard Operating Procedure retrieved from on-prem ChromaDB knowledge base.
 
-    TODO(T02): Validate similarity_score in [0.0, 1.0] and ensure prescribed_actions list is non-empty.
+    TODO(T02): Validate similarity_score in [0.0, 1.0] and ensure prescribed_actions
+    list is non-empty.
     """
 
     sop_id: str = Field(description="Unique identifier of standard operating procedure")
     title: str = Field(description="Descriptive title of procedure")
     similarity_score: float = Field(ge=0.0, le=1.0, description="Vector cosine similarity score")
-    prescribed_actions: list[str] = Field(default_factory=list, description="Ordered procedural mitigation steps")
+    prescribed_actions: list[str] = Field(
+        default_factory=list, description="Ordered procedural mitigation steps"
+    )
 
 
 class SimilarIncident(HydroMeshBaseModel):
@@ -133,6 +148,7 @@ class SimilarIncident(HydroMeshBaseModel):
 # =============================================================================
 # Milestone T02: Action Discriminated Union
 # =============================================================================
+
 
 class ModulateIntake(HydroMeshBaseModel):
     """Advisory action: throttle or open plant headworks intake gates.
@@ -170,7 +186,7 @@ class ReallocateDispatch(HydroMeshBaseModel):
 
 # Discriminated union of all operational action types
 Action = Annotated[
-    Union[ModulateIntake, TriggerFlush, ReallocateDispatch],
+    ModulateIntake | TriggerFlush | ReallocateDispatch,
     Field(discriminator="action_type"),
 ]
 
@@ -178,6 +194,7 @@ Action = Annotated[
 # =============================================================================
 # Milestone T02: Dispatch & Safety Verdict Contracts
 # =============================================================================
+
 
 class AgentDecision(HydroMeshBaseModel):
     """Operational proposal generated by Dispatch agent before safety arbitration.
@@ -198,9 +215,15 @@ class SafetyVerdict(HydroMeshBaseModel):
     """
 
     verdict: SafetyStatus = Field(description="Safety outcome: approved, rejected, or needs_human")
-    evaluated_rules: list[str] = Field(default_factory=list, description="List of rule IDs verified")
-    clamped_actions: list[Action] = Field(default_factory=list, description="Actions post parameter clamping")
-    violations: list[str] = Field(default_factory=list, description="Rule violation explanations if rejected")
+    evaluated_rules: list[str] = Field(
+        default_factory=list, description="List of rule IDs verified"
+    )
+    clamped_actions: list[Action] = Field(
+        default_factory=list, description="Actions post parameter clamping"
+    )
+    violations: list[str] = Field(
+        default_factory=list, description="Rule violation explanations if rejected"
+    )
     notes: str = Field(default="", description="Informational arbitration notes")
 
 
@@ -212,13 +235,16 @@ class ExecutionResult(HydroMeshBaseModel):
 
     action_id: str = Field(description="Referenced action identifier")
     status: ExecutionStatus = Field(description="Current execution lifecycle status")
-    operator_id: str | None = Field(default=None, description="ID of acknowledging operator, if any")
+    operator_id: str | None = Field(
+        default=None, description="ID of acknowledging operator, if any"
+    )
     timestamp: str = Field(description="ISO 8601 state change timestamp")
 
 
 # =============================================================================
 # Milestone T02: Live Streaming, Twin & Aggregate Contracts
 # =============================================================================
+
 
 class RoutingPlan(HydroMeshBaseModel):
     """Supervisor agent pipeline execution graph.
@@ -241,7 +267,9 @@ class AgentEvent(HydroMeshBaseModel):
     timestamp: str = Field(description="ISO 8601 timestamp")
     source_agent: str = Field(description="Agent emitting event (e.g. triage, dispatch)")
     kind: Literal["info", "decision", "warning", "action"] = Field(description="UI indicator kind")
-    payload: dict[str, Any] = Field(default_factory=dict, description="Arbitrary structured event payload")
+    payload: dict[str, Any] = Field(
+        default_factory=dict, description="Arbitrary structured event payload"
+    )
 
 
 class TwinSnapshot(HydroMeshBaseModel):
@@ -253,11 +281,15 @@ class TwinSnapshot(HydroMeshBaseModel):
     tick: int = Field(description="Monotonic simulation step tick")
     timestamp: str = Field(description="Current simulation timestamp")
     intake_flow_m3s: float = Field(description="Current intake volumetric flow")
-    desander_basins: dict[str, dict[str, Any]] = Field(description="Per-basin silt and status state")
+    desander_basins: dict[str, dict[str, Any]] = Field(
+        description="Per-basin silt and status state"
+    )
     runner_wear_mm: float = Field(description="Accumulated IEC 62364 runner erosion in mm")
     current_generation_mw: float = Field(description="Active power generation in MW")
     available_generation_mw: float = Field(description="Total nameplate/available capacity in MW")
-    recent_action_count_10m: int = Field(default=0, description="Count of actions executed in last 10m")
+    recent_action_count_10m: int = Field(
+        default=0, description="Count of actions executed in last 10m"
+    )
 
 
 class IncidentReport(HydroMeshBaseModel):
@@ -271,7 +303,9 @@ class IncidentReport(HydroMeshBaseModel):
     alert_tier: AlertTier = Field(description="Highest alert tier reached during incident")
     status: str = Field(description="Operational incident status")
     summary: str = Field(description="Concise operator summary of hazard and mitigation")
-    requires_override: bool = Field(default=False, description="Whether action awaits manual override")
+    requires_override: bool = Field(
+        default=False, description="Whether action awaits manual override"
+    )
     ack_window_seconds: int = Field(default=600, description="Operator ACK countdown window")
 
 
