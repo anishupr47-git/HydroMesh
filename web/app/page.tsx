@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main
@@ -34,7 +36,7 @@ export default function HomePage() {
         </span>
         <div style={{ display: "flex", gap: "var(--space-6)" }}>
           {["Demo", "Safety", "Evidence", "About"].map((label) => (
-            <a
+            <Link
               key={label}
               href={`/${label.toLowerCase()}`}
               style={{
@@ -45,7 +47,7 @@ export default function HomePage() {
               }}
             >
               {label}
-            </a>
+            </Link>
           ))}
         </div>
       </nav>
@@ -110,7 +112,7 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
-          <a
+          <Link
             href="/demo"
             style={{
               background: "var(--color-accent)",
@@ -124,8 +126,8 @@ export default function HomePage() {
             }}
           >
             View Live Demo
-          </a>
-          <a
+          </Link>
+          <Link
             href="/safety"
             style={{
               border: "1px solid var(--color-border)",
@@ -137,7 +139,7 @@ export default function HomePage() {
             }}
           >
             Safety Rules R1–R11
-          </a>
+          </Link>
         </div>
 
         {/* Alert status preview strip */}

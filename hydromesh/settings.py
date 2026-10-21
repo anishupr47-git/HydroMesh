@@ -14,13 +14,19 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    env: str = "development"
+    debug: bool = False
+    mock_mode: bool = False
+
     ollama_host: str = "http://localhost:11434"
     llm_model: str = "qwen2.5:7b-instruct"
+    llm_temperature: float = 0.0
     llm_timeout_s: int = 30
     llm_max_retries: int = 2
 
     redis_url: str = "redis://localhost:6379/0"
     chroma_path: str = ".chroma"
+    chroma_persist_dir: str = ".chroma"
 
     twin_seed: int = 42
     predict_every_n_ticks: int = 6

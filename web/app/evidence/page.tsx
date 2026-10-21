@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const tableRows = [
   { metric: "Runner Wear (mm/season)", baseline: "Pending T18", hydromesh: "Pending T18", improvement: "Pending T18" },
   { metric: "Generation Loss (MWh)", baseline: "Pending T18", hydromesh: "Pending T18", improvement: "Pending T18" },
@@ -8,7 +10,7 @@ const tableRows = [
 export default function EvidencePage() {
   return (
     <main style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text-primary)", fontFamily: "var(--font-ui)", padding: "var(--space-8)" }}>
-      <a href="/" style={{ color: "var(--color-accent)", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", textDecoration: "none" }}>← HydroMesh</a>
+      <Link href="/" style={{ color: "var(--color-accent)", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", textDecoration: "none" }}>← HydroMesh</Link>
 
       <h1 style={{ fontSize: "var(--text-3xl)", fontWeight: 700, marginTop: "var(--space-6)", marginBottom: "var(--space-2)" }}>
         Baseline Evaluation
