@@ -45,6 +45,11 @@ docs/reference/
 
 # Testing and coverage
 .coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+nosetests.xml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
