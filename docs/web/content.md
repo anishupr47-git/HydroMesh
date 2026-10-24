@@ -35,3 +35,12 @@ When displaying the terms of service, AI policy, or cookies, use this standardiz
 
 > **In Plain English**: HydroMesh is your digital control room assistant. It uses real European satellite radar and hydrological math to forecast river surges. The AI never moves valves on its own—a certified human engineer always has the final say. We do not sell your data or use tracking cookies.
 
+---
+
+## 5. Cookie & Privacy Consent Banner Copy
+
+- **Headline**: Essential Security & Session Notice
+- **Body**: HydroMesh uses strictly necessary, zero-tracking session cookies (`session`, `csrf_token`) to secure control room operations and enforce rate limits. No advertising cookies, tracking pixels, or third-party behavioral analytics scripts are ever loaded.
+- **Action Buttons**: `[Acknowledge & Proceed]` | `[View Security & Privacy Policy]`
+
+
