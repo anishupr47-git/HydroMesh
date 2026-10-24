@@ -358,5 +358,7 @@ export function HeroIllustration() {
 
 ---
 
-## 4. Asset & Licensing Note
+## 4. Asset, Licensing & Performance Note
 The reference composition is a study; the output SVG is an original artwork created entirely from vector primitives (polygons, ellipses, paths, and gradients). Shipped code contains zero third-party binary images or copyrighted material.
+All animated vector paths leverage `transform: translateZ(0)` for dedicated GPU composition layers, ensuring steady 60/120 FPS rendering on mobile control room displays.
+
