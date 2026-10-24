@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -13,7 +15,7 @@ from hydromesh.weather import get_plant_by_id
 
 
 @pytest.fixture
-def client():
+def client() -> Generator[TestClient, None, None]:
     app = create_app()
     with TestClient(app) as client:
         yield client

@@ -72,7 +72,7 @@ async def main() -> None:
     assert incident.verdict is not None
     assert incident.report is not None
     print(
-        f"Step 1 (Triage): Severity = {incident.anomaly.severity.value} (Silt Risk: {incident.anomaly.silt_risk*100:.0f}%, Confidence: {incident.anomaly.confidence*100:.0f}%)"
+        f"Step 1 (Triage): Severity = {incident.anomaly.severity.value} (Silt Risk: {incident.anomaly.silt_risk * 100:.0f}%, Confidence: {incident.anomaly.confidence * 100:.0f}%)"
     )
     print(
         f"Step 2 (Predictive): Peak Silt = {incident.forecast.peak_silt_ppm:.0f} ppm | Risk = {incident.forecast.risk.value}"

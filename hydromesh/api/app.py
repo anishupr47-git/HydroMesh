@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
@@ -73,7 +73,9 @@ def create_app() -> FastAPI:
 
     # 2. Rate Limiting Middleware
     @app.middleware("http")
-    async def rate_limiting_middleware(request: Request, call_next) -> Response:
+    async def rate_limiting_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         client_ip = request.client.host if request.client else "127.0.0.1"
         now = time.monotonic()
 
@@ -89,11 +91,14 @@ def create_app() -> FastAPI:
             )
 
         _rate_limits[client_ip].append(now)
-        return await call_next(request)
+        response: Response = await call_next(request)
+        return response
 
     # 3. Security Headers Middleware
     @app.middleware("http")
-    async def security_headers_middleware(request: Request, call_next) -> Response:
+    async def security_headers_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         response: Response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"

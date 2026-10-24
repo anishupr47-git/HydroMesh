@@ -27,6 +27,7 @@ dependencies = [
   "joblib",
   "structlog>=24.1",
   "httpx>=0.27",
+  "argon2-cffi>=23.1",
   "celery[redis]",
   "apscheduler",
 ]
