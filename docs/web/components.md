@@ -124,11 +124,12 @@
 ## 11. SatelliteFeedBox (`web/components/SatelliteFeedBox.tsx`)
 - **Role**: Unobtrusive lower-left corner real-time satellite telemetry widget fetched each second.
 - **Visuals**:
-  - Semi-transparent dark SCADA glassmorphic container (`w-72`, fixed `bottom-4 left-4 z-30`).
-  - 1 Hz blinking green satellite link pulse beacon (`● SAT-LINK ACTIVE 1.00s`).
-  - Live GPS station coordinates, NASA GPM IMERG rain rate (mm/h), ERA5 moisture flux, and ECMWF optical reflectivity index.
-  - Latency gauge (`⚡ 38ms`) and rolling SHA-256 frame verification token.
-  - Collapse toggle to shrink into a 28px glowing pill indicator.
+  - Solid dark SCADA container with 94% opacity (`--color-surface`, `w-72`, fixed `bottom-4 left-4 z-30`).
+  - 1 Hz blinking monospace status beacon: `[SAT-LINK: ACTIVE] [TICK: 1.00s]`.
+  - Real-time Upper Tamakoshi GPS coordinates (`27.8483 N, 86.1361 E | Elev: 822 m`), NASA GPM IMERG rain rate (34.8 mm/h), ERA5-Land moisture flux (46.8 kg/m*s), and ECMWF 0.25 deg optical radiance (212.4 K).
+  - Telemetry ingestion latency: `[PING: 28 ms] [STATUS: HTTP 200 OK]` with rolling BLAKE2b verification token.
+  - Collapse toggle to shrink into an unobtrusive 32px status badge.
+
 
 
 

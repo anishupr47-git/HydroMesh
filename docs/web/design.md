@@ -824,26 +824,27 @@ A focused modal card sequence anchored over the dim twilight mountain canvas:
 
 #### Dedicated Real-Time Satellite Feed Box (`<SatelliteFeedBox />`)
 * **Position & Footprint**:
-  * Docked unobtrusively in the **lower-left corner** (fixed overlay `bottom-4 left-4 z-30` or integrated cleanly within the sidebar base).
-  * Compact footprint (`w-72` / `288px` wide, semi-transparent frosted SCADA backdrop `--color-bg: #2A2C6B` at 92% opacity, 1px border `--color-sky-dark: #3E428F` with 4px industrial chamfered corners).
+  * Docked unobtrusively in the **lower-left corner** (`fixed bottom-4 left-4 z-30` or integrated into the sidebar base).
+  * Compact footprint (`w-72` / `288px` wide, solid dark SCADA backdrop `--color-surface: #1E2240` with 94% opacity, 1px border `--color-border: #3A4060` with 4px industrial chamfered corners).
   * **Zero Interference Guarantee**: Positioned so it never overlaps or blocks the 20-powerhouse grid, plant detail cards, or header navigation.
-* **1-Second Heartbeat Pulse & Live Telemetry Stream**:
-  * An animated 1 Hz green radar pulse beacon: `● SAT-LINK ACTIVE (1.00s tick)`.
-  * Real-time GPS Coordinates: Station latitude & longitude with elevation (e.g. `27.848° N, 86.136° E · 822 m Head`).
-  * Live Satellite Vectors fetched every single second from the ingestion bridge (`live_extraction.py`):
-    * **Satellite Rain Radar (NASA GPM IMERG)**: Instantaneous precipitation rate in $\text{mm/h}$ with dynamic sparkline.
-    * **Atmospheric Moisture Flux (ERA5-Land)**: Total column water vapor flux ($\text{kg}/(\text{m} \cdot \text{s})$).
-    * **Cloud Optical Radiance (ECMWF 9km)**: Radar reflectivity index (e.g. `34.2 dBZ · High Convective Overcast`).
-    * **DHM Hydrology Proxy**: Monitored river basin discharge estimate derived from mountain weather catchment runoff.
-  * **Network & Ingestion Health**:
-    * Ingestion latency badge: `⚡ 38 ms ping · HTTP 200 OK`.
-    * Rolling cryptographic verification token: `Frame SHA: 7f8a3c...`.
-* **Micro-Controls**:
-  * `[Collapse / Expand]`: Can collapse to an ultra-compact `28px` glowing telemetry beacon pill.
-  * `[Freeze Frame]`: Allows operators to temporarily freeze live 1-second packet stream for detailed data audit.
-  * `[View Raw JSON]`: Modal inspect of unparsed satellite telemetry payload.
+* **1-Second Heartbeat Pulse & Live Satellite Stream**:
+  * Status indicator: `[SAT-LINK: ACTIVE] [TICK: 1.00s]`.
+  * Real-time GPS Coordinates: Station latitude, longitude, and elevation (`27.8483 N, 86.1361 E | Elev: 822 m`).
+  * Real-time Satellite Telemetry fetched every second via `live_extraction.py` and `hydromesh/ingest/live.py`:
+    * **Satellite Precipitation (NASA GPM IMERG v07B)**: Live rainfall rate `34.8 mm/h` with 60-second micro-sparkline.
+    * **Atmospheric Moisture Flux (ERA5-Land)**: Total column water vapor flux `46.8 kg/(m * s)`.
+    * **Cloud Optical Radiance (ECMWF OpenData 0.25 deg)**: Brightness temperature `212.4 K` (deep convective cloud mass).
+    * **Catchment Runoff Gradient**: Real-time river discharge rate `+12.4 m3/s/h` calculated from orographic precipitation.
+  * **Network & Ingestion Verification**:
+    * Latency: `[PING: 28 ms] [STATUS: HTTP 200 OK]`.
+    * Integrity Checksum: `[BLAKE2b: d84a9e21...]` verified per frame.
+* **Controls**:
+  * `[MINIMIZE / EXPAND]`: Collapses to an unobtrusive `32px` monospace status pill.
+  * `[FREEZE FRAME]`: Temporarily pauses the 1-second packet stream for operator verification.
+  * `[RAW JSON]`: Direct telemetry JSON payload viewer.
 
 ---
+
 
 
 ### 9.3 Main View: The 20 Hydropower "House" Grid (`<PowerhouseGrid />`)
@@ -976,43 +977,13 @@ HydroMesh rejects invasive third-party ad networks, Google Analytics cookies, an
 
 #### 2. Cache & Telemetry Freshness Protocols:
 * **In-Memory & Redis Blackboard TTL**: Telemetry values expire after **30 to 300 seconds** to ensure operators never make life-critical water decisions based on stale cached sensor feeds.
-* **Satellite Model Refresh Transparency**: Weather radar models refresh hourly. The UI prominently displays the age of the satellite assimilation frame so operators know the exact freshness of mountain precipitation vectors.
-* **Audit Trail Retention**: Local SQLite WAL records operator overrides and incident audits for **7 days** to satisfy regulatory post-incident reviews, after which logs are automatically trimmed.
-
-#### 3. Friendly Cookie Consent Banner Design:
-* An elegant, non-intrusive floating card in the lower-right corner styled with `--color-surface-raised` (`#252B4A`) and a subtle golden rim border (`--color-cloud-rim`).
-* **Friendly Copy**:
-  > *"We only use essential security cookies to keep your control room session safe and remember your display preferences. No ad trackers, no third-party data brokers, ever."*
-* **Action Buttons**: `[Acknowledge & Close]` (Primary amber button) and `[Review Privacy Policy]`.
-
----
-
-### 10.5 Friendly, Non-Tech Human Tone Guidelines
-
-Engineering control rooms are high-stress environments during monsoons and floods. The interface must remain calming, human, and crystal-clear:
-* **No Intimidating Legalese**: Legal terms are summarized with a single-sentence plain-English callout box (*"In plain English: This is an assistant tool. A human engineer always has the final say before touching any valves."*).
-* **Positive Status Affirmations**: Instead of cryptic error codes, use encouraging industrial phrasing:
-  * `[OK] All 25 Himalayan Stations Connected & Calibrated`
-  * `[Protected] Safety Kernel R1–R11 Invariants Enforced`
-  * `[Advisory Only] Human Authorization Required for Valve Movement`
-
----
-
-### 10.6 Master Footer Architecture (`<GlobalFooter />`)
-
-The application footer serves as the operational anchor, compliance ledger, and support clearinghouse. It is designed using a 4-column responsive layout built on `--color-surface` (`#1E2240`), `--color-sky-zenith` (`#1E1A38`), and `--color-border` (`#3A4060`).
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   HYDROMESH FOOTER                                     │
-├────────────────────┬────────────────────┬────────────────────┬─────────────────────────┤
-│  1. MISSION & CORE │  2. SCADA FLEET    │  3. TRUST & SAFETY │  4. FIELD DISPATCH      │
+* **Satellite Mod|  1. MISSION & CORE │  2. SCADA FLEET    │  3. TRUST & SAFETY │  4. FIELD DISPATCH      │
 │  Himalayan River   │  • 20-House Grid   │  • Privacy Policy  │  [OPERATOR ENTITY]      │
 │  Smart Guardian    │  • Live Inspector  │  • Terms of Service│  [DISPATCH HOTLINE]     │
 │  Advisory DSS      │  • SOP Procedures  │  • AI Ethics / Safe│  [STATION HQ ADDRESS]   │
 │  Status: All Green │  • Twin Sandboxes  │  • Cookie Settings │  [REGULATORY LICENSE #] │
 ├────────────────────┴────────────────────┴────────────────────┴─────────────────────────┤
-│  © 2026 HydroMesh · Himalayan Hydropower Autonomous Digital Twin · Version 0.4.0-sprint4 │
+│  (C) 2026 HydroMesh · Himalayan Hydropower Autonomous Digital Twin · Version 0.4.0-sprint4 │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1020,7 +991,7 @@ The application footer serves as the operational anchor, compliance ledger, and 
 1. **Column 1 — Brand, Mission & System Health**:
    * Brand name: `HydroMesh` with glowing amber hearth indicator.
    * Mission: *Autonomous Spatio-Temporal Digital Twin & Early Warning Sentinel for Himalayan Run-of-River Hydropower.*
-   * Live Status Beacon: `● All Systems Operational · Satellite Link Active (ECMWF 9km)`.
+   * Live Status Beacon: `[STATUS: ONLINE] · Satellite Link Active (ECMWF OpenData 0.25 deg)`.
 2. **Column 2 — SCADA Operations & Telemetry**:
    * `20-Powerhouse Fleet Overview`
    * `Live Satellite Telemetry Inspector (live_extraction.py)`
@@ -1042,7 +1013,7 @@ The application footer serves as the operational anchor, compliance ledger, and 
      * **Primary Support Desk**: `[support@yourdomain.org]`
 
 #### Bottom Legal Micro-Bar:
-* **Copyright**: `© 2026 HydroMesh. Open-source under MIT / Apache-2.0. Built for Himalayan Energy Resilience.`
+* **Copyright**: `(C) 2026 HydroMesh. Open-source under MIT / Apache-2.0. Built for Himalayan Energy Resilience.`
 * **Safety Affirmation**: `Advisory Decision Support System. Does not actuate physical equipment without human signoff.`
 * **Version & SHA-256 Token**: `Release v0.4.0 (Sprint 4) · SOP Manifest SHA: 88c4b1...`
 
@@ -1051,7 +1022,7 @@ The application footer serves as the operational anchor, compliance ledger, and 
 ## 11. The AI "VAR" Decision Review HUD (Multi-Layer Verification Chamber)
 
 > **Core Philosophy**: Video Assistant Referee (VAR) Rigor for Industrial AI.  
-> **Anti-Slop Rule**: Conversational prose, AI apologies, and polite chatbot paragraphs are strictly prohibited. The output of the AI pipeline must present as an ultra-high-density telemetry review chamber—displaying connected wireframe boxes, live mathematical equation substitution traces, threshold audits, and point-by-point data ledgers.
+> **Anti-Slop Rule**: Conversational prose, AI apologies, polite chatbot paragraphs, and emojis are strictly prohibited. The output of the AI pipeline must present as an ultra-high-density telemetry review chamber—displaying connected wireframe boxes, live mathematical equation substitution traces, threshold audits, and point-by-point data ledgers.
 
 ### 11.1 The 5-Zone "VAR Chamber" Layout Architecture
 
@@ -1059,17 +1030,57 @@ The VAR Decision HUD sits directly within Mission Control, converting the multi-
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ ⚡ HYDROMESH AI DECISION HUD // VAR INSPECTION CHAMBER v2.4                      [STATUS: FROZEN FRAME] │
+│ [SYSTEM: HYDROMESH VAR DECISION REVIEW CHAMBER // REF: SCADA-VAR-01]            [STATUS: MONITORED]    │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ZONE A: MULTI-LAYER PIPELINE WIREFRAME & BOX TRACE                                                     │
 │                                                                                                        │
 │  ┌───────────────────────┐       ┌───────────────────────┐       ┌────────────────────────┐            │
-│  │ LAYER 01: SENSOR AUDIT│──────▶│ LAYER 02: TRIAGE MATH │──────▶│ LAYER 03: TFT FORECAST │            │
-│  │ • Plausibility: [PASS]│       │ • dQ/dt: +18.4% [NORM]│       │ • Peak Q: 894.2 m³/s   │            │
-│  │ • Silt: 2,840 PPM     │       │ • Silt Delta: +41.2%  │       │ • Risk Horizon: T+4h   │            │
-│  │ • IMERG: 28 mm/h      │       │ • Severity: WARNING   │       │ • PINN Loss: 0.0028    │            │
+│  │ LAYER 01: SENSOR AUDIT│------>│ LAYER 02: TRIAGE MATH │------>│ LAYER 03: TFT FORECAST │            │
+│  │ • Plausibility: [PASS]│       │ • dQ/dt: +14.2% [NORM]│       │ • Peak Q: 901.4 m³/s   │            │
+│  │ • Silt: 3,102.7 PPM   │       │ • Silt Delta: +158.5% │       │ • Risk Horizon: T+3.5h │            │
+│  │ • IMERG: 34.8 mm/h    │       │ • Severity: CRITICAL  │       │ • PINN Loss: 0.0018    │            │
 │  └───────────────────────┘       └───────────────────────┘       └────────────────────────┘            │
 │                 │                                                                                      │
+│                 |                                                                                      │
+│                 v                                                                                      │
+│  ┌───────────────────────┐       ┌───────────────────────┐       ┌────────────────────────┐            │
+│  │ LAYER 04: SOP RAG     │------>│ LAYER 05: WEAR PHYSICS│------>│ LAYER 06: SAFETY KERNEL│            │
+│  │ • SOP: SOP-HYD-04     │       │ • ΔW: 0.0842 mm/h     │       │ • R1 Conf >= 0.8: PASS │            │
+│  │ • Sim Score: 0.894    │       │ • Critical RUL: 40.1h │       │ • R3 Flow Shock: PASS  │            │
+│  │ • Verified: SHA-256   │       │ • Erosion Risk: HIGH  │       │ • Verdict: APPROVED    │            │
+│  └───────────────────────┘       └───────────────────────┘       └────────────────────────┘            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE B: LIVE MATHEMATICAL PROOF & EQUATION SUBSTITUTION TRACE                                          │
+│                                                                                                        │
+│  [1] IEC 62364 RUNNER ABRASION EQUATION (STAINLESS STEEL 13CR-4NI IN HIMALAYAN QUARTZ):               │
+│      ΔW = 10^-9 * Km * C * (W_rel)^2.5 * K_hardness                                                     │
+│      ΔW = 10^-9 * (1.25) * (3,102.7) * (42.5)^2.5 * (1.8)                                               │
+│         = 0.08424 mm/h  -->  [3,911% ACCELERATION OVER CLEAR-WATER BASELINE (0.0021 mm/h)]             │
+│                                                                                                        │
+│  [2] WATER HAMMER TRANSIENT FLUID SURGE DYNAMICS (ALLIEVI SURGE / RULE R3):                            │
+│      ΔQ_proposed = 66.0 m³/s --> 45.0 m³/s  (Drop: -21.0 m³/s = -31.8%)                                │
+│      Safety Bound: Max allowable flow reduction = 50.0% (-33.0 m³/s)                                    │
+│      Surge Head  : ΔH = (a * Δv) / g = (1,200 * -0.7) / 9.81 = -85.6 m  --> [SURGE TANK DAMPENED]     │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE C: RISK LEVEL DIAGNOSTIC & THRESHOLD AUDIT (IS IT RISKY OR NOT?)                                 │
+│                                                                                                        │
+│  ┌─────────────────────────────────┐  THRESHOLD AUDIT LEDGER:                                         │
+│  │ RISK LEVEL: CRITICAL (HIGH WEAR)│  +-- Silt Concentration : 3,102.7 PPM vs 1,200.0 PPM --> [EXCEEDED]│
+│  │ ACTION    : OPEN BASIN 1 SCOUR  │  +-- Turbine Vibration  : 3.82 mm/s   vs 4.50 mm/s    --> [WARNING] │
+│  │ STATUS    : ADVISORY ONLY       │  +-- Ecological Baseflow: 45.0 m³/s   vs 13.2 m³/s    --> [PASSED]  │
+│  └─────────────────────────────────┘  +-- Operator ACK Window: 600s Active Timeout Countdown--> [582s] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE D: POINT-BY-POINT STRUCTURED DATA LEDGER                                                          │
+│                                                                                                        │
+│  • PLANT IDENTIFIER   : np-gandaki-marsyangdi-04 (Marsyangdi Hydropower Project, Gandaki Basin)        │
+│  • COORDINATES / HEAD : 27.8711 N, 84.5422 E  |  90.5 m Net Head  |  69.0 MW Installed Capacity        │
+│  • INTAKE ACTUATION   : Modulate Sluice Gate 0 to 45.0 m³/s (Delta: -21.0 m³/s, Flow Drop: -31.8%)     │
+│  • DESANDER SCOUR     : Open Basin 1 Scour Gate (Flush Duration: 45 min, Scour Flow: 8.5 m³/s)         │
+│  • AVOIDED EROSION    : Preserves 0.063 mm runner thickness per 6-hour monsoon flood crest             │
+│  • MONETARY BENEFIT   : Estimated NPR 6.4 Lakhs overhaul cost mitigation over next 24h                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+                                                                          │
 │                 ▼                                                                                      │
 │  ┌───────────────────────┐       ┌───────────────────────┐       ┌────────────────────────┐            │
 │  │ LAYER 04: SOP RAG     │──────▶│ LAYER 05: WEAR PHYSICS│──────▶│ LAYER 06: SAFETY KERNEL│            │
