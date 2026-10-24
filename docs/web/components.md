@@ -111,26 +111,14 @@
 
 ---
 
-## 10. VARScreenHUD (`web/components/VARScreenHUD.tsx`)
-- **Role**: Industrial AI Decision Verification Chamber displaying multi-layer wireframe box traces and live mathematical derivations.
+## 10. SatelliteFeedBox (`web/components/SatelliteFeedBox.tsx`)
+- **Role**: Lower-left corner live satellite telemetry box updating every 1.00s.
 - **Visuals**:
-  - 4-Zone SCADA grid: Layer Fulfillment Boxes, Live Math Proofs, Risk Diagnostic Matrix, and Point-by-Point Data Ledger.
-  - Flowing vector box lines with animated dash strokes connecting Layers 1 through 6.
-  - High-visibility risk pills (`[NOMINAL]`, `[ELEVATED]`, `[CRITICAL_RISK]`).
-  - 100% monospace typography (`JetBrains Mono`) with KaTeX/ASCII equation substitution traces.
-
----
-
-## 11. SatelliteFeedBox (`web/components/SatelliteFeedBox.tsx`)
-- **Role**: Unobtrusive lower-left corner real-time satellite telemetry widget fetched each second.
-- **Visuals**:
-  - Solid dark SCADA container with 94% opacity (`--color-surface`, `w-72`, fixed `bottom-4 left-4 z-30`).
-  - 1 Hz blinking monospace status beacon: `[SAT-LINK: ACTIVE] [TICK: 1.00s]`.
-  - Real-time Upper Tamakoshi GPS coordinates (`27.8483 N, 86.1361 E | Elev: 822 m`), NASA GPM IMERG rain rate (34.8 mm/h), ERA5-Land moisture flux (46.8 kg/m*s), and ECMWF 0.25 deg optical radiance (212.4 K).
-  - Telemetry ingestion latency: `[PING: 28 ms] [STATUS: HTTP 200 OK]` with rolling BLAKE2b verification token.
-  - Collapse toggle to shrink into an unobtrusive 32px status badge.
-
-
+  - Compact `w-72` SCADA container with 94% opacity (`--color-surface: #1E2240`, 1px border `--color-border: #3A4060`).
+  - Monospace status indicator: `[SAT-LINK: ACTIVE] [TICK: 1.00s]`.
+  - Real-time station telemetry for Upper Tamakoshi (`27.8483 N, 86.1361 E | Elev: 822 m`), NASA GPM IMERG precipitation rate (34.8 mm/h), ERA5-Land moisture flux (46.8 kg/m*s), and ECMWF optical brightness temperature (212.4 K).
+  - Ingestion roundtrip latency: `[PING: 28 ms] [STATUS: HTTP 200 OK]` with per-frame BLAKE2b verification hash.
+  - Interactive controls: `[MINIMIZE / EXPAND]`, `[FREEZE FRAME]`, and `[RAW JSON]`.
 
 
 

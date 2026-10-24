@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import RevenueOutlookCard from "@/components/RevenueOutlookCard";
 
 interface TelemetryPoint {
   ts: string;
@@ -1206,6 +1207,14 @@ export default function DemoPage() {
           </div>
         </div>
       </section>
+
+      {/* 7.5 Energy Revenue Outlook Agent (Sprint 5) */}
+      <RevenueOutlookCard
+        plantId={selectedPlantId}
+        plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+        capacityMw={activePlant?.capacity_mw || 456}
+        apiBase={API_BASE}
+      />
 
       {/* 8. 25 Official Nepal Hydropower Stations Grid */}
       <section
