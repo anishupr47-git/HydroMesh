@@ -47,245 +47,153 @@ export default function GlobalNav({
     return () => clearInterval(interval);
   }, []);
 
-  const overallAlertTier = activeCriticalCount > 0 ? "CRITICAL" : activeWarningCount > 0 ? "WARNING" : "NORMAL";
+  const overallAlertTier =
+    activeCriticalCount > 0
+      ? "CRITICAL"
+      : activeWarningCount > 0
+      ? "WARNING"
+      : "NORMAL";
+
+  const tierColor =
+    overallAlertTier === "CRITICAL"
+      ? "#E0705A"
+      : overallAlertTier === "WARNING"
+      ? "#E0A43A"
+      : "#5FB3A8";
 
   return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        background: "rgba(30, 34, 64, 0.95)",
-        borderBottom: "1px solid var(--color-border-default, #3A436D)",
-        backdropFilter: "blur(8px)",
-        padding: "10px 20px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexWrap: "wrap",
-        gap: "12px",
-      }}
-    >
-      {/* Left: Brand Logo & Mode Switcher */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* Illuminated Amber Arch Window Icon */}
-          <div
-            style={{
-              width: "22px",
-              height: "26px",
-              background: "#1A1010",
-              border: "2px solid #7A5C48",
-              borderRadius: "10px 10px 2px 2px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                width: "12px",
-                height: "16px",
-                background: "#F0C860",
-                borderRadius: "6px 6px 1px 1px",
-                boxShadow: "0 0 10px rgba(240, 200, 96, 0.8)",
-              }}
-            />
-          </div>
-          <div>
-            <span
-              style={{
-                fontFamily: "var(--font-mono, monospace)",
-                fontWeight: 800,
-                fontSize: "16px",
-                letterSpacing: "0.05em",
-                color: "var(--color-text-primary, #F4F6FC)",
-              }}
+    <header className="sticky top-0 z-50 bg-[#0F1A2E]/95 backdrop-blur-md border-b border-[#C9A24B] px-4 sm:px-6 py-2.5 flex items-center justify-between flex-wrap gap-3">
+      {/* Left: Francis Runner Glyph + HydroMesh Branding + Mode Switcher */}
+      <div className="flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          {/* Rotating Francis Runner Glyph */}
+          <div className="w-7 h-7 rounded-full border border-[#C9A24B] flex items-center justify-center bg-[#0B1424] shadow-[0_0_8px_rgba(201,162,75,0.4)]">
+            <svg
+              viewBox="0 0 100 100"
+              className="w-5 h-5 animate-chakra"
+              style={{ transformOrigin: "center" }}
             >
-              Hydro<span style={{ color: "var(--color-cloud-rim, #D4B94A)" }}>Mesh</span>
-            </span>
-            <div style={{ fontSize: "9px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)", letterSpacing: "0.08em" }}>
-              HIMALAYAN RIVER GUARDIAN
+              <g transform="translate(50, 50)">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <path
+                    key={i}
+                    d="M 0 -12 C 10 -22, 20 -35, 12 -45 C 5 -45, 2 -25, 0 -12 Z"
+                    fill="#F0D27A"
+                    transform={`rotate(${i * 45})`}
+                  />
+                ))}
+                <circle cx="0" cy="0" r="10" fill="#C9A24B" />
+              </g>
+            </svg>
+          </div>
+
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#F1EAD9]">
+                Hydro<span className="text-[#F0D27A]">Mesh</span>
+              </span>
+              <span className="text-[10px] font-mono tracking-widest uppercase text-[#C9A24B]">
+                SCADA
+              </span>
+            </div>
+            <div className="text-[9px] font-mono tracking-widest uppercase text-[#A3B0C8] -mt-1 hidden sm:block">
+              Himalayan River Guardian
             </div>
           </div>
         </Link>
 
-        {/* Mode Switcher Pill */}
-        <div
-          style={{
-            display: "flex",
-            background: "var(--color-surface-sunken, #15172C)",
-            border: "1px solid var(--color-border-subtle, #2E3557)",
-            borderRadius: "4px",
-            padding: "2px",
-          }}
-        >
-          <button
-            onClick={() => onModeChange("global")}
-            style={{
-              background: mode === "global" ? "var(--color-cloud-rim, #D4B94A)" : "transparent",
-              color: mode === "global" ? "#1A1010" : "var(--color-text-secondary, #A6B0CF)",
-              border: "none",
-              borderRadius: "3px",
-              padding: "4px 10px",
-              fontSize: "11px",
-              fontWeight: mode === "global" ? 700 : 500,
-              cursor: "pointer",
-              transition: "all 150ms ease",
-            }}
-          >
-            🌐 Global Fleet
-          </button>
+        {/* View Tabs: [MY PLANT] vs [GLOBAL FLEET] */}
+        <div className="flex items-center bg-[#0B1424] border border-[#C9A24B]/40 rounded-sm p-0.5 ml-2">
           <button
             onClick={() => onModeChange("individual")}
-            style={{
-              background: mode === "individual" ? "var(--color-cloud-rim, #D4B94A)" : "transparent",
-              color: mode === "individual" ? "#1A1010" : "var(--color-text-secondary, #A6B0CF)",
-              border: "none",
-              borderRadius: "3px",
-              padding: "4px 10px",
-              fontSize: "11px",
-              fontWeight: mode === "individual" ? 700 : 500,
-              cursor: "pointer",
-              transition: "all 150ms ease",
-            }}
+            className={`px-3 py-1 rounded-sm text-xs font-mono tracking-wider uppercase transition-colors cursor-pointer ${
+              mode === "individual"
+                ? "bg-[#C9A24B] text-[#0B1424] font-bold shadow-[0_1px_4px_rgba(201,162,75,0.4)]"
+                : "text-[#A3B0C8] hover:text-[#F1EAD9]"
+            }`}
           >
-            ⚡ My Plant
+            [MY PLANT]
+          </button>
+          <button
+            onClick={() => onModeChange("global")}
+            className={`px-3 py-1 rounded-sm text-xs font-mono tracking-wider uppercase transition-colors cursor-pointer ${
+              mode === "global"
+                ? "bg-[#C9A24B] text-[#0B1424] font-bold shadow-[0_1px_4px_rgba(201,162,75,0.4)]"
+                : "text-[#A3B0C8] hover:text-[#F1EAD9]"
+            }`}
+          >
+            [GLOBAL FLEET]
           </button>
         </div>
       </div>
 
       {/* Center: Real-Time Fleet Health Pill */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          background: "var(--color-surface-sunken, #15172C)",
-          border: "1px solid var(--color-border-subtle, #2E3557)",
-          borderRadius: "20px",
-          padding: "4px 14px",
-          fontFamily: "var(--font-mono, monospace)",
-          fontSize: "11px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <div className="hidden lg:flex items-center gap-3 bg-[#0B1424] border border-[#C9A24B]/30 rounded-full px-4 py-1 text-xs font-mono">
+        <div className="flex items-center gap-2">
           <span
+            className="w-2 h-2 rounded-full"
             style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background:
-                overallAlertTier === "CRITICAL"
-                  ? "var(--color-status-red, #E64C4C)"
-                  : overallAlertTier === "WARNING"
-                  ? "var(--color-status-yellow, #E5B83B)"
-                  : "var(--color-status-green, #4CAF82)",
-              boxShadow:
-                overallAlertTier === "CRITICAL"
-                  ? "0 0 8px rgba(230, 76, 76, 0.8)"
-                  : "0 0 8px rgba(76, 175, 130, 0.8)",
+              backgroundColor: tierColor,
+              boxShadow: `0 0 8px ${tierColor}`,
             }}
           />
-          <span style={{ fontWeight: 600, color: "var(--color-text-primary, #F4F6FC)" }}>
-            {totalSites} Active Stations
+          <span className="text-[#F1EAD9] font-medium">
+            {totalSites} Active Himalayan Stations
           </span>
         </div>
-
-        <span style={{ color: "var(--color-border-default, #3A436D)" }}>|</span>
-
-        <span style={{ color: "var(--color-text-secondary, #A6B0CF)" }}>
-          Satellite Link: <strong style={{ color: "#4CAF82" }}>ECMWF 9km [Connected · 820ms]</strong>
+        <span className="text-[#C9A24B]/40">|</span>
+        <span className="text-[#A3B0C8]">
+          Satellite Link: <strong className="text-[#5FB3A8]">NASA GPM & ECMWF 9km</strong>
         </span>
       </div>
 
-      {/* Right: Nepal Time Clock, Action Links & User Badge */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        {/* Nepal Standard Time */}
+      {/* Right: NST Clock, Replay Intro & Operator Profile */}
+      <div className="flex items-center gap-3">
+        {/* Live NST Clock */}
         <div
-          style={{
-            fontFamily: "var(--font-mono, monospace)",
-            fontSize: "12px",
-            color: "var(--color-text-amber, #F0C860)",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-          }}
+          className="font-mono text-xs text-[#F0D27A] font-semibold tracking-wider bg-[#0B1424] px-2.5 py-1 border border-[#C9A24B]/30 rounded-sm"
           title="Nepal Standard Time (UTC+5:45)"
         >
           ⏱️ {nstTime || "12:00:00 NST"}
         </div>
 
-        {/* Quick Trigger Buttons */}
-        {onOpenInspector && (
-          <button
-            onClick={onOpenInspector}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--color-border-subtle, #2E3557)",
-              color: "var(--color-text-secondary, #A6B0CF)",
-              borderRadius: "4px",
-              padding: "4px 8px",
-              fontSize: "11px",
-              cursor: "pointer",
-            }}
-          >
-            📋 Inspector
-          </button>
-        )}
-
+        {/* Replay Cinematic Intro Button */}
         {onReplayIntro && (
           <button
             onClick={onReplayIntro}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--color-border-subtle, #2E3557)",
-              color: "var(--color-text-secondary, #A6B0CF)",
-              borderRadius: "4px",
-              padding: "4px 8px",
-              fontSize: "11px",
-              cursor: "pointer",
-            }}
+            className="px-2.5 py-1 text-xs font-mono text-[#C9A24B] hover:text-[#F0D27A] border border-[#C9A24B]/40 hover:border-[#C9A24B] bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
+            title="Replay 4-Phase Cinematic Entry Flow"
           >
-            ℹ️ Intro Tour
+            [↺ REPLAY INTRO]
+          </button>
+        )}
+
+        {/* Inspector Button */}
+        {onOpenInspector && (
+          <button
+            onClick={onOpenInspector}
+            className="hidden sm:block px-2.5 py-1 text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] border border-[#C9A24B]/30 bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
+          >
+            [📋 AUDIT]
           </button>
         )}
 
         <Link
           href="/safety"
-          style={{
-            color: "var(--color-text-secondary, #A6B0CF)",
-            textDecoration: "none",
-            fontSize: "11px",
-            border: "1px solid var(--color-border-subtle, #2E3557)",
-            borderRadius: "4px",
-            padding: "4px 8px",
-          }}
+          className="hidden md:block px-2.5 py-1 text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] border border-[#C9A24B]/30 bg-[#0B1424] rounded-sm transition-colors"
         >
-          🛡️ Rules R1-R11
+          [🛡️ R1–R11]
         </Link>
 
-        {/* User Identity Pill */}
+        {/* Operator Badge & Auth Trigger */}
         <button
           onClick={onOpenAuth}
-          style={{
-            background: "var(--color-surface-raised, #252B4A)",
-            border: "1px solid var(--color-border-default, #3A436D)",
-            borderRadius: "16px",
-            padding: "4px 10px",
-            color: userEmail ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-text-primary, #F4F6FC)",
-            fontSize: "11px",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
+          className="flex items-center gap-2 px-3 py-1 bg-[#13264A] hover:bg-[#1a3364] border border-[#C9A24B] text-xs font-mono text-[#F1EAD9] rounded-sm transition-all cursor-pointer shadow-[0_0_8px_rgba(201,162,75,0.2)]"
         >
-          <span>👤</span>
-          <span>{userEmail || "Guest Operator"}</span>
-          <span style={{ fontSize: "9px", color: "var(--color-text-dim, #6C7699)" }}>
-            ({userRole === "guest" ? "Free Fleet" : "Pro 1-Site"})
+          <span className="w-1.5 h-1.5 rounded-full bg-[#5FB3A8]" />
+          <span>{userEmail ? userEmail.split("@")[0] : "GUEST OPERATOR"}</span>
+          <span className="text-[10px] text-[#C9A24B]">
+            [{userRole === "guest" ? "GUEST" : "STATION PRO"}]
           </span>
         </button>
       </div>

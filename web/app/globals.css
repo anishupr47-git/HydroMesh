@@ -6,6 +6,26 @@
    ========================================================================== */
 
 :root {
+  /* ==========================================================================
+     HIMALAYAN CLASSICAL BRASS & MIDNIGHT BLUE SCADA CONTROL ROOM TOKENS
+     ========================================================================== */
+  --bg-root:        #0B1424;  /* Primary viewport backdrop canvas */
+  --bg-hero-sky:    #0F1D38;  /* Upper atmospheric hero vault behind the chakra */
+  --bg-panel:       #0F1A2E;  /* Card & instrument panel surface */
+  --bg-chamber:     #13264A;  /* Concentric runner chamber fill */
+  --border-brass:   #C9A24B;  /* 1px precision panel borders, notches & dividers */
+  --border-subtle:  rgba(201, 162, 75, 0.38); /* Card boundaries & interior division */
+  --brass-bright:   #F0D27A;  /* Specular glints, active ticks, pulsing LED beacons */
+  --brass-dark:     #6F5A2C;  /* Deep runner vane shading, desander silt sediment */
+  --text-cream:     #F1EAD9;  /* Primary high-contrast text and main metric digits */
+  --text-warm:      #D9D2BF;  /* Subheadings, agent plain-English quotes */
+  --text-slate:     #A3B0C8;  /* Secondary labels, engineering units, axis markers */
+  
+  --status-normal:   #5FB3A8; /* Normal condition, approved gate status (Sage Teal) */
+  --status-watch:    #E0A43A; /* Watch condition, desander flush SOP (Warm Amber) */
+  --status-warning:  #E08A3A; /* Warning condition, monsoon surge (Flame Orange) */
+  --status-critical: #E0705A; /* Critical condition, emergency shutoff (Vermilion) */
+
   /* ------------------------------------------------------------------------
      1. ATMOSPHERIC SKY PALETTE
      ------------------------------------------------------------------------ */
@@ -455,3 +475,200 @@ body {
     border-color: var(--color-status-red);
   }
 }
+
+/* ==========================================================================
+   HIMALAYAN CLASSICAL BRASS & MIDNIGHT BLUE UTILITY CLASSES
+   ========================================================================== */
+
+.font-serif {
+  font-family: var(--font-serif), Cormorant Garamond, Georgia, serif;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.font-sans {
+  font-family: var(--font-sans), IBM Plex Sans, system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), JetBrains Mono, monospace;
+}
+
+/* Corner Notches (.pn) */
+.pn {
+  position: relative;
+}
+
+.pn::before,
+.pn::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pn::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--border-brass, #C9A24B);
+  border-left: 2px solid var(--border-brass, #C9A24B);
+}
+
+.pn::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--border-brass, #C9A24B);
+  border-right: 2px solid var(--border-brass, #C9A24B);
+}
+
+/* 4-corner notch variant */
+.pn-all {
+  position: relative;
+}
+
+.pn-all::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  z-index: 10;
+  border: 1px solid var(--border-subtle, rgba(201, 162, 75, 0.38));
+  background: 
+    linear-gradient(to right, var(--border-brass) 12px, transparent 12px) 0 0,
+    linear-gradient(to right, var(--border-brass) 12px, transparent 12px) 0 100%,
+    linear-gradient(to left, var(--border-brass) 12px, transparent 12px) 100% 0,
+    linear-gradient(to left, var(--border-brass) 12px, transparent 12px) 100% 100%,
+    linear-gradient(to bottom, var(--border-brass) 12px, transparent 12px) 0 0,
+    linear-gradient(to bottom, var(--border-brass) 12px, transparent 12px) 100% 0,
+    linear-gradient(to top, var(--border-brass) 12px, transparent 12px) 0 100%,
+    linear-gradient(to top, var(--border-brass) 12px, transparent 12px) 100% 100%;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
+
+/* Perched Roman Badges (.np) */
+.np {
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: var(--border-brass, #C9A24B);
+  color: var(--bg-root, #0B1424);
+  font-family: var(--font-serif), Cormorant Garamond, Georgia, serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+}
+
+/* Vernier Divider (.vernier-strip) */
+.vernier-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 18px;
+  width: 100%;
+  margin: 16px 0;
+}
+
+.vernier-strip::before,
+.vernier-strip::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-brass, #C9A24B) 35%, var(--border-brass, #C9A24B) 65%, transparent);
+  opacity: 0.55;
+}
+
+.vernier-jewel {
+  width: 8px;
+  height: 8px;
+  background: var(--border-brass, #C9A24B);
+  transform: rotate(45deg);
+  margin: 0 14px;
+  box-shadow: 0 0 10px rgba(201, 162, 75, 0.85);
+  flex-shrink: 0;
+}
+
+/* Chakra spin keyframes */
+@keyframes chakra-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes chakra-spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-chakra {
+  animation: chakra-spin 120s linear infinite;
+}
+
+.animate-chakra-fast {
+  animation: chakra-spin 8s linear infinite;
+}
+
+.animate-chakra-reverse {
+  animation: chakra-spin-reverse 100s linear infinite;
+}
+
+/* Water ripple keyframes */
+@keyframes water-ripple {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Letter drop bounce */
+@keyframes letter-drop {
+  0% {
+    transform: translateY(-110px) scale(0.85);
+    opacity: 0;
+  }
+  65% {
+    transform: translateY(8px) scale(1.04);
+    opacity: 1;
+  }
+  85% {
+    transform: translateY(-4px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Golden sweep */
+@keyframes golden-sweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(200%);
+    opacity: 0;
+  }
+}
+
