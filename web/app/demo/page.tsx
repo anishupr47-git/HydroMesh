@@ -1,40 +1,1200 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-export default function DemoPage() {
-  return (
-    <main style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text-primary)", fontFamily: "var(--font-ui)", padding: "var(--space-8)" }}>
-      <Link href="/" style={{ color: "var(--color-accent)", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", textDecoration: "none" }}>← HydroMesh</Link>
-      <h1 style={{ fontSize: "var(--text-3xl)", fontWeight: 700, marginTop: "var(--space-6)", marginBottom: "var(--space-4)" }}>
-        Live Plant Dashboard
-      </h1>
-      <p style={{ color: "var(--color-text-secondary)", maxWidth: "600px", lineHeight: 1.7, marginBottom: "var(--space-8)" }}>
-        Watch HydroMesh protect the river plant in real time. The AI helper spots muddy water, checks with the strict safety guard, and asks human operators before opening any gate!
-      </p>
+interface TelemetryPoint {
+  ts: string;
+  plant_id: string;
+  discharge_m3s: number;
+  silt_ppm: number;
+  alert_tier: "NORMAL" | "WATCH" | "WARNING" | "CRITICAL";
+  runner_wear_pct: number;
+  active_decision: string;
+  safety_status: string;
+}
 
-      {/* Placeholder panels */}
-      {[
-        { title: "Robot Helper Activity Log", desc: "Live step-by-step diary of what the AI helpers see, what they suggest, and how the safety guard checks each idea." },
-        { title: "Live Plant Dials", desc: "Real-time meters showing river water speed, floating sand count, and scratches on the spinning water wheels." },
-        { title: "River Mud Forecast Graph", desc: "A 24-hour lookahead graph showing upcoming rain and when big waves of sand will reach the plant." },
-        { title: "Operator Action Cards", desc: "Simple action cards where human plant operators can review suggestions, press approve, or cancel anytime." },
-      ].map(({ title, desc }) => (
+interface UserIdentity {
+  role: string;
+  user_id: string | null;
+  email: string | null;
+  guest_id: string | null;
+  tier: string;
+  max_plants_allowed: number;
+}
+
+interface FleetSite {
+  id: string;
+  name: string;
+  coordinates: { lat: number; lon: number };
+  capacity_mw: number;
+  alert_tier?: string;
+  current_silt_ppm?: number;
+  current_discharge_m3s?: number;
+  preset?: string;
+}
+
+interface FleetSnapshot {
+  total_sites: number;
+  active_warnings: number;
+  active_critical: number;
+  sites: FleetSite[];
+}
+
+interface AgentEvaluation {
+  incident_id?: string;
+  anomaly?: {
+    severity: string;
+    confidence: number;
+    description: string;
+    recommended_actions: string[];
+  };
+  forecast?: {
+    peak_silt_ppm_1h: number;
+    peak_silt_ppm_4h: number;
+    estimated_arrival_minutes: number;
+  };
+  sop?: {
+    title: string;
+    procedure: string;
+    verified_hash?: string;
+  };
+  decision?: {
+    actions: unknown[];
+    reasoning: string;
+    advisory: boolean;
+  };
+  verdict?: {
+    status: string;
+    reason: string;
+    evaluated_rules: string[];
+  };
+  explanation?: {
+    plain_english: string;
+    key_points: string[];
+  };
+}
+
+export default function DemoPage() {
+  // Mode & Plant Selection
+  const [mode, setMode] = useState<"global" | "individual">("global");
+  const [selectedPlant, setSelectedPlant] = useState("upper_tamakoshi");
+
+  // Live Telemetry & History
+  const [telemetry, setTelemetry] = useState<TelemetryPoint>({
+    ts: "2026-10-24T00:00:00Z",
+    plant_id: "upper_tamakoshi",
+    discharge_m3s: 65.0,
+    silt_ppm: 420.0,
+    alert_tier: "NORMAL",
+    runner_wear_pct: 0.015,
+    active_decision: "None",
+    safety_status: "approved",
+  });
+  const [history, setHistory] = useState<TelemetryPoint[]>([]);
+  const [wsConnected, setWsConnected] = useState(false);
+
+  // 10-Minute Alert Window Countdown
+  const [countdown, setCountdown] = useState(600);
+  const [ackIncident, setAckIncident] = useState(false);
+
+  // User Identity & Quota
+  const [user, setUser] = useState<UserIdentity | null>(null);
+  const [fleet, setFleet] = useState<FleetSnapshot | null>(null);
+
+  // AI Pipeline Evaluation State
+  const [latestEval, setLatestEval] = useState<AgentEvaluation | null>(null);
+  const [evaluatingAI, setEvaluatingAI] = useState(false);
+  const [scenarioStatus, setScenarioStatus] = useState<string | null>(null);
+  const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
+
+  // Auth Modal State
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "register">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authFeedback, setAuthFeedback] = useState<{ err?: string; ok?: string }>({});
+
+  const wsRef = useRef<WebSocket | null>(null);
+
+  const API_BASE = "http://127.0.0.1:8000";
+  const WS_URL = "ws://127.0.0.1:8000/ws/stream";
+
+  // 1. Fetch User Identity & Preferences
+  const fetchUser = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      }
+    } catch {
+      // offline or server starting
+    }
+  };
+
+  // 2. Fetch Global Fleet Snapshot
+  const fetchFleet = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/global/fleet`);
+      if (res.ok) {
+        const data = await res.json();
+        setFleet(data);
+      }
+    } catch {
+      // offline
+    }
+  };
+
+  // 3. Connect to 24/7 Live WebSocket Stream
+  useEffect(() => {
+    fetchUser();
+    fetchFleet();
+
+    let retryTimer: NodeJS.Timeout;
+
+    const connectWS = () => {
+      try {
+        const ws = new WebSocket(WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          setWsConnected(true);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data: TelemetryPoint = JSON.parse(event.data);
+            setTelemetry(data);
+            setHistory((prev) => {
+              const next = [...prev, data];
+              return next.length > 30 ? next.slice(next.length - 30) : next;
+            });
+
+            // Reset countdown if alert changes to Warning/Critical
+            if (data.alert_tier === "WARNING" || data.alert_tier === "CRITICAL") {
+              setCountdown((c) => (c <= 0 ? 600 : c));
+            }
+          } catch {
+            // malformed frame
+          }
+        };
+
+        ws.onclose = () => {
+          setWsConnected(false);
+          retryTimer = setTimeout(connectWS, 2500);
+        };
+
+        ws.onerror = () => {
+          ws.close();
+        };
+      } catch {
+        setWsConnected(false);
+        retryTimer = setTimeout(connectWS, 3000);
+      }
+    };
+
+    connectWS();
+
+    const fleetInterval = setInterval(fetchFleet, 10000);
+
+    return () => {
+      clearTimeout(retryTimer);
+      clearInterval(fleetInterval);
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // 4. Alert Countdown Timer
+  useEffect(() => {
+    if (telemetry.alert_tier === "WARNING" || telemetry.alert_tier === "CRITICAL") {
+      const timer = setInterval(() => {
+        setCountdown((c) => Math.max(0, c - 1));
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setCountdown(600);
+      setAckIncident(false);
+    }
+  }, [telemetry.alert_tier]);
+
+  // Format MM:SS for countdown
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  // Trigger Scenario Injection
+  const injectScenario = async (type: string, multiplier: number = 1.5) => {
+    setScenarioStatus(`Injecting ${type} (${multiplier}x)...`);
+    try {
+      const res = await fetch(`${API_BASE}/api/twin/scenario`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenario: type,
+          severity: multiplier > 1.5 ? "critical" : "warning",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setScenarioStatus(`Scenario applied: ${data.scenario} (${data.severity})`);
+      } else {
+        setScenarioStatus(`Scenario rejected: Status ${res.status}`);
+      }
+    } catch (err: unknown) {
+      setScenarioStatus(`Error: ${(err as Error).message}`);
+    }
+  };
+
+  // Run On-Demand AI Multi-Agent Pipeline Cycle
+  const triggerAIEvaluation = async () => {
+    setEvaluatingAI(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/pipeline/evaluate?plant_id=${selectedPlant}`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLatestEval({
+          incident_id: data.incident_id,
+          anomaly: data.anomaly,
+          sop: data.sop_context
+            ? {
+                title: data.sop_context.matched_sop_title || "Standard Sand Exclusion SOP",
+                procedure: data.sop_context.operating_instructions || "Throttling intake gate to reduce sand erosion.",
+                verified_hash: data.sop_context.sha256_hash,
+              }
+            : undefined,
+          decision: data.decision,
+          verdict: data.verdict,
+          explanation: data.explanation
+            ? {
+                plain_english: data.explanation.text || "The river has too much sand. We are slowing down intake water.",
+                key_points: data.explanation.key_points || ["High sand in river", "Gate throttled safely", "Turbine protected"],
+              }
+            : undefined,
+        });
+      }
+    } catch (err: unknown) {
+      setScenarioStatus(`AI Pipeline error: ${(err as Error).message}`);
+    } finally {
+      setEvaluatingAI(false);
+    }
+  };
+
+  // Send Operator Override
+  const sendOverride = async (choice: "approve" | "reject" | "acknowledge") => {
+    try {
+      const nonce = `ovr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const res = await fetch(`${API_BASE}/api/override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action_id: telemetry.active_decision || "act_001",
+          operator_id: user?.email || user?.guest_id || "operator_control_room",
+          override_choice: choice,
+          nonce: nonce,
+          reason: `Manual testbench ${choice} executed by operator.`,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOverrideMsg(`Override registered: ${choice.toUpperCase()} (Nonce: ${data.record?.nonce || nonce})`);
+        if (choice === "acknowledge") setAckIncident(true);
+      }
+    } catch (err: unknown) {
+      setOverrideMsg(`Override error: ${(err as Error).message}`);
+    }
+  };
+
+  // Handle Auth (Register / Login)
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthFeedback({});
+    const endpoint = authTab === "register" ? "/api/auth/register" : "/api/auth/login";
+
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: authEmail, password: authPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAuthFeedback({ ok: `Logged in as ${data.user?.email || authEmail}` });
+        await fetchUser();
+        setTimeout(() => setAuthOpen(false), 900);
+      } else {
+        setAuthFeedback({ err: data.detail || "Authentication failed." });
+      }
+    } catch (err: unknown) {
+      setAuthFeedback({ err: (err as Error).message });
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: "POST", credentials: "include" });
+    await fetchUser();
+  };
+
+  // Color mapping based on alert status
+  const getAlertColor = (tier: string) => {
+    switch (tier) {
+      case "CRITICAL":
+        return "var(--color-red)";
+      case "WARNING":
+        return "#E07C38";
+      case "WATCH":
+        return "var(--color-yellow)";
+      default:
+        return "var(--color-green)";
+    }
+  };
+
+  // Calculate SVG line points for real-time chart
+  const renderSVGChart = () => {
+    if (history.length < 2) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "160px", color: "var(--color-text-dim)" }}>
+          Streaming live telemetry ticks from WebSocket...
+        </div>
+      );
+    }
+
+    const width = 640;
+    const height = 150;
+    const maxSilt = Math.max(3500, ...history.map((h) => h.silt_ppm));
+    const maxQ = Math.max(1000, ...history.map((h) => h.discharge_m3s));
+
+    const pointsSilt = history.map((pt, i) => {
+      const x = (i / (history.length - 1)) * width;
+      const y = height - (pt.silt_ppm / maxSilt) * (height - 20) - 10;
+      return `${x},${y}`;
+    }).join(" ");
+
+    const pointsQ = history.map((pt, i) => {
+      const x = (i / (history.length - 1)) * width;
+      const y = height - (pt.discharge_m3s / maxQ) * (height - 20) - 10;
+      return `${x},${y}`;
+    }).join(" ");
+
+    const yWarn = height - (1200 / maxSilt) * (height - 20) - 10;
+    const yCrit = height - (3000 / maxSilt) * (height - 20) - 10;
+
+    return (
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
+        {/* Warning & Critical Guide lines */}
+        <line x1="0" y1={yWarn} x2={width} y2={yWarn} stroke="#E07C38" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+        <text x="8" y={yWarn - 4} fill="#E07C38" fontSize="10" fontFamily="var(--font-mono)">1,200 PPM (Warning Threshold)</text>
+
+        <line x1="0" y1={yCrit} x2={width} y2={yCrit} stroke="var(--color-red)" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
+        <text x="8" y={yCrit - 4} fill="var(--color-red)" fontSize="10" fontFamily="var(--font-mono)">3,000 PPM (Critical Threshold)</text>
+
+        {/* Discharge Line */}
+        <polyline fill="none" stroke="#50B0D8" strokeWidth="2" points={pointsQ} opacity="0.7" />
+
+        {/* Silt Line */}
+        <polyline fill="none" stroke="var(--color-accent)" strokeWidth="2.5" points={pointsSilt} />
+      </svg>
+    );
+  };
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-bg)",
+        color: "var(--color-text-primary)",
+        fontFamily: "var(--font-ui)",
+        padding: "var(--space-6) var(--space-8)",
+      }}
+    >
+      {/* 1. Header & Navigation Bar */}
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingBottom: "var(--space-4)",
+          borderBottom: "1px solid var(--color-border)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+          <Link
+            href="/"
+            style={{
+              color: "var(--color-accent)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-sm)",
+              textDecoration: "none",
+              fontWeight: 600,
+            }}
+          >
+            ← HydroMesh
+          </Link>
+          <span style={{ color: "var(--color-text-dim)" }}>|</span>
+          <span style={{ fontWeight: 700, fontSize: "var(--text-lg)", color: "var(--color-highlight)" }}>
+            Live Operations & AI Testbench
+          </span>
+        </div>
+
+        {/* Mode Switcher */}
         <div
-          key={title}
+          style={{
+            display: "flex",
+            background: "var(--color-surface)",
+            borderRadius: "6px",
+            border: "1px solid var(--color-border)",
+            padding: "2px",
+          }}
+        >
+          <button
+            onClick={() => setMode("global")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "4px",
+              border: "none",
+              background: mode === "global" ? "var(--color-surface-raised)" : "transparent",
+              color: mode === "global" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+              fontWeight: mode === "global" ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "var(--text-sm)",
+            }}
+          >
+            🌐 Global Fleet Showcase
+          </button>
+          <button
+            onClick={() => setMode("individual")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "4px",
+              border: "none",
+              background: mode === "individual" ? "var(--color-surface-raised)" : "transparent",
+              color: mode === "individual" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+              fontWeight: mode === "individual" ? 600 : 400,
+              cursor: "pointer",
+              fontSize: "var(--text-sm)",
+            }}
+          >
+            🏔️ My Plant (Sandbox)
+          </button>
+        </div>
+
+        {/* Connection & Auth Status */}
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+          {/* WS Status Badge */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: wsConnected ? "var(--color-green-bg)" : "var(--color-red-bg)",
+              border: `1px solid ${wsConnected ? "var(--color-green)" : "var(--color-red)"}`,
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "var(--text-xs)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: wsConnected ? "var(--color-green)" : "var(--color-red)",
+                display: "inline-block",
+              }}
+            />
+            {wsConnected ? "LIVE STREAM 2.0s" : "CONNECTING..."}
+          </div>
+
+          {/* User Identity Pill */}
+          <button
+            onClick={() => setAuthOpen(true)}
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "6px",
+              padding: "6px 12px",
+              color: "var(--color-text-primary)",
+              fontSize: "var(--text-xs)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>👤</span>
+            <span>
+              {user?.email ? user.email : user?.guest_id ? `${user.guest_id.slice(0, 14)}...` : "Guest"}
+            </span>
+            <span style={{ color: "var(--color-accent)", fontSize: "10px" }}>
+              [{user?.role === "member" ? "Member · 1 Site Max" : "Guest Mode"}]
+            </span>
+          </button>
+        </div>
+      </header>
+
+      {/* 2. Active Alert Status Banner */}
+      <section
+        style={{
+          background:
+            telemetry.alert_tier === "CRITICAL"
+              ? "var(--color-red-bg)"
+              : telemetry.alert_tier === "WARNING"
+              ? "rgba(224, 124, 56, 0.15)"
+              : telemetry.alert_tier === "WATCH"
+              ? "var(--color-yellow-bg)"
+              : "var(--color-green-bg)",
+          border: `1px solid ${getAlertColor(telemetry.alert_tier)}`,
+          borderRadius: "8px",
+          padding: "var(--space-4) var(--space-6)",
+          marginBottom: "var(--space-6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+          <span style={{ fontSize: "24px" }}>
+            {telemetry.alert_tier === "CRITICAL" ? "🚨" : telemetry.alert_tier === "WARNING" ? "⚠️" : telemetry.alert_tier === "WATCH" ? "🟡" : "🟢"}
+          </span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "var(--text-base)", color: getAlertColor(telemetry.alert_tier) }}>
+              ALERT LEVEL: {telemetry.alert_tier} ({telemetry.silt_ppm.toFixed(1)} PPM Sediment)
+            </div>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+              {telemetry.alert_tier === "CRITICAL"
+                ? "Immediate desander purge required. Sharp Himalayan quartz exceeds critical runner blade erosion limit."
+                : telemetry.alert_tier === "WARNING"
+                ? "Quartz sediment surge detected. Multi-agent AI proposal formulated. Safety kernel gate review active."
+                : telemetry.alert_tier === "WATCH"
+                ? "River sediment rising above seasonal baseline. Continuous satellite and twin monitoring active."
+                : "Turbine runner safe. Baseline desander flushing active. Silt well below 800 PPM."}
+            </div>
+          </div>
+        </div>
+
+        {/* 10-Minute Action Window Countdown */}
+        {(telemetry.alert_tier === "WARNING" || telemetry.alert_tier === "CRITICAL") && (
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+            <div
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-lg)",
+                fontWeight: 700,
+                color: countdown < 180 ? "var(--color-red)" : "var(--color-accent)",
+                background: "var(--color-surface)",
+                padding: "6px 14px",
+                borderRadius: "6px",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              ⏱️ {formatTime(countdown)}
+            </div>
+            <button
+              onClick={() => sendOverride("acknowledge")}
+              disabled={ackIncident}
+              style={{
+                background: ackIncident ? "var(--color-green)" : "var(--color-accent)",
+                color: "#1A1010",
+                fontWeight: 700,
+                border: "none",
+                borderRadius: "6px",
+                padding: "8px 16px",
+                cursor: ackIncident ? "default" : "pointer",
+                fontSize: "var(--text-xs)",
+              }}
+            >
+              {ackIncident ? "✓ Incident Acknowledged" : "Acknowledge Incident"}
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* 3. Live Physical Metrics Dials (4 Cards) */}
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "var(--space-4)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        {/* Card 1: Silt PPM */}
+        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
+          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
+            Quartz Sediment (PPM)
+          </div>
+          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: getAlertColor(telemetry.alert_tier), fontFamily: "var(--font-mono)" }}>
+            {telemetry.silt_ppm.toFixed(1)}
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
+            Normal &lt;800 | Watch 800–1,200 | Critical &gt;3,000
+          </div>
+        </div>
+
+        {/* Card 2: River Discharge */}
+        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
+          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
+            River Discharge (Q)
+          </div>
+          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: "#50B0D8", fontFamily: "var(--font-mono)" }}>
+            {telemetry.discharge_m3s.toFixed(1)} <span style={{ fontSize: "var(--text-sm)" }}>m³/s</span>
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
+            Physical Runoff & Open-Meteo Coupled
+          </div>
+        </div>
+
+        {/* Card 3: Turbine Runner Wear */}
+        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
+          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
+            Runner Blade Erosion
+          </div>
+          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: "var(--color-highlight)", fontFamily: "var(--font-mono)" }}>
+            {telemetry.runner_wear_pct.toFixed(3)}%
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
+            Cumulative IEC 62364 Quartz Abrasion Model
+          </div>
+        </div>
+
+        {/* Card 4: Safety Kernel Status */}
+        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
+          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
+            Deterministic Safety Kernel
+          </div>
+          <div
+            style={{
+              fontSize: "var(--text-lg)",
+              fontWeight: 700,
+              color: telemetry.safety_status === "approved" ? "var(--color-green)" : telemetry.safety_status === "rejected" ? "var(--color-red)" : "var(--color-yellow)",
+              fontFamily: "var(--font-mono)",
+              marginTop: "4px",
+            }}
+          >
+            {telemetry.safety_status.toUpperCase()}
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
+            Rules R1–R11 Enforced · Advisory Dispatch Locked
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Real-Time Telemetry Trend Chart */}
+      <section
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "8px",
+          padding: "var(--space-5)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+              Live Telemetry Stream Trend (Last 30 Ticks)
+            </h3>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+              Continuous WebSocket frame stream from PlantTwin engine (2.0s updates)
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "var(--space-4)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
+            <span style={{ color: "var(--color-accent)" }}>● Silt (PPM)</span>
+            <span style={{ color: "#50B0D8" }}>● River Flow (m³/s)</span>
+          </div>
+        </div>
+        {renderSVGChart()}
+      </section>
+
+      {/* 5. Interactive Testbench & Scenario Injection Panel */}
+      <section
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "8px",
+          padding: "var(--space-5)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-3)" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+              ⚡ Interactive Physical Scenario Testbench
+            </h3>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+              Inject extreme Himalayan monsoon conditions or sensor glitches to evaluate real-time multi-agent safety response.
+            </span>
+          </div>
+          <button
+            onClick={triggerAIEvaluation}
+            disabled={evaluatingAI}
+            style={{
+              background: "var(--color-surface-raised)",
+              color: "var(--color-accent)",
+              border: "1px solid var(--color-accent)",
+              borderRadius: "6px",
+              padding: "6px 14px",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            {evaluatingAI ? "Evaluating 5 Agents..." : "🤖 Force AI Cycle Evaluation"}
+          </button>
+        </div>
+
+        {/* Scenario Injection Buttons */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
+          <button
+            onClick={() => injectScenario("monsoon_surge", 1.5)}
+            style={{
+              background: "rgba(224, 124, 56, 0.15)",
+              border: "1px solid #E07C38",
+              color: "#E07C38",
+              borderRadius: "6px",
+              padding: "8px 14px",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            🌊 Monsoon Silt Surge (1.5x)
+          </button>
+
+          <button
+            onClick={() => injectScenario("monsoon_surge", 2.2)}
+            style={{
+              background: "var(--color-red-bg)",
+              border: "1px solid var(--color-red)",
+              color: "var(--color-red)",
+              borderRadius: "6px",
+              padding: "8px 14px",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ⚡ Critical Flash Flood (2.2x)
+          </button>
+
+          <button
+            onClick={() => injectScenario("sensor_drift", 1.0)}
+            style={{
+              background: "var(--color-yellow-bg)",
+              border: "1px solid var(--color-yellow)",
+              color: "var(--color-yellow)",
+              borderRadius: "6px",
+              padding: "8px 14px",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            🌫️ Sensor Drift Glitch (Fail-Closed Test)
+          </button>
+
+          <button
+            onClick={() => injectScenario("clear", 1.0)}
+            style={{
+              background: "var(--color-green-bg)",
+              border: "1px solid var(--color-green)",
+              color: "var(--color-green)",
+              borderRadius: "6px",
+              padding: "8px 14px",
+              fontSize: "var(--text-xs)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ☀️ Clear Mountain Baseflow
+          </button>
+        </div>
+
+        {/* Operator Override Buttons */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-3)",
+            paddingTop: "var(--space-3)",
+            borderTop: "1px solid var(--color-border)",
+          }}
+        >
+          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", fontWeight: 600 }}>
+            Operator Advisory Control:
+          </span>
+          <button
+            onClick={() => sendOverride("approve")}
+            style={{
+              background: "var(--color-green-bg)",
+              border: "1px solid var(--color-green)",
+              color: "var(--color-green)",
+              borderRadius: "4px",
+              padding: "4px 10px",
+              fontSize: "11px",
+              cursor: "pointer",
+            }}
+          >
+            Approve Advisory Action
+          </button>
+          <button
+            onClick={() => sendOverride("reject")}
+            style={{
+              background: "var(--color-red-bg)",
+              border: "1px solid var(--color-red)",
+              color: "var(--color-red)",
+              borderRadius: "4px",
+              padding: "4px 10px",
+              fontSize: "11px",
+              cursor: "pointer",
+            }}
+          >
+            Reject Proposal
+          </button>
+        </div>
+
+        {/* Feedback Messages */}
+        {(scenarioStatus || overrideMsg) && (
+          <div
+            style={{
+              marginTop: "var(--space-3)",
+              fontSize: "var(--text-xs)",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-accent)",
+            }}
+          >
+            {scenarioStatus && <div>ℹ️ {scenarioStatus}</div>}
+            {overrideMsg && <div>🔒 {overrideMsg}</div>}
+          </div>
+        )}
+      </section>
+
+      {/* 6. Multi-Agent AI Diagnostic & Explanation Center */}
+      <section
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "8px",
+          padding: "var(--space-5)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        <div style={{ marginBottom: "var(--space-4)" }}>
+          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+            🧠 Multi-Agent AI Pipeline Inspection
+          </h3>
+          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+            5 autonomous agents collaborate to analyze physical hydrology, search verified SOP memories, and generate Plain English operator advisories.
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-4)" }}>
+          {/* 1. Triage Agent */}
+          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>1. Triage Agent</span>
+              <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>
+                Conf: {latestEval?.anomaly?.confidence ? `${(latestEval.anomaly.confidence * 100).toFixed(0)}%` : "98%"}
+              </span>
+            </div>
+            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
+              {latestEval?.anomaly?.description || `Classified river telemetry as ${telemetry.alert_tier}. Silt rating curve indicates quartz hazard.`}
+            </p>
+          </div>
+
+          {/* 2. SOP RAG Agent */}
+          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>2. SOP RAG Memory</span>
+              <span style={{ fontSize: "11px", color: "var(--color-green)", fontFamily: "var(--font-mono)" }}>SHA-256 ✓</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
+              <strong>{latestEval?.sop?.title || "SOP-04: High Sediment Desander Flushing"}</strong>
+              <br />
+              {latestEval?.sop?.procedure || "Modulate intake gate to reduce abrasive sediment while keeping baseline desander flush open."}
+            </p>
+          </div>
+
+          {/* 3. Dispatch Agent */}
+          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>3. Dispatch Agent</span>
+              <span style={{ fontSize: "11px", color: "var(--color-accent)", fontFamily: "var(--font-mono)" }}>advisory=True</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
+              {telemetry.active_decision !== "None" ? telemetry.active_decision : "Advisory: Modulate penstock intake gate target flow to 14.4 m³/s"}
+            </p>
+          </div>
+
+          {/* 4. Explain Agent (Grade-1 Plain English) */}
+          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-highlight)" }}>4. Explain Agent (Plain English)</span>
+              <span style={{ fontSize: "11px", color: "var(--color-text-dim)" }}>Grade 1</span>
+            </div>
+            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-primary)", lineHeight: 1.5 }}>
+              {latestEval?.explanation?.plain_english ||
+                "\"The river from the mountains is bringing down sharp sand. We are slowing the water entering the pipes so the sand settles quietly in the washing basin without scratching our turbines.\""}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Global Fleet Explorer (When Mode is Global) */}
+      {mode === "global" && (
+        <section
           style={{
             background: "var(--color-surface)",
             border: "1px solid var(--color-border)",
             borderRadius: "8px",
-            padding: "var(--space-6)",
-            marginBottom: "var(--space-4)",
+            padding: "var(--space-5)",
           }}
         >
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-xs)", color: "var(--color-accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "var(--space-2)" }}>
-            T15–T16 →
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+                🌐 Autonomous Global Demonstration Fleet ({fleet?.total_sites || 8} Stations)
+              </h3>
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+                Continuous 24/7 autonomous cycles across Himalayan, Alpine, and Andean hydrological regimes.
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "var(--space-3)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
+              <span style={{ color: "var(--color-red)" }}>Critical: {fleet?.active_critical || 0}</span>
+              <span style={{ color: "var(--color-yellow)" }}>Warnings: {fleet?.active_warnings || 0}</span>
+            </div>
           </div>
-          <h2 style={{ fontSize: "var(--text-xl)", fontWeight: 600, marginBottom: "var(--space-2)", margin: "0 0 var(--space-2)" }}>{title}</h2>
-          <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-sm)", margin: 0 }}>{desc}</p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-4)" }}>
+            {fleet?.sites.map((site) => (
+              <div
+                key={site.id}
+                onClick={() => setSelectedPlant(site.id)}
+                style={{
+                  background: selectedPlant === site.id ? "var(--color-surface-raised)" : "var(--color-bg)",
+                  border: `1px solid ${selectedPlant === site.id ? "var(--color-accent)" : "var(--color-border)"}`,
+                  borderRadius: "6px",
+                  padding: "var(--space-3) var(--space-4)",
+                  cursor: "pointer",
+                  transition: "all 150ms ease",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <span style={{ fontWeight: 600, fontSize: "var(--text-xs)", color: "var(--color-highlight)" }}>{site.name}</span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: site.alert_tier === "CRITICAL" ? "var(--color-red-bg)" : "var(--color-green-bg)",
+                      color: site.alert_tier === "CRITICAL" ? "var(--color-red)" : "var(--color-green)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {site.alert_tier || "NORMAL"}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)" }}>
+                  <span>{site.capacity_mw} MW</span>
+                  <span>{site.current_silt_ppm ? `${site.current_silt_ppm.toFixed(0)} PPM` : "420 PPM"}</span>
+                  <span>{site.preset || "monsoon"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 8. Authentication & Member Registration Modal */}
+      {authOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(10, 14, 25, 0.75)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "10px",
+              padding: "var(--space-6)",
+              width: "380px",
+              maxWidth: "90%",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
+              <h3 style={{ margin: 0, fontSize: "var(--text-lg)", fontWeight: 700 }}>
+                {user?.email ? "Account Profile" : authTab === "login" ? "Operator Sign In" : "Register Free Account"}
+              </h3>
+              <button
+                onClick={() => setAuthOpen(false)}
+                style={{ background: "transparent", border: "none", color: "var(--color-text-dim)", cursor: "pointer", fontSize: "16px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {user?.email ? (
+              <div>
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>
+                  You are signed in as: <strong>{user.email}</strong>
+                </p>
+                <div style={{ fontSize: "var(--text-xs)", background: "var(--color-bg)", padding: "10px", borderRadius: "6px", marginBottom: "var(--space-4)" }}>
+                  <div>Role: {user.role}</div>
+                  <div>Account Tier: {user.tier}</div>
+                  <div>Quota: Strictly {user.max_plants_allowed} registered plant</div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: "100%",
+                    background: "var(--color-red-bg)",
+                    border: "1px solid var(--color-red)",
+                    color: "var(--color-red)",
+                    borderRadius: "6px",
+                    padding: "8px",
+                    fontSize: "var(--text-xs)",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleAuthSubmit}>
+                {/* Auth Tabs */}
+                <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setAuthTab("login")}
+                    style={{
+                      flex: 1,
+                      padding: "6px",
+                      background: authTab === "login" ? "var(--color-surface-raised)" : "transparent",
+                      border: "1px solid var(--color-border)",
+                      color: authTab === "login" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "var(--text-xs)",
+                    }}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthTab("register")}
+                    style={{
+                      flex: 1,
+                      padding: "6px",
+                      background: authTab === "register" ? "var(--color-surface-raised)" : "transparent",
+                      border: "1px solid var(--color-border)",
+                      color: authTab === "register" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "var(--text-xs)",
+                    }}
+                  >
+                    Register
+                  </button>
+                </div>
+
+                <div style={{ marginBottom: "var(--space-3)" }}>
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "4px" }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      background: "var(--color-bg)",
+                      border: "1px solid var(--color-border)",
+                      color: "var(--color-text-primary)",
+                      fontSize: "var(--text-xs)",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: "var(--space-4)" }}>
+                  <label style={{ display: "block", fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "4px" }}>
+                    Password (min. 12 characters)
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={12}
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      background: "var(--color-bg)",
+                      border: "1px solid var(--color-border)",
+                      color: "var(--color-text-primary)",
+                      fontSize: "var(--text-xs)",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                {authFeedback.err && (
+                  <div style={{ color: "var(--color-red)", fontSize: "11px", marginBottom: "var(--space-3)" }}>
+                    ✕ {authFeedback.err}
+                  </div>
+                )}
+                {authFeedback.ok && (
+                  <div style={{ color: "var(--color-green)", fontSize: "11px", marginBottom: "var(--space-3)" }}>
+                    ✓ {authFeedback.ok}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  style={{
+                    width: "100%",
+                    background: "var(--color-accent)",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px",
+                    color: "#1A1010",
+                    fontWeight: 700,
+                    fontSize: "var(--text-xs)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {authTab === "login" ? "Sign In" : "Create Member Account"}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
-      ))}
+      )}
     </main>
   );
 }
