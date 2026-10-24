@@ -308,10 +308,18 @@ Every architectural control links directly to an automated verification mechanis
 | **F6: Log Redaction** | `hydromesh/logging.py` | `tests/unit/test_logging.py` | Sensitive keys masked in log output |
 | **F8: Sandboxed Templates** | `hydromesh/agents/explain.py` | `tests/unit/test_explain.py` | Jinja2 sandboxing renders inert |
 | **F9: BOLA / IDOR Defense** | `hydromesh/api/site_routes.py` | `tests/security/test_site_access.py` | Uniform 404 returned on unauthorized site read |
-| **F10: Argon2id Passwords** | `hydromesh/auth/crypto.py` | `tests/security/test_auth.py` | Weak passwords rejected; timing neutralized |
+| **F10: Argon2id Passwords** | `hydromesh/auth/crypto.py` | `tests/security/test_auth.py` | Memory-hardened hashing ($m=64\text{MB}, t=3, p=4$); constant-time comparison via `hmac.compare_digest` |
 | **F11: Single-Site Quota** | `hydromesh/db/database.py` | `tests/security/test_quotas.py` | 403 QUOTA_EXCEEDED on >1 site for free members |
 | **F12: Coordinate Privacy** | `hydromesh/schemas.py` | `tests/security/test_site_access.py` | Coordinates coarsened to 0.1° on global map |
 | **Static Code Security** | Entire codebase | `bandit -r hydromesh/`, `semgrep` | CI fails on any high/critical finding |
 | **Secret Scanning** | Repository & git history | `gitleaks detect`, `detect-secrets` | Commit / PR blocked |
 | **Dependency Auditing** | `pyproject.toml` | `pip-audit`, `osv-scanner` | Build rejected on vulnerable packages |
+
+---
+
+### Cryptographic Configuration & Constant-Time Guarantees
+
+1. **Argon2id Parameters**: Configured strictly to RFC 9106 standards with memory cost $m=65,536\text{ KiB}$, iteration count $t=3$, and parallelism $p=4$, ensuring GPU brute-force resistance.
+2. **Timing Attack Invariants**: All credential, token, and session comparison routines enforce `hmac.compare_digest` to prevent byte-by-byte timing discrepancy leakage.
+
 
