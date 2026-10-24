@@ -1,30 +1,30 @@
-"""Deterministic, fail-closed safety kernel (rules R1-R11).
+"""Plant Safety Guard (Rules R1-R11).
 
-Pure: no I/O, no clock, no LLM. Every input arrives through `SafetyContext`, so the same
-call always gives the same verdict. Cost is O(A + log N) for A <= 4 proposed actions and N
-recent actions; the rate limit is a bisect on an ascending timestamp tuple, not a scan.
+SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
+Think of this file as the strict Plant Guard at the dam.
+The AI helper can brainstorm ideas (like "let's close gate 1" or "let's clean the sand trap").
+However, the AI is NEVER allowed to touch physical plant buttons!
+Every single idea must pass these 11 strict safety rules.
+If an idea is dangerous, too fast, or confusing, the Guard says NO (rejected).
+If the AI is guessing, the Guard rings the bell and asks a human (needs_human).
+Only safe, human-approved actions are ever allowed to execute!
 
-Hardening (Security Finding F1 & F4):
-- F1 (Deterministic Confidence): Effective confidence = min(decision.confidence, ctx.deterministic_confidence).
-  If an LLM hallucinates or injects confidence=0.99 but deterministic rule/triage agreement is below threshold,
-  effective confidence is clamped to the deterministic floor and forces needs_human.
-- F4 (Server-Built Context): SafetyContext requires monotonic server timestamp now_s and action log history
-  built exclusively by the server/blackboard, disallowing caller-provided time tampering.
+THE 11 RULES IN PLAIN WORDS:
+R1  Is the AI sure? If confidence is below 80%, ask a human operator.
+R2  Real gates only: Reject orders for gates or basins that don't exist.
+R3  No sudden water slams: Never cut river flow by more than 50% at once.
+R4  Keep the river alive: Never let water drop below 20% so river life survives.
+R5  Don't burst pipes: Never push more water through than gates can safely hold.
+R6  Proper cleaning time: Sand trap flushing must take between 5 and 90 minutes.
+R7  Let the sand trap rest: Wait at least 1 hour between flush cleanings.
+R8  Don't rush the buttons: Max 3 actions in 10 minutes to save the motors.
+R9  No pretend electricity: Never promise more megawatts than the river spins.
+R10 Hospitals & clean water first: Always keep essential power lines on top!
+R11 No blank homework: If the AI suggests zero actions, ask a human to check.
 
-Verdict precedence: any hard violation -> "rejected"; otherwise low confidence or an empty
-proposal -> "needs_human"; otherwise "approved" with clamped actions.
-
-R1  confidence below threshold            -> needs_human
-R2  unknown gate / basin id               -> rejected
-R3  flow cut deeper than max_reduction    -> clamp
-R4  flow below minimum baseload           -> clamp (never above the current flow)
-R5  target above design flow              -> rejected
-R6  flush duration outside range          -> rejected
-R7  basin flushing, or inside cooldown    -> rejected
-R8  action rate limit (incl. this batch)  -> rejected
-R9  dispatch target above available MW    -> rejected
-R10 critical feeders not first            -> rejected
-R11 no actions proposed                   -> needs_human
+Technical details: Pure deterministic function. No network, no clock, no LLM.
+F1: Effective confidence = min(LLM confidence, deterministic confidence).
+F4: Server-built context ensures timestamps cannot be spoofed.
 """
 
 from __future__ import annotations

@@ -5,18 +5,18 @@ export default function DemoPage() {
     <main style={{ minHeight: "100vh", background: "var(--color-bg)", color: "var(--color-text-primary)", fontFamily: "var(--font-ui)", padding: "var(--space-8)" }}>
       <Link href="/" style={{ color: "var(--color-accent)", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", textDecoration: "none" }}>← HydroMesh</Link>
       <h1 style={{ fontSize: "var(--text-3xl)", fontWeight: 700, marginTop: "var(--space-6)", marginBottom: "var(--space-4)" }}>
-        Live Demo Dashboard
+        Live Plant Dashboard
       </h1>
-      <p style={{ color: "var(--color-text-secondary)", maxWidth: "560px", lineHeight: 1.7, marginBottom: "var(--space-8)" }}>
-        Real-time agent event stream, twin gauges, forecast chart, and operator override panel. Powered by the HydroMesh API — falls back to recorded replay when API is unreachable.
+      <p style={{ color: "var(--color-text-secondary)", maxWidth: "600px", lineHeight: 1.7, marginBottom: "var(--space-8)" }}>
+        Watch HydroMesh protect the river plant in real time. The AI helper spots muddy water, checks with the strict safety guard, and asks human operators before opening any gate!
       </p>
 
       {/* Placeholder panels */}
       {[
-        { title: "Agent Event Stream", desc: "LiveStream component — WebSocket /ws/stream · agent decisions, safety verdicts, alert transitions" },
-        { title: "Twin Gauges", desc: "TwinGauges component — discharge m³/s · silt PPM · runner wear mm · grid freq Hz" },
-        { title: "Forecast Chart", desc: "ForecastChart component — actual vs predicted sediment over 24h horizon · Recharts" },
-        { title: "Incident Cards", desc: "IncidentCard component — per-incident report · safety verdict · override countdown button" },
+        { title: "Robot Helper Activity Log", desc: "Live step-by-step diary of what the AI helpers see, what they suggest, and how the safety guard checks each idea." },
+        { title: "Live Plant Dials", desc: "Real-time meters showing river water speed, floating sand count, and scratches on the spinning water wheels." },
+        { title: "River Mud Forecast Graph", desc: "A 24-hour lookahead graph showing upcoming rain and when big waves of sand will reach the plant." },
+        { title: "Operator Action Cards", desc: "Simple action cards where human plant operators can review suggestions, press approve, or cancel anytime." },
       ].map(({ title, desc }) => (
         <div
           key={title}

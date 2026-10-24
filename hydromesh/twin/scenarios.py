@@ -1,4 +1,14 @@
-"""Pure, seed-free river/grid input profiles for the digital twin: t (seconds) -> Inputs."""
+"""River Weather Scenarios & River Mud Curves.
+
+SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
+This file creates realistic river stories to test the power plant computer twin!
+1. Normal Day: A peaceful, steady sunny day with clean mountain water.
+2. Monsoon Surge: Heavy summer monsoon rain pours on the peaks. A big flood wave filled with
+   thick river sand rushes down. Tests if our sand traps and warning alerts save the turbines!
+3. Flash Inflow Surge: A sudden 10-minute water jump to test plant reaction speed.
+4. River Mud Curve (Rating Curve): When water rushes faster, it picks up more sand from the river bed.
+   This math curve calculates how much sand is floating based on river speed!
+"""
 
 from __future__ import annotations
 

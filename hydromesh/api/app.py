@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from hydromesh.api.routes import router
+
 
 def create_app() -> FastAPI:
     """Create and configure the HydroMesh FastAPI application."""
@@ -12,6 +14,8 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description="HydroMesh Digital Twin & Hydropower Plant Operations API",
     )
+
+    app.include_router(router)
 
     @app.get("/health")
     def health_check() -> dict[str, str]:

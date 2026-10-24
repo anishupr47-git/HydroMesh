@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -12,6 +13,7 @@ from hydromesh.pipeline import OrchestrationPipeline
 from hydromesh.schemas import (
     BasinState,
     GateState,
+    HydroPlantSpec,
     Incident,
     Severity,
     Telemetry,
@@ -22,7 +24,7 @@ from hydromesh.weather import get_plant_by_id
 
 
 @pytest.fixture
-def tamakoshi_plant():
+def tamakoshi_plant() -> HydroPlantSpec:
     plant = get_plant_by_id("upper_tamakoshi")
     assert plant is not None
     return plant
@@ -68,7 +70,7 @@ def plant_snapshot() -> TwinSnapshot:
 
 @pytest.mark.asyncio
 async def test_pipeline_end_to_end_surge_execution(
-    tamakoshi_plant,
+    tamakoshi_plant: HydroPlantSpec,
     monsoon_telemetry: Telemetry,
     monsoon_weather: WeatherObservation,
     plant_snapshot: TwinSnapshot,
@@ -119,7 +121,7 @@ async def test_pipeline_end_to_end_surge_execution(
 
 @pytest.mark.asyncio
 async def test_pipeline_fail_closed_on_unsafe_proposal(
-    tamakoshi_plant,
+    tamakoshi_plant: HydroPlantSpec,
     monsoon_telemetry: Telemetry,
     monsoon_weather: WeatherObservation,
     plant_snapshot: TwinSnapshot,
@@ -131,7 +133,7 @@ async def test_pipeline_fail_closed_on_unsafe_proposal(
     pipeline = OrchestrationPipeline(plant=tamakoshi_plant, blackboard=bb)
 
     # Monkey-patch dispatch agent to return an unsafe proposal (hallucinating 500 m3/s on a 30 m3/s gate)
-    async def unsafe_dispatch(*args, **kwargs) -> AgentDecision:
+    async def unsafe_dispatch(*args: Any, **kwargs: Any) -> AgentDecision:
         return AgentDecision(
             actions=(ModulateIntake(gate_id=0, flow_target_m3s=500.0),),
             rationale="Unsafe hallucinated flood gate opening",

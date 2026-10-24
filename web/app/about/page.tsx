@@ -35,13 +35,28 @@ export default function AboutPage() {
       <p
         style={{
           color: "var(--color-text-secondary)",
-          maxWidth: "560px",
-          lineHeight: 1.7,
+          maxWidth: "620px",
+          lineHeight: 1.8,
+          fontSize: "var(--text-base)",
+          marginBottom: "var(--space-6)",
         }}
       >
-        Self-hosted spatio-temporal deep-learning platform for Himalayan run-of-river
-        hydropower plants. Forecasting sediment and discharge to protect infrastructure
-        and optimize operations.
+        In the high mountains of Nepal, fast Himalayan rivers carry millions of tons of sharp, tiny quartz sand. 
+        When this sandy water rushes through a hydropower plant, it scratches and cuts the metal water wheels (turbines) 
+        just like sandpaper.
+      </p>
+      <p
+        style={{
+          color: "var(--color-text-secondary)",
+          maxWidth: "620px",
+          lineHeight: 1.8,
+          fontSize: "var(--text-base)",
+          marginBottom: "var(--space-6)",
+        }}
+      >
+        <strong>HydroMesh is our smart river guardian.</strong> It watches mountain rain, counts floating sand in the water, 
+        and warns operators 12–24 hours ahead of big muddy floods. This gives plant crews time to clean out sand basins and 
+        protect clean energy equipment that lights up homes across Nepal!
       </p>
     </main>
   );

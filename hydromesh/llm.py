@@ -1,15 +1,14 @@
-"""LLM adapter: schema-constrained output, bounded latency, and a deterministic way out.
+"""AI Helper Adapter (Ollama Local Client & Safety Fuse).
 
-Latency design
-  * one shared AsyncClient (connection reuse) and `keep_alive` so the model stays resident
-  * `warmup()` loads the model at startup, so the first incident does not pay the load
-  * temperature 0 + JSON-schema constrained decoding + capped `num_predict` / `num_ctx`
-  * hard per-call timeout; a circuit breaker stops paying that timeout while Ollama is down
-  * one request at a time (semaphore): concurrent generations on one GPU only slow each other
-Every agent calls `generate_or(...)`, so the try/except-and-fallback logic exists once.
-
-Hardening (Security Finding F5):
-- Strict host and scheme validation in OllamaConfig preventing SSRF and cloud metadata exfiltration.
+SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
+Think of this file as the Phone Line connecting the plant to our local AI Brain!
+1. Talking to the AI Brain: Sends river sensors to the local AI model (Qwen) and asks for advice.
+2. Rigid Form Answers (JSON Schema): The AI is forced to fill out a strict multiple-choice form.
+   It cannot babble, make up weird commands, or step outside its allowed box.
+3. Safety Fuse (Circuit Breaker): If the AI gets sleepy, freezes, or crashes, a safety fuse trips!
+   The plant immediately switches to simple, reliable backup math rules so the dam is never left waiting.
+4. Keep It Local (Security F5): The phone line is strictly locked to this single local computer (loopback),
+   preventing any sneaky connections to the outside internet.
 """
 
 from __future__ import annotations

@@ -1,21 +1,17 @@
-"""Run-of-river digital twin: intake gates -> desander basins -> turbine, plus runner wear.
+"""River Plant Computer Twin (Digital Twin Simulator).
 
-Stylized, not engineering-validated. Each piece is a known, cheap model:
-  * gate flow          first-order lag toward target; closed-form update (stable for any dt)
-  * basin trapping     eta = 1 - exp(-w*A / Q)  (Camp/Vetter); falls as the basin fills
-  * flushing           drains the basin but passes more silt while it runs
-  * runner wear        IEC 62364-style: rate ~ K * particle load * (velocity ratio)^p.
-                       K lumps material/flow factors and is calibrated so the runner is
-                       consumed after `wear_life_days` at `wear_ref_ppm`; the standard's own
-                       coefficients are NOT used. Set `wear_exponent` from your source.
+SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
+Think of this file as a Video Game Twin of the real mountain power plant!
+1. River Water & Metal Gates: River water rushes into the dam through big metal intake doors.
+2. Giant Sand Buckets (Desander Basins): Mountain rivers carry sharp quartz sand. Water pauses
+   in big concrete pools so the heavy sand sinks to the bottom.
+3. Spinning Water Wheels (Turbines): The water shoots through pipes to spin metal wheels and make electricity.
+4. Scratch Damage (Turbine Wear): Sand acts like sandpaper. This simulator calculates how scratched
+   the metal wheel gets, so operators know when to flush the sand buckets clean!
 
 Hardening (Security Finding F3):
-- F3 (TOCTOU Defense): PlantTwin.apply() performs an atomic re-validation against a freshly
-  captured PlantTwin.snapshot() before modifying any plant actuator state, rejecting stale
-  or invalidated actions if the physical state drifted into an unsafe condition.
-
-Cost: O(n_units) per step with plain floats (no allocation besides the returned Telemetry),
-~2 us/step for the raw update, so 24 simulated hours at dt=10 s run in tens of milliseconds.
+- F3 (Atomic Re-validation): Before moving any gate, PlantTwin.apply() takes a fresh picture of the plant
+  and re-checks safety rules so no stale or dangerous action ever gets through.
 """
 
 from __future__ import annotations

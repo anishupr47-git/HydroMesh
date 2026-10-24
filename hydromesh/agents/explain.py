@@ -58,7 +58,7 @@ class ExplainAgent(BaseAgent):
         prediction = (
             f"24-hour satellite forecast predicts peak sediment concentration of {forecast.peak_silt_ppm:.0f} ppm "
             f"with peak river discharge of {forecast.peak_discharge_m3s:.1f} m3/s (Horizon: {forecast.horizon_h}h, "
-            f"Risk Level: {forecast.risk.value}, Confidence: {forecast.confidence*100:.0f}%)."
+            f"Risk Level: {forecast.risk.value}, Confidence: {forecast.confidence * 100:.0f}%)."
         )
 
         # 4. Action and safety verdict narrative
@@ -70,7 +70,7 @@ class ExplainAgent(BaseAgent):
 
         # 5. Confidence note
         confidence_note = (
-            f"Decision proposed with {decision.confidence*100:.0f}% confidence. "
+            f"Decision proposed with {decision.confidence * 100:.0f}% confidence. "
             f"Safety Kernel evaluated {len(verdict.approved_actions)} approved actions with zero rule violations."
         )
 

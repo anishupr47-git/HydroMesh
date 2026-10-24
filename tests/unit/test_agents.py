@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 
@@ -135,7 +136,10 @@ async def test_sop_rag_agent(surge_telemetry: Telemetry) -> None:
     sop_rag = SOPRAGAgent()
     matches, incidents = await sop_rag.run(surge_telemetry, anomaly)
     assert len(matches) > 0
-    assert any("High Silt" in m.section or "Sediment" in m.section or "Trigger" in m.section or "SOP" in m.doc_id for m in matches)
+    assert any(
+        "High Silt" in m.section or "Sediment" in m.section or "Trigger" in m.section or "SOP" in m.doc_id
+        for m in matches
+    )
     assert len(incidents) > 0
     assert incidents[0].outcome == "protected"
 
@@ -217,7 +221,7 @@ async def test_dispatch_with_mock_llm(
     sample_snapshot: TwinSnapshot,
 ) -> None:
     class MockLLM:
-        async def generate_structured(self, **kwargs) -> AgentDecision:
+        async def generate_structured(self, **kwargs: Any) -> AgentDecision:
             return AgentDecision(
                 actions=(ModulateIntake(gate_id=0, flow_target_m3s=24.0),),
                 rationale="LLM proposed intake modulation",

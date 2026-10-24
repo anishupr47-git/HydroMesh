@@ -93,7 +93,7 @@ export default function HomePage() {
           Himalayan Hydropower
           <br />
           <span style={{ color: "var(--color-accent)" }}>
-            Predictive Intelligence
+            Smart River Guardian
           </span>
         </h1>
 
@@ -101,14 +101,13 @@ export default function HomePage() {
           style={{
             fontSize: "var(--text-lg)",
             color: "var(--color-text-secondary)",
-            maxWidth: "560px",
+            maxWidth: "600px",
             lineHeight: 1.7,
             margin: 0,
           }}
         >
-          Forecast suspended sediment &amp; river discharge 12–24 h ahead.
-          Coupled with IEC 62364 turbine wear physics and 3-tier operational
-          alerts for run-of-river plants.
+          We watch mountain rivers so floating sand doesn’t scratch the spinning water wheels (turbines). 
+          We predict muddy floods 12–24 hours ahead, keeping our clean green power running safely!
         </p>
 
         <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
@@ -125,7 +124,7 @@ export default function HomePage() {
               transition: "background 150ms ease",
             }}
           >
-            View Live Demo
+            See Live Demo
           </Link>
           <Link
             href="/safety"
@@ -153,9 +152,9 @@ export default function HomePage() {
           }}
         >
           {[
-            { label: "🟢 GREEN", sub: "< 1,200 PPM", bg: "var(--color-green-bg)", border: "var(--color-green)" },
-            { label: "🟡 YELLOW", sub: "1,200 – 3,000 PPM", bg: "var(--color-yellow-bg)", border: "var(--color-yellow)" },
-            { label: "🔴 RED", sub: "> 3,000 PPM", bg: "var(--color-red-bg)", border: "var(--color-red)" },
+            { label: "🟢 GREEN: Clean River", sub: "Under 1,200 PPM · Water is safe to spin wheels!", bg: "var(--color-green-bg)", border: "var(--color-green)" },
+            { label: "🟡 YELLOW: Muddy River", sub: "1,200 – 3,000 PPM · Sand traps filling up fast!", bg: "var(--color-yellow-bg)", border: "var(--color-yellow)" },
+            { label: "🔴 RED: Sand Flood", sub: "Over 3,000 PPM · Close gates to save the turbines!", bg: "var(--color-red-bg)", border: "var(--color-red)" },
           ].map(({ label, sub, bg, border }) => (
             <div
               key={label}
@@ -164,7 +163,7 @@ export default function HomePage() {
                 borderLeft: `4px solid ${border}`,
                 borderRadius: "0 8px 8px 0",
                 padding: "var(--space-4) var(--space-6)",
-                minWidth: "180px",
+                minWidth: "220px",
               }}
             >
               <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "var(--text-base)" }}>
@@ -185,13 +184,13 @@ export default function HomePage() {
             gap: "var(--space-4)",
             marginTop: "var(--space-8)",
             width: "100%",
-            maxWidth: "720px",
+            maxWidth: "760px",
           }}
         >
           {[
-            { label: "DISCHARGE", value: "342.8", unit: "m³/s" },
-            { label: "SILT PPM", value: "1,847", unit: "ppm" },
-            { label: "RUNNER WEAR", value: "0.42", unit: "mm" },
+            { label: "WATER FLOW (How fast the river rushes)", value: "342.8", unit: "m³/s" },
+            { label: "RIVER SAND (Tiny sharp rocks in water)", value: "1,847", unit: "ppm" },
+            { label: "WHEEL WEAR (Scratch damage on metal)", value: "0.42", unit: "mm" },
           ].map(({ label, value, unit }) => (
             <div
               key={label}

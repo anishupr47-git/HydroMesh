@@ -30,9 +30,12 @@ class SupervisorAgent(BaseAgent):
         """Evaluate situation and produce the optimal step-by-step agent execution plan."""
         sev = anomaly.severity
 
+        steps: tuple[str, ...]
         if sev in (Severity.CRITICAL, Severity.WARNING):
             steps = ("triage", "predict", "sop_rag", "dispatch", "explain")
-            reason = f"High sediment surge ({telemetry.silt_ppm:.0f} ppm, {sev.value}). Full 5-agent pipeline activated."
+            reason = (
+                f"High sediment surge ({telemetry.silt_ppm:.0f} ppm, {sev.value}). Full 5-agent pipeline activated."
+            )
         elif sev == Severity.WATCH:
             steps = ("triage", "predict", "dispatch", "explain")
             reason = f"Elevated silt detected ({telemetry.silt_ppm:.0f} ppm). Predictive and dispatch pathways active."

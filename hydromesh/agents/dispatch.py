@@ -99,6 +99,7 @@ class DispatchAgent(BaseAgent):
             from datetime import UTC, datetime
 
             from hydromesh.schemas import BasinState, GateState
+
             snapshot = TwinSnapshot(
                 ts=datetime.now(UTC),
                 gates={0: GateState(gate_id=0, flow_m3s=30.0, design_flow_m3s=30.0)},
