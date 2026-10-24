@@ -27,3 +27,6 @@
 | **W18** | T18 | Evidence benchmark comparison table on `/evidence` | Interactive table with sorting & export |
 | **W19** | T19 | HeroIllustration 14-layer animated SVG on `/` | Responsive 1440x810 scene with keyframe motion |
 | **W20** | T20 | Cross-browser testing, SEO metadata, release polish | Lighthouse score > 90 across performance/a11y |
+| **W21** | T21 | User Journey 4-Phase State Machine (Splash, Auth, Intro, Dashboard) | Full seamless transition with skip toggle |
+| **W22** | T22 | 20-Powerhouse Grid & Left Inspector Panel | Interactive 20-card isometric SCADA view |
+
