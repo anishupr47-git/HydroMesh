@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import RevenueOutlookCard from "@/components/RevenueOutlookCard";
 import SoloCustomRadarCard from "@/components/SoloCustomRadarCard";
+import SatelliteFeedBox from "@/components/SatelliteFeedBox";
+import MountainLandscape from "@/components/MountainLandscape";
 
 interface TelemetryPoint {
   ts: string;
@@ -1492,6 +1494,18 @@ export default function DemoPage() {
           </div>
         </div>
       )}
+
+      {/* Background Animated Mountain Landscape */}
+      <MountainLandscape focusMode={false} />
+
+      {/* Docked Lower-Left Corner Satellite Telemetry Box */}
+      <SatelliteFeedBox
+        stationName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+        lat={activePlant?.latitude || 27.8483}
+        lon={activePlant?.longitude || 86.1361}
+        elevM={activePlant?.head_m ? Math.round(activePlant.head_m * 1.8) : 822}
+        currentRainMmH={liveWeather?.precipitation_mm_h || 12.4}
+      />
     </main>
   );
 }
