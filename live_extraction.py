@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import os
 import sys
 import time
@@ -25,10 +26,8 @@ if sys.platform == "win32":
     os.system("")  # Enable ANSI escape sequences on Windows console
     reconfig_out = getattr(sys.stdout, "reconfigure", None)
     if callable(reconfig_out):
-        try:
+        with contextlib.suppress(Exception):
             reconfig_out(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
 
 from hydromesh.ingest.live import LiveIngestionEngine
 from hydromesh.schemas import HydroPlantSpec
