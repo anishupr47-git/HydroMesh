@@ -27,6 +27,11 @@ make security
 
 # Micro-benchmarks (validate, step, 24h simulation):
 python scripts/bench.py
+
+# Live European ECMWF Satellite & Hydrology Extraction:
+python live_extraction.py
+python live_extraction.py --plant upper_tamakoshi --stream
+python live_extraction.py --all
 ```
 
 ---
