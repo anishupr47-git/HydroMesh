@@ -1025,6 +1025,93 @@ The application footer serves as the operational anchor, compliance ledger, and 
 * **Version & SHA-256 Token**: `Release v0.4.0 (Sprint 4) · SOP Manifest SHA: 88c4b1...`
 
 ---
-*HydroMesh Master Design System — Complete, Lawsuit-Protected, Ethically Sound, and Ready for Deployment.*
+
+## 11. The AI "VAR" Decision Review HUD (Multi-Layer Verification Chamber)
+
+> **Core Philosophy**: Video Assistant Referee (VAR) Rigor for Industrial AI.  
+> **Anti-Slop Rule**: Conversational prose, AI apologies, and polite chatbot paragraphs are strictly prohibited. The output of the AI pipeline must present as an ultra-high-density telemetry review chamber—displaying connected wireframe boxes, live mathematical equation substitution traces, threshold audits, and point-by-point data ledgers.
+
+### 11.1 The 5-Zone "VAR Chamber" Layout Architecture
+
+The VAR Decision HUD sits directly within Mission Control, converting the multi-agent decision stream into an inspectable, auditable operational proof:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ HYDROMESH AI DECISION HUD // VAR INSPECTION CHAMBER v2.4                      [STATUS: FROZEN FRAME] │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE A: MULTI-LAYER PIPELINE WIREFRAME & BOX TRACE                                                     │
+│                                                                                                        │
+│  ┌───────────────────────┐       ┌───────────────────────┐       ┌────────────────────────┐            │
+│  │ LAYER 01: SENSOR AUDIT│──────▶│ LAYER 02: TRIAGE MATH │──────▶│ LAYER 03: TFT FORECAST │            │
+│  │ • Plausibility: [PASS]│       │ • dQ/dt: +18.4% [NORM]│       │ • Peak Q: 894.2 m³/s   │            │
+│  │ • Silt: 2,840 PPM     │       │ • Silt Delta: +41.2%  │       │ • Risk Horizon: T+4h   │            │
+│  │ • IMERG: 28 mm/h      │       │ • Severity: WARNING   │       │ • PINN Loss: 0.0028    │            │
+│  └───────────────────────┘       └───────────────────────┘       └────────────────────────┘            │
+│                 │                                                                                      │
+│                 ▼                                                                                      │
+│  ┌───────────────────────┐       ┌───────────────────────┐       ┌────────────────────────┐            │
+│  │ LAYER 04: SOP RAG     │──────▶│ LAYER 05: WEAR PHYSICS│──────▶│ LAYER 06: SAFETY KERNEL│            │
+│  │ • SOP: SOP-HYD-04     │       │ • ΔW: 0.084 mm/h      │       │ • R1 Conf >= 0.8: PASS │            │
+│  │ • Sim Score: 0.884    │       │ • Critical RUL: 40.1h │       │ • R3 Flow Shock: PASS  │            │
+│  │ • Verified: SHA-256   │       │ • Erosion Risk: HIGH  │       │ • Verdict: APPROVED    │            │
+│  └───────────────────────┘       └───────────────────────┘       └────────────────────────┘            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE B: LIVE MATHEMATICAL PROOF & EQUATION SUBSTITUTION TRACE                                          │
+│                                                                                                        │
+│  [1] IEC 62364 RUNNER ABRASION EQUATION:                                                               │
+│      ΔW = 10⁻⁹ × Km × C × (W_rel)^2.5 × K_hardness                                                     │
+│      ΔW = 10⁻⁹ × (1.0) × (2,840.0) × (42.5)^2.5 × (2.8)                                                │
+│         = 0.08424 mm/h  ──▶  [EXCEEDS NOMINAL BASELINE (0.0021 mm/h) BY +3,911%]                        │
+│                                                                                                        │
+│  [2] WATER HAMMER TRANSIENT CLAMP (RULE R3):                                                           │
+│      ΔQ_proposed = 66.0 m³/s ──▶ 45.0 m³/s  (Drop: -21.0 m³/s = -31.8%)                                │
+│      Safety Bound: Max allowable drop = 50.0% (-33.0 m³/s)  ──▶  [-31.8% <= -50.0%] [SAFE / CLAMPED]   │
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE C: RISK LEVEL DIAGNOSTIC & THRESHOLD AUDIT (IS IT RISKY OR NOT?)                                 │
+│                                                                                                        │
+│  ┌────────────────────────┐  THRESHOLD CHECKS:                                                         │
+│  │  RISK LEVEL: ELEVATED  │  ├─ Silt Threshold   : 2,840 PPM  vs Limit 1,200 PPM  ──▶ [EXCEEDED +136%] │
+│  │  ACTION: DESANDER FLUSH│  ├─ Turbine Vibration: 3.82 mm/s  vs Limit 4.50 mm/s  ──▶ [WARNING BAND]   │
+│  │  AUTONOMY: ADVISORY    │  ├─ Ecological Floor : 45.0 m³/s  vs Min 13.2 m³/s    ──▶ [COMPLIANT]      │
+│  └────────────────────────┘  └─ Operator Timeout : 600s Auto-ACK Window Active    ──▶ [COUNTDOWN: 588s]│
+├────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ZONE D: POINT-BY-POINT STRUCTURED DATA LEDGER                                                          │
+│                                                                                                        │
+│  • PLANT IDENTIFIER   : np-marsyangdi-04 (Marsyangdi Hydropower Station, Gandaki Basin)                │
+│  • RATED HEAD / MW    : 90.5 m Net Head  |  69.0 MW Installed Capacity                                 │
+│  • INTAKE ACTUATION   : Modulate Sluice Gate #0 to 45.0 m³/s (Duration: Indefinite until silt < 1.2k)  │
+│  • DESANDER SLUICE    : Open Basin #1 Scour Gate (Flush Duration: 45 min, Flush Flow: 8.5 m³/s)       │
+│  • AVOIDED EROSION    : Preserves ~0.063 mm runner thickness per 6-hour monsoon flood crest            │
+│  • MONETARY EQUIVALENT: Estimated NPR 6.4 Lakhs overhaul cost mitigation over next 24h                 │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Design Tokens & Visual Hierarchy
+* **Chamber Enclosure**: `--color-bg` (`#2A2C6B`) with 1px border `--color-sky-dark` (`#3E428F`) and 4px chamfered industrial corners.
+* **Wireframe Box Lines**: 1px crisp borders using CSS `box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.08)` to evoke CRT radar/VAR monitors.
+* **Vector Step Connectors**: Horizontal and vertical directional connector arrows rendered via SVG paths with subtle flowing dash stroke animation (`stroke-dashoffset`).
+* **Categorical Status Indicators**:
+  * `[PASS] / [NOMINAL]`: Emerald neon border (`#10B981`) with static glow.
+  * `[WARNING] / [CLAMPED]`: Amber hazard border (`#F59E0B`) with subtle pulse.
+  * `[BREACH] / [CRITICAL_RISK]`: Crimson alert border (`#EF4444`) with high-visibility strobe.
+* **Typography**: Pure monospace (`font-family: 'JetBrains Mono', 'Fira Code', monospace`) across all four zones to preserve column alignment and mathematical precision.
+
+### 11.3 Mathematical Proof Card Components
+Each mathematical derivation is wrapped in a `<MathProofBox />` component:
+1. **Equation Name & Standard**: (e.g. `IEC 62364 Silt Abrasion`, `Penstock Surge Pressure / Allievi Formula`).
+2. **Symbolic Formula**: Rendered in clear ASCII or KaTeX notation.
+3. **Live Parameter Bindings**: Explicitly shows real-time variables injected from telemetry ($C$, $W_\text{rel}$, $Q$).
+4. **Intermediate Arithmetic Trace**: Shows the exact step-by-step multiplication.
+5. **Operational Delta**: Expressed as a comparison to clear-water baseline (e.g. `+3,911% above nominal wear rate`).
+
+### 11.4 Threshold Audit & Risk Verdict Logic
+The VAR HUD explicitly answers **"Is this situation risky or not?"** within a 0.25-second visual scan:
+* **Green (Nominal Risk)**: Silt < 1,200 PPM, Vibration < 2.5 mm/s, Head within ±2% of design. Verdict: `GENERATE_OPTIMAL`.
+* **Amber (Elevated Risk)**: Silt 1,200–3,000 PPM, Sluice flush required, Vibration in transition zone. Verdict: `PROACTIVE_FLUSH_ADVISORY`.
+* **Red (Critical Risk)**: Silt > 3,000 PPM, Runner erosion accelerating rapidly. Verdict: `THROTTLE_INTAKE / ALERT_ONLY`.
+
+---
+*HydroMesh Master Design System — Complete, Lawsuit-Protected, Ethically Sound, and Powered by Precision VAR AI Telemetry.*
+
 
 

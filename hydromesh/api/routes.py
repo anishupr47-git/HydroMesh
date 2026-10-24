@@ -20,11 +20,13 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
+from hydromesh.agents.revenue import EnergyRevenueOutlookAgent
 from hydromesh.api.stream import stream_manager
 from hydromesh.blackboard import Blackboard
+from hydromesh.llm import OllamaClient
 from hydromesh.logging import get_logger
 from hydromesh.pipeline import OrchestrationPipeline
-from hydromesh.schemas import HydroPlantSpec, WeatherObservation
+from hydromesh.schemas import EconomicInputs, HydroPlantSpec, WeatherObservation
 from hydromesh.twin import scenarios
 from hydromesh.twin.plant import PlantSpec, PlantTwin
 from hydromesh.weather import WeatherClient, get_plant_by_id, load_nepal_plants
@@ -129,6 +131,51 @@ async def evaluate_plant(
     )
 
     return incident.model_dump(mode="json")
+
+
+@router.post("/api/plants/{plant_id}/revenue-outlook")
+async def get_revenue_outlook(
+    plant_id: str,
+    inputs: EconomicInputs | None = None,
+) -> dict[str, Any]:
+    """Calculate operational economics, MWh generation, and IEC 62364 wear savings."""
+    plant = get_plant_by_id(plant_id, _plants)
+    if not plant:
+        raise HTTPException(status_code=404, detail=f"Hydropower plant '{plant_id}' not found")
+
+    econ_inputs = inputs or EconomicInputs()
+
+    # 1. Fetch live Open-Meteo weather
+    obs = await _weather_client.fetch_weather(plant.latitude, plant.longitude)
+    from hydromesh.ingest.live import calculate_runoff_discharge, silt_rating_curve
+
+    # 2. Derive projected discharge and silt for each hour of the horizon
+    hourly_q: list[float] = []
+    hourly_silt: list[float] = []
+
+    precip_profile = list(obs.hourly_precipitation_48h) or [obs.precipitation_mm_h] * 48
+    for t in range(econ_inputs.horizon_hours):
+        rain_t = precip_profile[t % len(precip_profile)]
+        q_t = calculate_runoff_discharge(
+            base_flow_m3s=plant.base_flow_m3s,
+            rainfall_mm_h=rain_t,
+            catchment_area_km2=plant.catchment_area_km2,
+            runoff_coeff=plant.runoff_coeff,
+        )
+        silt_t = silt_rating_curve(q_t)
+        hourly_q.append(q_t)
+        hourly_silt.append(silt_t)
+
+    # 3. Execute EnergyRevenueOutlookAgent
+    agent = EnergyRevenueOutlookAgent(llm_client=OllamaClient())
+    report = await agent.run(
+        plant=plant,
+        inputs=econ_inputs,
+        hourly_discharge_m3s=hourly_q,
+        hourly_silt_ppm=hourly_silt,
+    )
+
+    return report.model_dump(mode="json")
 
 
 # --- Operator Override Model & Endpoint ------------------------------------------------

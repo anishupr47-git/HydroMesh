@@ -109,4 +109,15 @@
   - Column 3: Emergency Dispatch Hotline & Station Control Room customizable slots.
   - Column 4: Privacy & Zero-Surveillance Cookie TTL policy indicators.
 
+---
+
+## 10. VARScreenHUD (`web/components/VARScreenHUD.tsx`)
+- **Role**: Industrial AI Decision Verification Chamber displaying multi-layer wireframe box traces and live mathematical derivations.
+- **Visuals**:
+  - 4-Zone SCADA grid: Layer Fulfillment Boxes, Live Math Proofs, Risk Diagnostic Matrix, and Point-by-Point Data Ledger.
+  - Flowing vector box lines with animated dash strokes connecting Layers 1 through 6.
+  - High-visibility risk pills (`[NOMINAL]`, `[ELEVATED]`, `[CRITICAL_RISK]`).
+  - 100% monospace typography (`JetBrains Mono`) with KaTeX/ASCII equation substitution traces.
+
+
 

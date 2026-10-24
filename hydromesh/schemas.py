@@ -333,3 +333,56 @@ class FleetSnapshot(Frozen):
     active_warnings: int
     active_critical: int
     sites: tuple[SiteSummary, ...]
+
+
+# --- Sprint 5: Energy Revenue Outlook & Operational Economics -------------------------
+MANDATORY_FINANCIAL_DISCLAIMER: str = (
+    "SIMULATED SCENARIO FOR OPERATIONAL & EDUCATIONAL PLANNING ONLY. "
+    "DOES NOT CONSTITUTE FINANCIAL, INVESTMENT, COMMODITY, OR LEGAL ADVICE. "
+    "PROJECTIONS ARE DERIVED FROM STYLIZED HYDROLOGICAL SIMULATIONS."
+)
+
+
+class EconomicOutlook(StrEnum):
+    FAVORABLE = "favorable"
+    NEUTRAL = "neutral"
+    ADVERSE = "adverse"
+
+
+class IllustrativeStance(StrEnum):
+    INVEST = "accumulate_generation"
+    HOLD = "maintain_baseload"
+    HEDGE = "preserve_capital_protect_equipment"
+
+
+class EconomicInputs(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    horizon_hours: Literal[24, 72, 168] = 24
+    ppa_tariff_npr_kwh: float = Field(ge=0.5, le=50.0, default=4.80)
+    overhaul_cost_npr: float = Field(ge=100_000.0, le=50_000_000.0, default=8_000_000.0)
+    fixed_om_cost_per_day_npr: float = Field(ge=0.0, default=50_000.0)
+
+
+class DeterministicFinancialMetrics(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    expected_energy_mwh: float = Field(ge=0.0)
+    baseline_revenue_npr: float = Field(ge=0.0)
+    realized_revenue_npr: float = Field(ge=0.0)
+    revenue_at_risk_npr: float = Field(ge=0.0)
+    avoided_wear_cost_npr: float = Field(ge=0.0)
+    net_economic_benefit_npr: float
+    erosion_depth_mitigated_mm: float = Field(ge=0.0)
+    outlook: EconomicOutlook
+    confidence: float = Field(ge=0.0, le=1.0)
+    top_drivers: tuple[str, ...] = Field(max_length=5)
+
+
+class RevenueOutlookReport(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    metrics: DeterministicFinancialMetrics
+    executive_summary: str = Field(max_length=1000)
+    illustrative_stance: IllustrativeStance
+    disclaimer: str = Field(default=MANDATORY_FINANCIAL_DISCLAIMER)
+    generated_at: AwareDatetime
+    advisory: Literal[True] = True
+
