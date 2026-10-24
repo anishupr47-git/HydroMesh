@@ -98,3 +98,15 @@
   - Monospace metrics: Capacity (MW), River Discharge (m³/s), Silt Level (PPM).
   - Hover glow with `--color-cloud-rim` and click navigation to plant detail view.
 
+---
+
+## 9. GlobalFooter (`web/components/GlobalFooter.tsx`)
+- **Role**: Responsive 4-column legal, operational, and non-liability footer.
+- **Visuals**:
+  - Subdued background `--color-bg` with 1px border `--color-sky-dark`.
+  - Column 1: System Status & Deterministic Safety Invariant badge (`advisory: Literal[True]`).
+  - Column 2: Legal Safeguards & Statutory Non-Liability Safe Harbor links.
+  - Column 3: Emergency Dispatch Hotline & Station Control Room customizable slots.
+  - Column 4: Privacy & Zero-Surveillance Cookie TTL policy indicators.
+
+
