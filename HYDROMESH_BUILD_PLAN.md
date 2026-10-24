@@ -1,5 +1,5 @@
 # HydroMesh — Master Project Plan & Build Specification
-**Status**: Pre-implementation planning — v1.0  
+**Status**: Sprints 1-4 Completed - 100% Core Tests Passing (139/139), 91.8% Coverage - v1.4  
 **Root directory**: `c:\Users\user\Documents\HydroMesh`
 
 ---
@@ -108,3 +108,10 @@ $$\Delta W = 10^{-9} \cdot K_m \cdot C \cdot (W_{\text{rel}})^{2.5} \cdot K_{\te
 - **Week 2: Agents**: T07 Triage, T08 SOP Corpus & RAG, T09 Predictor, T10 Dispatch, T11 Supervisor, T12 Explain & Memory
 - **Week 3: Integration & UI**: T13 Pipeline + Scenario Tests, T14 API & WebSocket, T15 Frontend Scaffold, T16 Dashboard Components, T17 Override UX
 - **Week 4: Evidence & Polish**: T18 Baseline Eval, T19 Docs, T20 Release Hygiene
+
+### Sprint Execution Milestones
+- [x] **Sprint 1**: Foundations, Frozen Schemas & Pure Deterministic Safety Kernel (R1–R11)
+- [x] **Sprint 2**: Multi-Agent Swarm, Vector SOP RAG & Digital Twin Simulator
+- [x] **Sprint 3**: FastAPI Engine, WebSockets, Storyline Fleet Engine & Argon2id Auth
+- [x] **Sprint 4**: Live Hydrology Ingestion (DHM/IMERG/ERA5) & 25 Official Hydro Stations
+
