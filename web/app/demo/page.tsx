@@ -664,7 +664,6 @@ export default function DemoPage() {
   };
 
   return (
-  return (
     <div className="min-h-screen bg-[#0B1424] text-[#F1EAD9] flex flex-col font-sans selection:bg-[#C9A24B] selection:text-[#0B1424] relative overflow-x-hidden">
       {/* =========================================================================
           THE UNIFIED ROOT CHAKRA (EXACT TEMPLATE POSITION: LEFT CALC(80% - 470px), TOP 0)
@@ -1335,23 +1334,25 @@ export default function DemoPage() {
             />
           </section>
         )}
-      </main>
+        </main>
 
-      {/* Slideout Inspector Drawer */}
-      <InspectorPanel
-        isOpen={inspectorOpen}
-        onClose={() => setInspectorOpen(false)}
-        plantName={activePlant?.name || "Upper Tamakoshi"}
-        telemetry={telemetry}
-        tempC={liveWeather?.temperature_c ?? 14.2}
-        rainfallMmH={liveWeather?.precipitation_mm_h ?? 12.4}
-      />
+        {/* Slideout Inspector Drawer */}
+        <InspectorPanel
+          isOpen={inspectorOpen}
+          onClose={() => setInspectorOpen(false)}
+          plantName={activePlant?.name || "Upper Tamakoshi"}
+          telemetry={telemetry}
+          tempC={liveWeather?.temperature_c ?? 14.2}
+          rainfallMmH={liveWeather?.precipitation_mm_h ?? 12.4}
+        />
 
-      {/* Floating Cookie Consent Banner */}
-      <CookieConsentBanner />
+        {/* Floating Cookie Consent Banner */}
+        <CookieConsentBanner />
 
-      {/* Master Global Footer */}
-      <GlobalFooter />
-    </div>
-  );
+        {/* Master Global Footer */}
+        <GlobalFooter />
+      </>
+    )}
+  </div>
+);
 }
