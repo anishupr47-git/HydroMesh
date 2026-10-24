@@ -134,13 +134,13 @@ def verify_sprint4() -> None:
         assert snapshot.total_sites >= 8
         print(f"Global Fleet snapshot: {snapshot.total_sites} stations across world river basins [PASSED]")
 
-        # Storyline Invariant: Trishuli Chasm at peak monsoon hour hits Critical (> 3,000 PPM)
-        trishuli = db.get_site("trishuli_chasm")
+        # Storyline Invariant: Trishuli at peak monsoon hour hits Critical (> 3,000 PPM)
+        trishuli = db.get_site("trishuli")
         assert trishuli is not None
         q_trish, silt_trish, _ = simulate_hourly_hydrology(trishuli, hour_of_day=15)
         assert q_trish > 500.0
         assert silt_trish > 3000.0
-        print(f"Storyline Invariant: Trishuli Chasm hour 15 produces Q={q_trish:.1f} m3/s, Silt={silt_trish:.1f} PPM (CRITICAL) [PASSED]")
+        print(f"Storyline Invariant: Trishuli hour 15 produces Q={q_trish:.1f} m3/s, Silt={silt_trish:.1f} PPM (CRITICAL) [PASSED]")
 
         # 7. Personal Plant Twin Scenario Rate Limiting (Max 3/hour)
         print("\n--- 7. Testing Scenario Injection Rate Limiter (Max 3/hour) ---")

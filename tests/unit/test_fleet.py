@@ -19,7 +19,7 @@ from hydromesh.schemas import Coordinates, FleetSnapshot, HourRecord, Site
 @pytest.fixture
 def seeded_site() -> Site:
     seed_fleet_if_empty()
-    site = db.get_site("trishuli_chasm")
+    site = db.get_site("trishuli")
     assert site is not None
     return site
 

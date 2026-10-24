@@ -23,6 +23,26 @@ interface UserIdentity {
   max_plants_allowed: number;
 }
 
+interface NepalPlant {
+  id: string;
+  name: string;
+  capacity_mw: number;
+  river_basin: string;
+  latitude: number;
+  longitude: number;
+  design_flow_m3s: number;
+  head_m: number;
+  catchment_area_km2: number;
+  base_flow_m3s?: number;
+}
+
+interface WeatherData {
+  precipitation_mm_h: number;
+  cloud_cover_pct: number;
+  temperature_c: number;
+  is_live: boolean;
+}
+
 interface FleetSite {
   id: string;
   name: string;
@@ -76,15 +96,22 @@ interface AgentEvaluation {
 }
 
 export default function DemoPage() {
-  // Mode & Plant Selection
+  // Mode & Selection
   const [mode, setMode] = useState<"global" | "individual">("global");
-  const [selectedPlant, setSelectedPlant] = useState("upper_tamakoshi");
+  const [plants, setPlants] = useState<NepalPlant[]>([]);
+  const [selectedPlantId, setSelectedPlantId] = useState("upper_tamakoshi");
+  const [basinFilter, setBasinFilter] = useState("All");
+
+  // Selected Plant Technical Data & Weather
+  const [activePlant, setActivePlant] = useState<NepalPlant | null>(null);
+  const [liveWeather, setLiveWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   // Live Telemetry & History
   const [telemetry, setTelemetry] = useState<TelemetryPoint>({
     ts: "2026-10-24T00:00:00Z",
     plant_id: "upper_tamakoshi",
-    discharge_m3s: 65.0,
+    discharge_m3s: 66.0,
     silt_ppm: 420.0,
     alert_tier: "NORMAL",
     runner_wear_pct: 0.015,
@@ -98,7 +125,7 @@ export default function DemoPage() {
   const [countdown, setCountdown] = useState(600);
   const [ackIncident, setAckIncident] = useState(false);
 
-  // User Identity & Quota
+  // User Identity & Fleet
   const [user, setUser] = useState<UserIdentity | null>(null);
   const [fleet, setFleet] = useState<FleetSnapshot | null>(null);
 
@@ -120,7 +147,40 @@ export default function DemoPage() {
   const API_BASE = "http://127.0.0.1:8000";
   const WS_URL = "ws://127.0.0.1:8000/ws/stream";
 
-  // 1. Fetch User Identity & Preferences
+  // 1. Fetch Real Nepal Hydropower Registry
+  const fetchPlants = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/plants`);
+      if (res.ok) {
+        const data: NepalPlant[] = await res.json();
+        setPlants(data);
+        const initial = data.find((p) => p.id === selectedPlantId) || data[0];
+        if (initial) {
+          setActivePlant(initial);
+        }
+      }
+    } catch {
+      // server starting
+    }
+  };
+
+  // 2. Fetch Live Open-Meteo Satellite Weather for Selected Station's GPS Coordinates
+  const fetchPlantWeather = async (plantId: string) => {
+    setWeatherLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/plants/${plantId}/weather`);
+      if (res.ok) {
+        const data = await res.json();
+        setLiveWeather(data);
+      }
+    } catch {
+      // offline fallback
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  // 3. Fetch User Identity & Preferences
   const fetchUser = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
@@ -129,11 +189,11 @@ export default function DemoPage() {
         setUser(data);
       }
     } catch {
-      // offline or server starting
+      // offline
     }
   };
 
-  // 2. Fetch Global Fleet Snapshot
+  // 4. Fetch Global Fleet Snapshot
   const fetchFleet = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/global/fleet`);
@@ -146,8 +206,16 @@ export default function DemoPage() {
     }
   };
 
-  // 3. Connect to 24/7 Live WebSocket Stream
+  // Switch selected Nepal plant
+  const selectPlant = (plant: NepalPlant) => {
+    setSelectedPlantId(plant.id);
+    setActivePlant(plant);
+    fetchPlantWeather(plant.id);
+  };
+
+  // 5. Connect to 24/7 Live WebSocket Stream
   useEffect(() => {
+    fetchPlants();
     fetchUser();
     fetchFleet();
 
@@ -171,7 +239,6 @@ export default function DemoPage() {
               return next.length > 30 ? next.slice(next.length - 30) : next;
             });
 
-            // Reset countdown if alert changes to Warning/Critical
             if (data.alert_tier === "WARNING" || data.alert_tier === "CRITICAL") {
               setCountdown((c) => (c <= 0 ? 600 : c));
             }
@@ -196,7 +263,7 @@ export default function DemoPage() {
 
     connectWS();
 
-    const fleetInterval = setInterval(fetchFleet, 10000);
+    const fleetInterval = setInterval(fetchFleet, 8000);
 
     return () => {
       clearTimeout(retryTimer);
@@ -207,7 +274,14 @@ export default function DemoPage() {
     };
   }, []);
 
-  // 4. Alert Countdown Timer
+  // Fetch initial weather when plant is available
+  useEffect(() => {
+    if (selectedPlantId) {
+      fetchPlantWeather(selectedPlantId);
+    }
+  }, [selectedPlantId]);
+
+  // 6. Alert Countdown Timer
   useEffect(() => {
     if (telemetry.alert_tier === "WARNING" || telemetry.alert_tier === "CRITICAL") {
       const timer = setInterval(() => {
@@ -220,14 +294,13 @@ export default function DemoPage() {
     }
   }, [telemetry.alert_tier]);
 
-  // Format MM:SS for countdown
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  // Trigger Scenario Injection
+  // Trigger Scenario Injection on Physical Twin
   const injectScenario = async (type: string, multiplier: number = 1.5) => {
     setScenarioStatus(`Injecting ${type} (${multiplier}x)...`);
     try {
@@ -241,20 +314,20 @@ export default function DemoPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setScenarioStatus(`Scenario applied: ${data.scenario} (${data.severity})`);
+        setScenarioStatus(`Applied: ${data.scenario} (${data.severity}) to physical twin`);
       } else {
-        setScenarioStatus(`Scenario rejected: Status ${res.status}`);
+        setScenarioStatus(`Rejected: Status ${res.status}`);
       }
     } catch (err: unknown) {
       setScenarioStatus(`Error: ${(err as Error).message}`);
     }
   };
 
-  // Run On-Demand AI Multi-Agent Pipeline Cycle
+  // Run On-Demand AI Multi-Agent Pipeline on Selected Real Plant
   const triggerAIEvaluation = async () => {
     setEvaluatingAI(true);
     try {
-      const res = await fetch(`${API_BASE}/api/pipeline/evaluate?plant_id=${selectedPlant}`, {
+      const res = await fetch(`${API_BASE}/api/plants/${selectedPlantId}/evaluate`, {
         method: "POST",
       });
       if (res.ok) {
@@ -265,7 +338,7 @@ export default function DemoPage() {
           sop: data.sop_context
             ? {
                 title: data.sop_context.matched_sop_title || "Standard Sand Exclusion SOP",
-                procedure: data.sop_context.operating_instructions || "Throttling intake gate to reduce sand erosion.",
+                procedure: data.sop_context.operating_instructions || "Throttling intake gate to reduce abrasive sediment.",
                 verified_hash: data.sop_context.sha256_hash,
               }
             : undefined,
@@ -273,8 +346,8 @@ export default function DemoPage() {
           verdict: data.verdict,
           explanation: data.explanation
             ? {
-                plain_english: data.explanation.text || "The river has too much sand. We are slowing down intake water.",
-                key_points: data.explanation.key_points || ["High sand in river", "Gate throttled safely", "Turbine protected"],
+                plain_english: data.explanation.text || "Water contains high quartz sand. Throttling intake gate safely.",
+                key_points: data.explanation.key_points || ["High sediment in river", "Gate throttled safely", "Turbines protected"],
               }
             : undefined,
         });
@@ -295,15 +368,15 @@ export default function DemoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action_id: telemetry.active_decision || "act_001",
-          operator_id: user?.email || user?.guest_id || "operator_control_room",
+          operator_id: user?.email || user?.guest_id || "lead_plant_operator",
           override_choice: choice,
           nonce: nonce,
-          reason: `Manual testbench ${choice} executed by operator.`,
+          reason: `Control room operator action executed for ${activePlant?.name || "Upper Tamakoshi"}.`,
         }),
       });
       if (res.ok) {
         const data = await res.json();
-        setOverrideMsg(`Override registered: ${choice.toUpperCase()} (Nonce: ${data.record?.nonce || nonce})`);
+        setOverrideMsg(`Override logged: ${choice.toUpperCase()} (Nonce: ${data.record?.nonce || nonce})`);
         if (choice === "acknowledge") setAckIncident(true);
       }
     } catch (err: unknown) {
@@ -311,7 +384,7 @@ export default function DemoPage() {
     }
   };
 
-  // Handle Auth (Register / Login)
+  // Handle Auth
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthFeedback({});
@@ -328,7 +401,7 @@ export default function DemoPage() {
       if (res.ok) {
         setAuthFeedback({ ok: `Logged in as ${data.user?.email || authEmail}` });
         await fetchUser();
-        setTimeout(() => setAuthOpen(false), 900);
+        setTimeout(() => setAuthOpen(false), 800);
       } else {
         setAuthFeedback({ err: data.detail || "Authentication failed." });
       }
@@ -342,7 +415,6 @@ export default function DemoPage() {
     await fetchUser();
   };
 
-  // Color mapping based on alert status
   const getAlertColor = (tier: string) => {
     switch (tier) {
       case "CRITICAL":
@@ -356,18 +428,23 @@ export default function DemoPage() {
     }
   };
 
-  // Calculate SVG line points for real-time chart
+  // Filtered plants by river basin
+  const filteredPlants = plants.filter((p) => {
+    if (basinFilter === "All") return true;
+    return p.river_basin.toLowerCase().includes(basinFilter.toLowerCase());
+  });
+
   const renderSVGChart = () => {
     if (history.length < 2) {
       return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "160px", color: "var(--color-text-dim)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "140px", color: "var(--color-text-dim)" }}>
           Streaming live telemetry ticks from WebSocket...
         </div>
       );
     }
 
     const width = 640;
-    const height = 150;
+    const height = 140;
     const maxSilt = Math.max(3500, ...history.map((h) => h.silt_ppm));
     const maxQ = Math.max(1000, ...history.map((h) => h.discharge_m3s));
 
@@ -388,17 +465,13 @@ export default function DemoPage() {
 
     return (
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
-        {/* Warning & Critical Guide lines */}
         <line x1="0" y1={yWarn} x2={width} y2={yWarn} stroke="#E07C38" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
-        <text x="8" y={yWarn - 4} fill="#E07C38" fontSize="10" fontFamily="var(--font-mono)">1,200 PPM (Warning Threshold)</text>
+        <text x="8" y={yWarn - 4} fill="#E07C38" fontSize="10" fontFamily="var(--font-mono)">1,200 PPM (Warning)</text>
 
         <line x1="0" y1={yCrit} x2={width} y2={yCrit} stroke="var(--color-red)" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
-        <text x="8" y={yCrit - 4} fill="var(--color-red)" fontSize="10" fontFamily="var(--font-mono)">3,000 PPM (Critical Threshold)</text>
+        <text x="8" y={yCrit - 4} fill="var(--color-red)" fontSize="10" fontFamily="var(--font-mono)">3,000 PPM (Critical)</text>
 
-        {/* Discharge Line */}
         <polyline fill="none" stroke="#50B0D8" strokeWidth="2" points={pointsQ} opacity="0.7" />
-
-        {/* Silt Line */}
         <polyline fill="none" stroke="var(--color-accent)" strokeWidth="2.5" points={pointsSilt} />
       </svg>
     );
@@ -440,11 +513,23 @@ export default function DemoPage() {
           </Link>
           <span style={{ color: "var(--color-text-dim)" }}>|</span>
           <span style={{ fontWeight: 700, fontSize: "var(--text-lg)", color: "var(--color-highlight)" }}>
-            Live Operations & AI Testbench
+            Nepal Hydropower Mission Control
+          </span>
+          <span
+            style={{
+              background: "var(--color-surface-raised)",
+              color: "var(--color-accent)",
+              fontSize: "11px",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            25 Official NEA Stations
           </span>
         </div>
 
-        {/* Mode Switcher */}
+        {/* Mode Toggle */}
         <div
           style={{
             display: "flex",
@@ -467,7 +552,7 @@ export default function DemoPage() {
               fontSize: "var(--text-sm)",
             }}
           >
-            🌐 Global Fleet Showcase
+            🇳🇵 Nepal Grid Fleet (25 Plants)
           </button>
           <button
             onClick={() => setMode("individual")}
@@ -482,13 +567,12 @@ export default function DemoPage() {
               fontSize: "var(--text-sm)",
             }}
           >
-            🏔️ My Plant (Sandbox)
+            🏔️ Selected Dam Sandbox
           </button>
         </div>
 
-        {/* Connection & Auth Status */}
+        {/* Connection & Auth */}
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-          {/* WS Status Badge */}
           <div
             style={{
               display: "flex",
@@ -511,10 +595,9 @@ export default function DemoPage() {
                 display: "inline-block",
               }}
             />
-            {wsConnected ? "LIVE STREAM 2.0s" : "CONNECTING..."}
+            {wsConnected ? "LIVE 2.0s" : "CONNECTING..."}
           </div>
 
-          {/* User Identity Pill */}
           <button
             onClick={() => setAuthOpen(true)}
             style={{
@@ -531,17 +614,158 @@ export default function DemoPage() {
             }}
           >
             <span>👤</span>
-            <span>
-              {user?.email ? user.email : user?.guest_id ? `${user.guest_id.slice(0, 14)}...` : "Guest"}
-            </span>
+            <span>{user?.email || (user?.guest_id ? `${user.guest_id.slice(0, 12)}...` : "Guest")}</span>
             <span style={{ color: "var(--color-accent)", fontSize: "10px" }}>
-              [{user?.role === "member" ? "Member · 1 Site Max" : "Guest Mode"}]
+              [{user?.role === "member" ? "Member" : "Guest"}]
             </span>
           </button>
         </div>
       </header>
 
-      {/* 2. Active Alert Status Banner */}
+      {/* 2. Official NEA Plant Specification & Mountain Satellite Weather Card */}
+      {activePlant && (
+        <section
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "8px",
+            padding: "var(--space-5)",
+            marginBottom: "var(--space-6)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "var(--space-4)" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "4px" }}>
+                <h2 style={{ margin: 0, fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--color-highlight)" }}>
+                  {activePlant.name}
+                </h2>
+                <span
+                  style={{
+                    background: "rgba(212, 168, 48, 0.15)",
+                    color: "var(--color-accent)",
+                    border: "1px solid var(--color-accent)",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {activePlant.river_basin} River Basin
+                </span>
+                <span
+                  style={{
+                    background: "var(--color-surface-raised)",
+                    color: "var(--color-text-secondary)",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  {activePlant.capacity_mw} MW
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+                Verified Official NEA Asset · Real Himalayan Hydrological Catchment & Quartz Silt Model
+              </p>
+            </div>
+
+            {/* Quick Switcher Dropdown */}
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <label style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>Select Real Plant:</label>
+              <select
+                value={selectedPlantId}
+                onChange={(e) => {
+                  const p = plants.find((x) => x.id === e.target.value);
+                  if (p) selectPlant(p);
+                }}
+                style={{
+                  background: "var(--color-bg)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-primary)",
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  fontSize: "var(--text-xs)",
+                  fontFamily: "var(--font-mono)",
+                  cursor: "pointer",
+                }}
+              >
+                {plants.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.capacity_mw} MW) - {p.river_basin}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 5 Technical Fact Columns */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "var(--space-3)",
+              marginTop: "var(--space-4)",
+              paddingTop: "var(--space-4)",
+              borderTop: "1px solid var(--color-border)",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Real GPS Coordinates</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                {activePlant.latitude.toFixed(3)}°N, {activePlant.longitude.toFixed(3)}°E
+              </div>
+              <a
+                href={`https://www.openstreetmap.org/?mlat=${activePlant.latitude}&mlon=${activePlant.longitude}#map=14/${activePlant.latitude}/${activePlant.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ fontSize: "10px", color: "var(--color-accent)", textDecoration: "none" }}
+              >
+                View on Map ↗
+              </a>
+            </div>
+
+            <div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Hydraulic Head</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                {activePlant.head_m} m
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Penstock Pressure Elevation</div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Design Flow (Q)</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "#50B0D8", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                {activePlant.design_flow_m3s} m³/s
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Maximum Intake Rating</div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Catchment Basin</div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                {activePlant.catchment_area_km2.toLocaleString()} km²
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Mountain Runoff Area</div>
+            </div>
+
+            {/* Live Open-Meteo Weather */}
+            <div style={{ background: "var(--color-surface-raised)", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--color-border)" }}>
+              <div style={{ fontSize: "10px", color: "var(--color-accent)", textTransform: "uppercase", fontWeight: 700 }}>
+                Live Satellite Weather (Open-Meteo)
+              </div>
+              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
+                {weatherLoading ? "Checking sky..." : `${liveWeather?.precipitation_mm_h.toFixed(1) || "0.0"} mm/h Rain`}
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--color-text-secondary)" }}>
+                {liveWeather ? `${liveWeather.temperature_c.toFixed(1)}°C | ${liveWeather.cloud_cover_pct.toFixed(0)}% Clouds` : "Live mountain feed"}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 3. Active Alert Banner */}
       <section
         style={{
           background:
@@ -571,17 +795,16 @@ export default function DemoPage() {
             </div>
             <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
               {telemetry.alert_tier === "CRITICAL"
-                ? "Immediate desander purge required. Sharp Himalayan quartz exceeds critical runner blade erosion limit."
+                ? `Critical Quartz Silt Surge at ${activePlant?.name || "Upper Tamakoshi"}. Exceeds 3,000 PPM blade abrasion threshold.`
                 : telemetry.alert_tier === "WARNING"
-                ? "Quartz sediment surge detected. Multi-agent AI proposal formulated. Safety kernel gate review active."
+                ? `Sediment surge detected. Desander flushing advisory formulated. Safety kernel R1-R11 checks active.`
                 : telemetry.alert_tier === "WATCH"
-                ? "River sediment rising above seasonal baseline. Continuous satellite and twin monitoring active."
-                : "Turbine runner safe. Baseline desander flushing active. Silt well below 800 PPM."}
+                ? "River silt rising above baseline. Monitoring glacier melt and precipitation."
+                : `Turbines safe. Baseline desander flushing active at ${activePlant?.name || "dam"}. Silt <800 PPM.`}
             </div>
           </div>
         </div>
 
-        {/* 10-Minute Action Window Countdown */}
         {(telemetry.alert_tier === "WARNING" || telemetry.alert_tier === "CRITICAL") && (
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
             <div
@@ -618,7 +841,7 @@ export default function DemoPage() {
         )}
       </section>
 
-      {/* 3. Live Physical Metrics Dials (4 Cards) */}
+      {/* 4. Live Physical Metrics Dials */}
       <section
         style={{
           display: "grid",
@@ -627,20 +850,18 @@ export default function DemoPage() {
           marginBottom: "var(--space-6)",
         }}
       >
-        {/* Card 1: Silt PPM */}
         <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
           <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Quartz Sediment (PPM)
+            Himalayan Quartz Silt
           </div>
           <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: getAlertColor(telemetry.alert_tier), fontFamily: "var(--font-mono)" }}>
-            {telemetry.silt_ppm.toFixed(1)}
+            {telemetry.silt_ppm.toFixed(1)} <span style={{ fontSize: "var(--text-xs)" }}>PPM</span>
           </div>
           <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Normal &lt;800 | Watch 800–1,200 | Critical &gt;3,000
+            Formula: Silt = 2.096e-4 × Q^2.432
           </div>
         </div>
 
-        {/* Card 2: River Discharge */}
         <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
           <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
             River Discharge (Q)
@@ -649,27 +870,25 @@ export default function DemoPage() {
             {telemetry.discharge_m3s.toFixed(1)} <span style={{ fontSize: "var(--text-sm)" }}>m³/s</span>
           </div>
           <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Physical Runoff & Open-Meteo Coupled
+            Design Flow: {activePlant?.design_flow_m3s || 66.0} m³/s
           </div>
         </div>
 
-        {/* Card 3: Turbine Runner Wear */}
         <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
           <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Runner Blade Erosion
+            Turbine Blade Sand Abrasion
           </div>
           <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: "var(--color-highlight)", fontFamily: "var(--font-mono)" }}>
             {telemetry.runner_wear_pct.toFixed(3)}%
           </div>
           <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Cumulative IEC 62364 Quartz Abrasion Model
+            IEC 62364 Hydro-Abrasive Wear Standard
           </div>
         </div>
 
-        {/* Card 4: Safety Kernel Status */}
         <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
           <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Deterministic Safety Kernel
+            Safety Kernel Verdict
           </div>
           <div
             style={{
@@ -683,12 +902,12 @@ export default function DemoPage() {
             {telemetry.safety_status.toUpperCase()}
           </div>
           <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Rules R1–R11 Enforced · Advisory Dispatch Locked
+            Deterministic Rules R1–R11 Enforced
           </div>
         </div>
       </section>
 
-      {/* 4. Real-Time Telemetry Trend Chart */}
+      {/* 5. Live Telemetry Trend Chart */}
       <section
         style={{
           background: "var(--color-surface)",
@@ -701,10 +920,10 @@ export default function DemoPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
           <div>
             <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-              Live Telemetry Stream Trend (Last 30 Ticks)
+              Live Telemetry Stream ({activePlant?.name || "Upper Tamakoshi"})
             </h3>
             <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              Continuous WebSocket frame stream from PlantTwin engine (2.0s updates)
+              Continuous real-time frames streamed over WebSocket (2.0s updates)
             </span>
           </div>
           <div style={{ display: "flex", gap: "var(--space-4)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
@@ -715,7 +934,7 @@ export default function DemoPage() {
         {renderSVGChart()}
       </section>
 
-      {/* 5. Interactive Testbench & Scenario Injection Panel */}
+      {/* 6. Physical Scenario Testbench & Operator Controls */}
       <section
         style={{
           background: "var(--color-surface)",
@@ -728,10 +947,10 @@ export default function DemoPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-3)" }}>
           <div>
             <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-              ⚡ Interactive Physical Scenario Testbench
+              ⚡ Real Himalayan Hydrology Scenario Testbench
             </h3>
             <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              Inject extreme Himalayan monsoon conditions or sensor glitches to evaluate real-time multi-agent safety response.
+              Simulate actual Himalayan extreme events (cloudbursts, glacial surges, sensor faults) on {activePlant?.name}.
             </span>
           </div>
           <button
@@ -748,11 +967,10 @@ export default function DemoPage() {
               cursor: "pointer",
             }}
           >
-            {evaluatingAI ? "Evaluating 5 Agents..." : "🤖 Force AI Cycle Evaluation"}
+            {evaluatingAI ? "Evaluating 5 Agents..." : `🤖 Run AI Pipeline on ${activePlant?.name || "Plant"}`}
           </button>
         </div>
 
-        {/* Scenario Injection Buttons */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
           <button
             onClick={() => injectScenario("monsoon_surge", 1.5)}
@@ -783,7 +1001,7 @@ export default function DemoPage() {
               cursor: "pointer",
             }}
           >
-            ⚡ Critical Flash Flood (2.2x)
+            ⚡ Cloudburst / Flash Flood (2.2x)
           </button>
 
           <button
@@ -819,7 +1037,6 @@ export default function DemoPage() {
           </button>
         </div>
 
-        {/* Operator Override Buttons */}
         <div
           style={{
             display: "flex",
@@ -830,7 +1047,7 @@ export default function DemoPage() {
           }}
         >
           <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", fontWeight: 600 }}>
-            Operator Advisory Control:
+            Control Room Action:
           </span>
           <button
             onClick={() => sendOverride("approve")}
@@ -862,23 +1079,15 @@ export default function DemoPage() {
           </button>
         </div>
 
-        {/* Feedback Messages */}
         {(scenarioStatus || overrideMsg) && (
-          <div
-            style={{
-              marginTop: "var(--space-3)",
-              fontSize: "var(--text-xs)",
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-accent)",
-            }}
-          >
+          <div style={{ marginTop: "var(--space-3)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
             {scenarioStatus && <div>ℹ️ {scenarioStatus}</div>}
             {overrideMsg && <div>🔒 {overrideMsg}</div>}
           </div>
         )}
       </section>
 
-      {/* 6. Multi-Agent AI Diagnostic & Explanation Center */}
+      {/* 7. Multi-Agent AI Pipeline Inspection */}
       <section
         style={{
           background: "var(--color-surface)",
@@ -890,15 +1099,14 @@ export default function DemoPage() {
       >
         <div style={{ marginBottom: "var(--space-4)" }}>
           <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🧠 Multi-Agent AI Pipeline Inspection
+            🧠 Multi-Agent AI Pipeline Evaluation ({activePlant?.name || "Upper Tamakoshi"})
           </h3>
           <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-            5 autonomous agents collaborate to analyze physical hydrology, search verified SOP memories, and generate Plain English operator advisories.
+            5 autonomous agents collaborate to analyze satellite weather, query SHA-256 verified SOPs, and produce Grade-1 Plain English advisories.
           </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-4)" }}>
-          {/* 1. Triage Agent */}
           <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>1. Triage Agent</span>
@@ -911,11 +1119,10 @@ export default function DemoPage() {
             </p>
           </div>
 
-          {/* 2. SOP RAG Agent */}
           <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>2. SOP RAG Memory</span>
-              <span style={{ fontSize: "11px", color: "var(--color-green)", fontFamily: "var(--font-mono)" }}>SHA-256 ✓</span>
+              <span style={{ fontSize: "11px", color: "var(--color-green)", fontFamily: "var(--font-mono)" }}>SHA-256 Verified ✓</span>
             </div>
             <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
               <strong>{latestEval?.sop?.title || "SOP-04: High Sediment Desander Flushing"}</strong>
@@ -924,18 +1131,16 @@ export default function DemoPage() {
             </p>
           </div>
 
-          {/* 3. Dispatch Agent */}
           <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>3. Dispatch Agent</span>
               <span style={{ fontSize: "11px", color: "var(--color-accent)", fontFamily: "var(--font-mono)" }}>advisory=True</span>
             </div>
             <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-              {telemetry.active_decision !== "None" ? telemetry.active_decision : "Advisory: Modulate penstock intake gate target flow to 14.4 m³/s"}
+              {telemetry.active_decision !== "None" ? telemetry.active_decision : `Advisory: Modulate ${activePlant?.name || "dam"} intake gate flow target to 14.4 m³/s`}
             </p>
           </div>
 
-          {/* 4. Explain Agent (Grade-1 Plain English) */}
           <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-highlight)" }}>4. Explain Agent (Plain English)</span>
@@ -943,45 +1148,67 @@ export default function DemoPage() {
             </div>
             <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-primary)", lineHeight: 1.5 }}>
               {latestEval?.explanation?.plain_english ||
-                "\"The river from the mountains is bringing down sharp sand. We are slowing the water entering the pipes so the sand settles quietly in the washing basin without scratching our turbines.\""}
+                `"The river entering ${activePlant?.name || "the plant"} is carrying sharp mountain quartz sand. We are slowing down intake flow so sand settles quietly in the desander basin before touching the spinning turbine blades."`}
             </p>
           </div>
         </div>
       </section>
 
-      {/* 7. Global Fleet Explorer (When Mode is Global) */}
-      {mode === "global" && (
-        <section
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            padding: "var(--space-5)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-                🌐 Autonomous Global Demonstration Fleet ({fleet?.total_sites || 8} Stations)
-              </h3>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-                Continuous 24/7 autonomous cycles across Himalayan, Alpine, and Andean hydrological regimes.
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "var(--space-3)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
-              <span style={{ color: "var(--color-red)" }}>Critical: {fleet?.active_critical || 0}</span>
-              <span style={{ color: "var(--color-yellow)" }}>Warnings: {fleet?.active_warnings || 0}</span>
-            </div>
+      {/* 8. 25 Official Nepal Hydropower Stations Grid */}
+      <section
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "8px",
+          padding: "var(--space-5)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+              🇳🇵 All 25 Real Nepal Hydropower Stations (Official NEA Registry)
+            </h3>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
+              Official coordinates, capacities, and river basins across Nepal. Click any station to focus live telemetry.
+            </span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-4)" }}>
-            {fleet?.sites.map((site) => (
-              <div
-                key={site.id}
-                onClick={() => setSelectedPlant(site.id)}
+          {/* Basin Filters */}
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            {["All", "Koshi", "Gandaki", "Karnali", "Bagmati"].map((basin) => (
+              <button
+                key={basin}
+                onClick={() => setBasinFilter(basin)}
                 style={{
-                  background: selectedPlant === site.id ? "var(--color-surface-raised)" : "var(--color-bg)",
-                  border: `1px solid ${selectedPlant === site.id ? "var(--color-accent)" : "var(--color-border)"}`,
+                  background: basinFilter === basin ? "var(--color-accent)" : "var(--color-surface-raised)",
+                  color: basinFilter === basin ? "#1A1010" : "var(--color-text-secondary)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "4px",
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  fontWeight: basinFilter === basin ? 700 : 400,
+                  cursor: "pointer",
+                }}
+              >
+                {basin}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-3)" }}>
+          {filteredPlants.map((plant) => {
+            const isSelected = plant.id === selectedPlantId;
+            const fleetSite = fleet?.sites.find((s) => s.id === plant.id);
+            const alertTier = fleetSite?.alert_tier || "NORMAL";
+
+            return (
+              <div
+                key={plant.id}
+                onClick={() => selectPlant(plant)}
+                style={{
+                  background: isSelected ? "var(--color-surface-raised)" : "var(--color-bg)",
+                  border: `1px solid ${isSelected ? "var(--color-accent)" : "var(--color-border)"}`,
                   borderRadius: "6px",
                   padding: "var(--space-3) var(--space-4)",
                   cursor: "pointer",
@@ -989,32 +1216,37 @@ export default function DemoPage() {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <span style={{ fontWeight: 600, fontSize: "var(--text-xs)", color: "var(--color-highlight)" }}>{site.name}</span>
+                  <span style={{ fontWeight: 600, fontSize: "var(--text-xs)", color: isSelected ? "var(--color-accent)" : "var(--color-highlight)" }}>
+                    {plant.name}
+                  </span>
                   <span
                     style={{
                       fontSize: "10px",
                       padding: "2px 6px",
                       borderRadius: "4px",
-                      background: site.alert_tier === "CRITICAL" ? "var(--color-red-bg)" : "var(--color-green-bg)",
-                      color: site.alert_tier === "CRITICAL" ? "var(--color-red)" : "var(--color-green)",
+                      background: alertTier === "CRITICAL" ? "var(--color-red-bg)" : "var(--color-green-bg)",
+                      color: alertTier === "CRITICAL" ? "var(--color-red)" : "var(--color-green)",
                       fontWeight: 700,
                     }}
                   >
-                    {site.alert_tier || "NORMAL"}
+                    {alertTier}
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)" }}>
-                  <span>{site.capacity_mw} MW</span>
-                  <span>{site.current_silt_ppm ? `${site.current_silt_ppm.toFixed(0)} PPM` : "420 PPM"}</span>
-                  <span>{site.preset || "monsoon"}</span>
+                  <span>{plant.capacity_mw} MW</span>
+                  <span>{plant.river_basin} Basin</span>
+                  <span>{plant.head_m}m Head</span>
+                </div>
+                <div style={{ fontSize: "10px", color: "var(--color-text-dim)", marginTop: "4px", fontFamily: "var(--font-mono)" }}>
+                  📍 {plant.latitude.toFixed(3)}°N, {plant.longitude.toFixed(3)}°E
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            );
+          })}
+        </div>
+      </section>
 
-      {/* 8. Authentication & Member Registration Modal */}
+      {/* 9. Auth Modal */}
       {authOpen && (
         <div
           style={{
@@ -1043,7 +1275,7 @@ export default function DemoPage() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
               <h3 style={{ margin: 0, fontSize: "var(--text-lg)", fontWeight: 700 }}>
-                {user?.email ? "Account Profile" : authTab === "login" ? "Operator Sign In" : "Register Free Account"}
+                {user?.email ? "Operator Profile" : authTab === "login" ? "Sign In" : "Register Free Account"}
               </h3>
               <button
                 onClick={() => setAuthOpen(false)}
@@ -1056,11 +1288,11 @@ export default function DemoPage() {
             {user?.email ? (
               <div>
                 <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>
-                  You are signed in as: <strong>{user.email}</strong>
+                  Signed in as: <strong>{user.email}</strong>
                 </p>
                 <div style={{ fontSize: "var(--text-xs)", background: "var(--color-bg)", padding: "10px", borderRadius: "6px", marginBottom: "var(--space-4)" }}>
                   <div>Role: {user.role}</div>
-                  <div>Account Tier: {user.tier}</div>
+                  <div>Tier: {user.tier}</div>
                   <div>Quota: Strictly {user.max_plants_allowed} registered plant</div>
                 </div>
                 <button
@@ -1082,7 +1314,6 @@ export default function DemoPage() {
               </div>
             ) : (
               <form onSubmit={handleAuthSubmit}>
-                {/* Auth Tabs */}
                 <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
                   <button
                     type="button"
