@@ -822,7 +822,29 @@ A focused modal card sequence anchored over the dim twilight mountain canvas:
 * **Tab 3: Agent Event Log**:
   * Streaming audit trail of autonomous events: `TriageAgent`, `PredictiveAgent`, `SafetyKernel`, and `ExplainerAgent`.
 
+#### Dedicated Real-Time Satellite Feed Box (`<SatelliteFeedBox />`)
+* **Position & Footprint**:
+  * Docked unobtrusively in the **lower-left corner** (fixed overlay `bottom-4 left-4 z-30` or integrated cleanly within the sidebar base).
+  * Compact footprint (`w-72` / `288px` wide, semi-transparent frosted SCADA backdrop `--color-bg: #2A2C6B` at 92% opacity, 1px border `--color-sky-dark: #3E428F` with 4px industrial chamfered corners).
+  * **Zero Interference Guarantee**: Positioned so it never overlaps or blocks the 20-powerhouse grid, plant detail cards, or header navigation.
+* **1-Second Heartbeat Pulse & Live Telemetry Stream**:
+  * An animated 1 Hz green radar pulse beacon: `● SAT-LINK ACTIVE (1.00s tick)`.
+  * Real-time GPS Coordinates: Station latitude & longitude with elevation (e.g. `27.848° N, 86.136° E · 822 m Head`).
+  * Live Satellite Vectors fetched every single second from the ingestion bridge (`live_extraction.py`):
+    * **Satellite Rain Radar (NASA GPM IMERG)**: Instantaneous precipitation rate in $\text{mm/h}$ with dynamic sparkline.
+    * **Atmospheric Moisture Flux (ERA5-Land)**: Total column water vapor flux ($\text{kg}/(\text{m} \cdot \text{s})$).
+    * **Cloud Optical Radiance (ECMWF 9km)**: Radar reflectivity index (e.g. `34.2 dBZ · High Convective Overcast`).
+    * **DHM Hydrology Proxy**: Monitored river basin discharge estimate derived from mountain weather catchment runoff.
+  * **Network & Ingestion Health**:
+    * Ingestion latency badge: `⚡ 38 ms ping · HTTP 200 OK`.
+    * Rolling cryptographic verification token: `Frame SHA: 7f8a3c...`.
+* **Micro-Controls**:
+  * `[Collapse / Expand]`: Can collapse to an ultra-compact `28px` glowing telemetry beacon pill.
+  * `[Freeze Frame]`: Allows operators to temporarily freeze live 1-second packet stream for detailed data audit.
+  * `[View Raw JSON]`: Modal inspect of unparsed satellite telemetry payload.
+
 ---
+
 
 ### 9.3 Main View: The 20 Hydropower "House" Grid (`<PowerhouseGrid />`)
 

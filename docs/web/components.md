@@ -119,5 +119,17 @@
   - High-visibility risk pills (`[NOMINAL]`, `[ELEVATED]`, `[CRITICAL_RISK]`).
   - 100% monospace typography (`JetBrains Mono`) with KaTeX/ASCII equation substitution traces.
 
+---
+
+## 11. SatelliteFeedBox (`web/components/SatelliteFeedBox.tsx`)
+- **Role**: Unobtrusive lower-left corner real-time satellite telemetry widget fetched each second.
+- **Visuals**:
+  - Semi-transparent dark SCADA glassmorphic container (`w-72`, fixed `bottom-4 left-4 z-30`).
+  - 1 Hz blinking green satellite link pulse beacon (`● SAT-LINK ACTIVE 1.00s`).
+  - Live GPS station coordinates, NASA GPM IMERG rain rate (mm/h), ERA5 moisture flux, and ECMWF optical reflectivity index.
+  - Latency gauge (`⚡ 38ms`) and rolling SHA-256 frame verification token.
+  - Collapse toggle to shrink into a 28px glowing pill indicator.
+
+
 
 
