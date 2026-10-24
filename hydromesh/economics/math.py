@@ -15,7 +15,7 @@ Think of this file as the Pure Math Engine for the Dam's Financial Report.
 from __future__ import annotations
 
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 from hydromesh.schemas import (
     DeterministicFinancialMetrics,

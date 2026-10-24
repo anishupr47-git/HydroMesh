@@ -158,6 +158,7 @@ async def test_energy_revenue_agent_deterministic_run(tamakoshi_spec: HydroPlant
 def test_revenue_outlook_api_endpoint() -> None:
     """Test 7: Test FastAPI POST /api/plants/{site_id}/revenue-outlook endpoint."""
     from fastapi.testclient import TestClient
+
     from hydromesh.api.app import create_app
 
     app = create_app()

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -176,6 +176,24 @@ async def get_revenue_outlook(
     )
 
     return report.model_dump(mode="json")
+
+
+@router.get("/api/plants/{plant_id}/revenue-outlook")
+async def get_revenue_outlook_get(
+    plant_id: str,
+    horizon_hours: int = Query(default=24, ge=1, le=168),
+    ppa_tariff_npr_kwh: float = Query(default=5.84, ge=0.5, le=50.0),
+    overhaul_cost_npr: float = Query(default=12_000_000.0, ge=0.0),
+    fixed_om_cost_per_day_npr: float = Query(default=150_000.0, ge=0.0),
+) -> dict[str, Any]:
+    """GET variant of revenue-outlook for instant browser direct link inspection."""
+    inputs = EconomicInputs(
+        horizon_hours=horizon_hours,  # type: ignore[arg-type]
+        ppa_tariff_npr_kwh=ppa_tariff_npr_kwh,
+        overhaul_cost_npr=overhaul_cost_npr,
+        fixed_om_cost_per_day_npr=fixed_om_cost_per_day_npr,
+    )
+    return await get_revenue_outlook(plant_id=plant_id, inputs=inputs)
 
 
 # --- Operator Override Model & Endpoint ------------------------------------------------
@@ -403,6 +421,12 @@ async def get_custom_live_query(
             run_ai=run_ai,
         )
     )
+
+
+@router.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    """Return 204 No Content for favicon requests to prevent console 404 noise."""
+    return Response(status_code=204)
 
 
 @router.get("/", response_class=HTMLResponse)

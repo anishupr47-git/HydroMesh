@@ -16,8 +16,8 @@ Think of this agent as the Plant Chief Financial Officer & Senior Economist.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Sequence
 
 from pydantic import BaseModel, Field
 
