@@ -21,7 +21,9 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from hydromesh.api.auth_routes import auth_router, me_router
 from hydromesh.api.routes import _get_pipeline_for_plant, _plants, router
+from hydromesh.api.site_routes import site_router
 from hydromesh.api.stream import stream_manager
 from hydromesh.ingest.scheduler import PlantScheduler
 from hydromesh.logging import get_logger
@@ -106,6 +108,9 @@ def create_app() -> FastAPI:
         return response
 
     # 4. Mount API Routes
+    app.include_router(me_router)
+    app.include_router(auth_router)
+    app.include_router(site_router)
     app.include_router(router)
 
     return app

@@ -258,3 +258,78 @@ class WeatherObservation(Frozen):
     cloud_cover_pct: Annotated[float, Field(ge=0, le=100)]
     hourly_precipitation_48h: Annotated[tuple[NonNeg, ...], Field(max_length=72)]
     is_live: bool = True
+
+
+# --- Sprint 4: Fleet, Sites, & Multi-Tenancy -------------------------------------------
+HydrologyPreset = Literal["monsoon", "glacial_melt", "rain_fed"]
+Mode = Literal["individual", "global"]
+
+
+class Coordinates(Frozen):
+    lat: Annotated[float, Field(ge=-90, le=90)]
+    lon: Annotated[float, Field(ge=-180, le=180)]
+
+    def coarsen(self, step: float = 0.1) -> Coordinates:
+        """Coarsen mountain coordinates for privacy when displaying user plants on Global map."""
+        import math
+        return Coordinates(
+            lat=round(math.floor(self.lat / step) * step, 2),
+            lon=round(math.floor(self.lon / step) * step, 2),
+        )
+
+
+class SiteSpecInput(Frozen):
+    name: Annotated[str, Field(min_length=3, max_length=120)]
+    coordinates: Coordinates
+    capacity_mw: Annotated[float, Field(gt=0, le=2000)]
+    head_m: Annotated[float, Field(gt=0, le=2500)]
+    design_flow_m3s: Annotated[float, Field(gt=0, le=1000)]
+    catchment_area_km2: Annotated[float, Field(gt=0, le=50000)]
+    preset: HydrologyPreset = "monsoon"
+    is_public: bool = False
+
+
+class Site(Frozen):
+    id: Annotated[str, Field(pattern=r"^[a-z0-9_-]{1,64}$")]
+    user_id: str | None = None
+    name: str
+    coordinates: Coordinates
+    capacity_mw: float
+    head_m: float
+    design_flow_m3s: float
+    catchment_area_km2: float
+    preset: HydrologyPreset = "monsoon"
+    is_seeded: bool = False
+    is_public: bool = False
+    created_at: AwareDatetime
+
+
+class SiteSummary(Frozen):
+    id: str
+    name: str
+    coordinates: Coordinates
+    capacity_mw: float
+    preset: HydrologyPreset
+    is_seeded: bool
+    is_public: bool
+    alert_tier: Severity = Severity.NORMAL
+    current_silt_ppm: float = 0.0
+    current_discharge_m3s: float = 0.0
+
+
+class HourRecord(Frozen):
+    site_id: str
+    hour_start_utc: AwareDatetime
+    discharge_m3s: float
+    silt_ppm: float
+    alert_tier: Severity
+    safety_verdict: VerdictStatus
+
+
+class FleetSnapshot(Frozen):
+    timestamp: AwareDatetime
+    mode: Mode
+    total_sites: int
+    active_warnings: int
+    active_critical: int
+    sites: tuple[SiteSummary, ...]
