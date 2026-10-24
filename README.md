@@ -1,14 +1,33 @@
 # HydroMesh
 
-> **Self-hosted, spatio-temporal deep-learning platform for Himalayan run-of-river hydropower plants.**
-> It forecasts suspended sediment (PPM) and river discharge 12–24 h ahead, couples those forecasts to IEC 62364 turbine wear physics, and surfaces automated 3-tier operational alerts — replacing a reactive overhaul cycle that costs up to NPR 80 Lakhs per monsoon season.
+> **HydroMesh is a deterministic decision-support engine for Himalayan run-of-river hydropower plants.**  
+> **It couples predictive sediment analytics to IEC 62364-style runner wear models to advise on gate modulation and desander flushing.**  
+> **The LLM only proposes; a pure, fail-closed safety kernel (R1–R11) strictly governs all approvals.**
 
 ---
 
-### Honesty Guardrails & Operational Scope
-- **Digital Twin Only**: The MVP runs strictly against a stylized digital twin simulator, not an engineering-validated plant model.
-- **Simulated Metrics**: All impact calculations, monetary savings, and wear reductions are simulated.
-- **Advisory Dispatch**: Advisory actions never auto-actuate physical plant valves or governors. All outputs require human operator approval or acknowledgement.
+### Physics Honesty Note
+- **Digital Twin Only**: The plant model runs against a stylized digital twin simulator, not an engineering-validated plant model.
+- **IEC 62364-Style Wear**: Runner wear uses an IEC 62364-style formulation with calibrated lumped constants ($K$), *not* certified standard coefficients. No formal compliance with IEC 62364 is claimed or implied.
+- **Strictly Advisory Dispatch**: Grid dispatch reallocations are hardcoded advisory recommendations (`advisory: Literal[True] = True`). The system cannot actuate physical electrical grid switchgear.
+- **Fail-Closed Execution**: Ambiguous states, sensor anomalies, or rule violations strictly produce `rejected` or `needs_human`.
+
+---
+
+## Verification & Testing
+
+Run the full gate suite (code style, type checking, 100% test coverage, and security analysis):
+
+```bash
+# Code style, strict typing, tests, and 100% safety kernel coverage:
+make check
+
+# Static security analysis (Bandit) and adversarial security suite:
+make security
+
+# Micro-benchmarks (validate, step, 24h simulation):
+python scripts/bench.py
+```
 
 ---
 
@@ -17,91 +36,48 @@
 ```mermaid
 flowchart TD
     subgraph DataIngress["Data Ingress"]
-        TW[PlantTwin Simulator]
+        TW["PlantTwin Simulator (twin/plant.py)"]
     end
 
-    subgraph EventCore["Event & Storage Layer"]
-        RB[(Redis Streams / Blackboard)]
-        CH[(ChromaDB SOP Memory)]
+    subgraph SecurityKernel["Safety & Validation Core"]
+        SC["schemas.py (Frozen Pydantic Models)"]
+        SK["safety.py (Deterministic R1-R11 Kernel)"]
+        CB["llm.py (Ollama Client + Circuit Breaker)"]
     end
 
-    subgraph AgentPipeline["Orchestrated Agent Pipeline"]
-        SP[Supervisor Agent]
-        TR[Triage Agent - scikit-learn GBM]
-        PR[Predictive Agent - Rating Curve & Trend]
-        SR[SOP RAG Agent - ChromaDB]
-        DP[Dispatch Agent - Ollama LLM]
-        SV[Safety Validator - Pure Deterministic R1-R11]
-        EX[Explain Agent - Incident Reports]
+    subgraph StateStore["State & Audit"]
+        BB["Blackboard / Monotonic Clock"]
+        AU["Append-Only Audit Log"]
     end
 
-    subgraph OperatorInterface["Operator & Visualization Surface"]
-        API[FastAPI & WebSocket Stream]
-        UI[Next.js App Router Dashboard]
-    end
-
-    TW -->|Telemetry| RB
-    RB --> SP
-    SP --> TR
-    TR -->|AnomalyVector| RB
-    SP --> PR
-    PR -->|Forecast| RB
-    SP --> SR
-    SR -->|SOPMatch & SimilarIncident| RB
-    SP --> DP
-    DP -->|AgentDecision| SV
-    SV -->|SafetyVerdict| RB
-    SP --> EX
-    EX -->|IncidentReport| RB
-    RB --> API
-    API -->|Live /ws/stream| UI
+    TW -->|Telemetry| BB
+    BB --> CB
+    CB -->|AgentDecision Proposal| SC
+    SC --> SK
+    SK -->|Approved Actions Only| TW
+    SK -->|Audit Record| AU
 ```
 
 ---
 
-## 3-Tier Alert System & IEC 62364 Wear Physics
+## Key Invariants & Security Baseline
 
-IEC 62364 Erosion Formula:
-$$\Delta W = 10^{-9} \cdot K_m \cdot C \cdot (W_{\text{rel}})^{2.5} \cdot K_{\text{hardness}}$$
-
-| Status | PPM Range | Action |
+| Invariant | Implementation | Architectural Defense |
 | :--- | :--- | :--- |
-| **GREEN** | < 1,200 | Normal generation |
-| **YELLOW** | 1,200 – 3,000 | Advisory: Open desander sluice gates for controlled flushing |
-| **RED** | > 3,000 | Alert-only; 10-minute operator ACK window before shutdown recommendation |
+| **I1: Kernel Authority** | `hydromesh/safety.py` | Model output never reaches actuators without kernel validation |
+| **I2: Advisory Dispatch** | `hydromesh/schemas.py` | `ReallocateDispatch.advisory` hardcoded to `Literal[True]` |
+| **I3: Fail Closed** | `hydromesh/safety.py` | On doubt, violation, or sensor stall -> `rejected` or `needs_human` |
+| **F1: Deterministic Confidence** | `hydromesh/safety.py` | `effective_confidence = min(llm_confidence, deterministic_confidence)` |
+| **F2: Schema Bounds** | `hydromesh/schemas.py` | Strict `max_length`, regex ID patterns, `allow_inf_nan=False` |
+| **F3: Atomic Re-validation** | `hydromesh/twin/plant.py` | `PlantTwin.apply()` re-validates fresh snapshot before actuation (TOCTOU defense) |
+| **F5: Host Allowlist (SSRF)** | `hydromesh/llm.py` | Ollama host strictly restricted to loopback allowlist; bans cloud metadata IPs |
+| **F6: Log Redaction** | `hydromesh/logging.py` | Redacts sensitive credentials and sanitizes CR/LF log injection |
 
 ---
 
-## Quickstart
+## Documentation
 
-```bash
-# 1. Configure environment
-cp .env.example .env
-
-# 2. Seed models and synthetic SOP corpus
-make seed
-
-# 3. Start demo services (Redis, API, Web)
-make demo
-```
-
----
-
-## Baseline Evaluation (Simulated)
-
-> [!NOTE]
-> Evaluation results comparing standard reactive scheduling vs HydroMesh advisory forecasting across 100 simulated monsoon days will be populated during milestone T18.
-
-| Metric | Baseline (Reactive) | HydroMesh (Advisory) | Improvement |
-| :--- | :--- | :--- | :--- |
-| Runner Wear (mm/season) | *Pending T18* | *Pending T18* | *Pending T18* |
-| Generation Loss (MWh) | *Pending T18* | *Pending T18* | *Pending T18* |
-| Unscheduled Outages | *Pending T18* | *Pending T18* | *Pending T18* |
-
----
-
-## Documentation & Safety
-
-- [SAFETY.md](file:///C:/Users/user/Documents/HydroMesh/SAFETY.md) - R1–R11 safety rules, fail-closed policy, and advisory guardrails
-- [DEMO.md](file:///C:/Users/user/Documents/HydroMesh/DEMO.md) - 3-minute interactive scenario walkthrough
-- [BUILD_PLAN.md](file:///C:/Users/user/Documents/HydroMesh/HYDROMESH_BUILD_PLAN.md) - Full engineering specification and implementation plan
+- [docs/THREATS.md](file:///C:/Users/user/Documents/HydroMesh/docs/THREATS.md) — Comprehensive Threat Model & Security Architecture Baseline (STRIDE, OWASP Top 10, F1–F8 Action Plan)
+- [SAFETY.md](file:///C:/Users/user/Documents/HydroMesh/SAFETY.md) — Deterministic safety rules R1–R11 specification
+- [DEMO.md](file:///C:/Users/user/Documents/HydroMesh/DEMO.md) — Interactive scenario walkthrough
+- [HYDROMESH_BUILD_PLAN.md](file:///C:/Users/user/Documents/HydroMesh/HYDROMESH_BUILD_PLAN.md) — Master implementation schedule
