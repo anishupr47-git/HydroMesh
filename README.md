@@ -80,9 +80,30 @@ flowchart TD
 
 ---
 
+## Verification & Environment Reference
+
+All components run with zero external cloud dependencies using local environment configurations:
+
+```bash
+# Verify end-to-end Sprint 4 stack:
+python scripts/verify_sprint4.py
+
+# Live Nepal Hydrology & Weather extraction:
+python live_extraction.py
+```
+
+Key environment configuration variables in `.env` (or system environment):
+- `HYDROMESH_ENV`: `production` / `staging` / `development` (default: `development`)
+- `HYDROMESH_OLLAMA_HOST`: Loopback Ollama endpoint (default: `http://127.0.0.1:11434`)
+- `HYDROMESH_SECRET_KEY`: High-entropy secret for Argon2id and JWT signing
+- `HYDROMESH_INSPECTION_MODE`: Enable/disable synthetic telemetry perturbation
+
+---
+
 ## Documentation
 
 - [docs/THREATS.md](file:///C:/Users/user/Documents/HydroMesh/docs/THREATS.md) — Comprehensive Threat Model & Security Architecture Baseline (STRIDE, OWASP Top 10, F1–F8 Action Plan)
 - [SAFETY.md](file:///C:/Users/user/Documents/HydroMesh/SAFETY.md) — Deterministic safety rules R1–R11 specification
 - [DEMO.md](file:///C:/Users/user/Documents/HydroMesh/DEMO.md) — Interactive scenario walkthrough
 - [HYDROMESH_BUILD_PLAN.md](file:///C:/Users/user/Documents/HydroMesh/HYDROMESH_BUILD_PLAN.md) — Master implementation schedule
+
