@@ -45,3 +45,6 @@ FastAPI Server (:8000)
 - **W03 (T17)**: Add `OverrideButton` with interactive 600s countdown timer.
 - **W04 (T18)**: Build `/evidence` benchmark table.
 - **W05 (T19)**: Render animated `HeroIllustration` SVG and finalize styling.
+- **W06 (Sprint 4)**: Implement 4-Phase User Journey State Machine (`splash` -> `auth` -> `intro` -> `dashboard`).
+- **W07 (Sprint 4)**: Implement 20-Powerhouse Grid with interactive station cards, left-docked inspector panel, and individual plant deep-dive.
+
