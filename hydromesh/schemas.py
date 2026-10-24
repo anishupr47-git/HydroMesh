@@ -1,7 +1,11 @@
-"""Single source of truth for every cross-module type.
+"""Plant Data Contracts & Official Forms (Pydantic Schemas).
 
-All models are frozen, reject unknown fields, and reject NaN/inf (a NaN sensor reading must
-never reach a safety rule). Collections are tuples so instances stay immutable and hashable.
+SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
+Think of this file as the Official Form Book for the entire hydropower station!
+Every sensor reading, water gate order, emergency alert, and report has an exact, clean form.
+1. No Broken Numbers: Rejects broken sensor glitches (like NaN or infinity) before they reach safety rules.
+2. Frozen Paperwork: Once a form is filled out, it is locked (frozen). Nobody can tamper with it.
+3. Clean Letters (Security F2): Every word has a length cap and blocks hidden computer control codes.
 
 Hardening (Security Finding F2):
 - Strict bounds (max_length) on every string and collection to prevent memory bloat and injection carriers.
@@ -15,7 +19,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Annotated, Any, Literal
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 Prob = Annotated[float, Field(ge=0, le=1)]
 NonNeg = Annotated[float, Field(ge=0)]
@@ -123,6 +127,30 @@ class AgentDecision(Frozen):
     rationale: Annotated[str, Field(max_length=600)]
     confidence: Prob
 
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _normalize_confidence(cls, v: Any) -> Any:
+        if isinstance(v, (int, float)) and 1.0 < v <= 100.0:
+            return v / 100.0
+        return v
+
+    @field_validator("actions", mode="before")
+    @classmethod
+    def _infer_action_tool(cls, actions: Any) -> Any:
+        if not isinstance(actions, (list, tuple)):
+            return actions
+        fixed = []
+        for a in actions:
+            if isinstance(a, dict) and "tool" not in a:
+                if "gate_id" in a or "flow_target_m3s" in a:
+                    a = {**a, "tool": "modulate_penstock_intake"}
+                elif "basin_id" in a or "duration_mins" in a:
+                    a = {**a, "tool": "trigger_sand_flushing_cycle"}
+                elif "feeder_priority" in a or "mw_target" in a:
+                    a = {**a, "tool": "reallocate_grid_dispatch"}
+            fixed.append(a)
+        return fixed
+
 
 VerdictStatus = Literal["approved", "rejected", "needs_human"]
 
@@ -204,3 +232,29 @@ class Incident(Frozen):
     verdict: SafetyVerdict | None = None
     execution: ExecutionResult | None = None
     report: IncidentReport | None = None
+
+
+# --- nepal hydro registry & weather ----------------------------------------------------
+class HydroPlantSpec(Frozen):
+    id: Annotated[str, Field(pattern=r"^[a-z0-9_]{1,64}$")]
+    name: Annotated[str, Field(max_length=120)]
+    capacity_mw: NonNeg
+    river_basin: Annotated[str, Field(max_length=64)]
+    latitude: Annotated[float, Field(ge=-90, le=90)]
+    longitude: Annotated[float, Field(ge=-180, le=180)]
+    design_flow_m3s: NonNeg
+    head_m: NonNeg
+    catchment_area_km2: NonNeg
+    base_flow_m3s: NonNeg = 20.0
+    runoff_coeff: Annotated[float, Field(ge=0, le=1)] = 0.35
+
+
+class WeatherObservation(Frozen):
+    ts: AwareDatetime
+    latitude: Annotated[float, Field(ge=-90, le=90)]
+    longitude: Annotated[float, Field(ge=-180, le=180)]
+    precipitation_mm_h: NonNeg
+    temperature_c: float
+    cloud_cover_pct: Annotated[float, Field(ge=0, le=100)]
+    hourly_precipitation_48h: Annotated[tuple[NonNeg, ...], Field(max_length=72)]
+    is_live: bool = True

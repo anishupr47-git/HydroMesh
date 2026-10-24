@@ -52,6 +52,7 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
+ignore = ["E501"]
 
 [tool.mypy]
 strict = true
@@ -67,7 +68,6 @@ addopts = "--cov=hydromesh --cov-report=term-missing"
 omit = [
   "hydromesh/agents/*",
   "hydromesh/api/*",
-  "hydromesh/blackboard.py",
   "hydromesh/memory.py",
   "hydromesh/pipeline.py",
   "hydromesh/prompts.py",
