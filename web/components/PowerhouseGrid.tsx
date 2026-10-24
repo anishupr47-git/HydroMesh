@@ -13,7 +13,7 @@ export interface PowerhouseStation {
   design_flow_m3s: number;
   current_discharge_m3s?: number;
   current_silt_ppm?: number;
-  alert_tier?: "NORMAL" | "WATCH" | "WARNING" | "CRITICAL";
+  alert_tier?: string;
 }
 
 interface PowerhouseGridProps {
@@ -32,7 +32,10 @@ export function PowerhouseCard({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const alertTier = plant.alert_tier || "NORMAL";
+  const rawTier = String(plant.alert_tier || "NORMAL").toUpperCase();
+  const alertTier = ["NORMAL", "WATCH", "WARNING", "CRITICAL"].includes(rawTier)
+    ? rawTier
+    : "NORMAL";
   const isCritical = alertTier === "CRITICAL";
   const isWarning = alertTier === "WARNING";
 
@@ -43,8 +46,10 @@ export function PowerhouseCard({
     CRITICAL: { bg: "rgba(230, 76, 76, 0.18)", color: "#E64C4C", border: "rgba(230, 76, 76, 0.5)" },
   };
 
+  const tierStyle = tierColors[alertTier] || tierColors["NORMAL"];
   const discharge = plant.current_discharge_m3s ?? plant.design_flow_m3s * 0.75;
   const silt = plant.current_silt_ppm ?? 380;
+  const basinDisplay = (plant.river_basin || "Nepal").toUpperCase();
 
   return (
     <div
@@ -99,7 +104,7 @@ export function PowerhouseCard({
               fontWeight: 700,
             }}
           >
-            {plant.river_basin.toUpperCase()} BASIN
+            {basinDisplay} BASIN
           </span>
         </div>
 
@@ -111,9 +116,9 @@ export function PowerhouseCard({
             fontWeight: 800,
             padding: "2px 6px",
             borderRadius: "3px",
-            background: tierColors[alertTier].bg,
-            color: tierColors[alertTier].color,
-            border: `1px solid ${tierColors[alertTier].border}`,
+            background: tierStyle.bg,
+            color: tierStyle.color,
+            border: `1px solid ${tierStyle.border}`,
             letterSpacing: "0.5px",
           }}
         >
@@ -138,7 +143,7 @@ export function PowerhouseCard({
           {plant.name}
         </h4>
         <div style={{ fontSize: "10px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)" }}>
-          📍 {plant.latitude.toFixed(2)}°N, {plant.longitude.toFixed(2)}°E · {plant.head_m}m Head
+          📍 {plant.latitude?.toFixed(2) ?? "27.85"}°N, {plant.longitude?.toFixed(2) ?? "86.14"}°E · {plant.head_m ?? 120}m Head
         </div>
       </div>
 
@@ -208,7 +213,7 @@ export default function PowerhouseGrid({
 }: PowerhouseGridProps) {
   // Show exactly 20 powerhouses
   const displayedPlants = plants
-    .filter((p) => (basinFilter === "All" ? true : p.river_basin.toLowerCase() === basinFilter.toLowerCase()))
+    .filter((p) => (basinFilter === "All" ? true : (p.river_basin || "").toLowerCase().includes(basinFilter.toLowerCase())))
     .slice(0, 20);
 
   return (

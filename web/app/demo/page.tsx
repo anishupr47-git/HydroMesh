@@ -482,7 +482,7 @@ export default function DemoPage() {
   };
 
   const getAlertColor = (tier: string) => {
-    switch (tier) {
+    switch (String(tier || "").toUpperCase()) {
       case "CRITICAL":
         return "var(--color-status-red, #E64C4C)";
       case "WARNING":
@@ -508,7 +508,10 @@ export default function DemoPage() {
       design_flow_m3s: p.design_flow_m3s,
       current_discharge_m3s: p.id === selectedPlantId ? telemetry.discharge_m3s : site?.current_discharge_m3s ?? (p.design_flow_m3s * 0.7),
       current_silt_ppm: p.id === selectedPlantId ? telemetry.silt_ppm : site?.current_silt_ppm ?? 380,
-      alert_tier: p.id === selectedPlantId ? telemetry.alert_tier : site?.alert_tier ?? "NORMAL",
+      alert_tier:
+        p.id === selectedPlantId
+          ? telemetry.alert_tier
+          : (site?.alert_tier?.toUpperCase() as any) ?? "NORMAL",
     };
   });
 
