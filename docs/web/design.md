@@ -1,9 +1,10 @@
 # HydroMesh — Master Visual Design System & Atmospheric Motion Guide
 
-> **Designation**: Master Design Specification (`docs/web/design.md`)  
+> **Designation**: Master Design Specification (`docs/web/design.md`) — v2.2 (RC2)  
 > **Aesthetic Philosophy**: Alpine Hydropower Citadel & High-Contrast Mountain Twilight  
 > **Source Reference**: Handcrafted vector landscape of a Himalayan cliffside hydropower fortress, illuminated control room, cascading dual-tier waterfall, and golden-rimmed dusk clouds.  
 > **Engineering Invariant**: **Zero AI-Slop**. No generic purple gradients, no fuzzy drop-shadow soup, no gratuitous glassmorphic blurs. Pure geometric precision, high-contrast industrial SCADA legibility, and GPU-accelerated 60/120 FPS responsive motion.
+
 
 ---
 
