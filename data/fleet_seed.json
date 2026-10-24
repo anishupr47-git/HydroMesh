@@ -1,0 +1,90 @@
+[
+  {
+    "id": "trishuli_chasm",
+    "name": "Trishuli Chasm Hydropower Plant",
+    "latitude": 28.145,
+    "longitude": 85.275,
+    "capacity_mw": 85.0,
+    "head_m": 145.0,
+    "design_flow_m3s": 65.0,
+    "catchment_area_km2": 3180.0,
+    "preset": "monsoon"
+  },
+  {
+    "id": "aconcagua_gorge",
+    "name": "Aconcagua Gorge Station",
+    "latitude": -32.653,
+    "longitude": -70.012,
+    "capacity_mw": 120.0,
+    "head_m": 420.0,
+    "design_flow_m3s": 32.0,
+    "catchment_area_km2": 950.0,
+    "preset": "glacial_melt"
+  },
+  {
+    "id": "rhone_torrent",
+    "name": "Rhône Torrent High-Head Plant",
+    "latitude": 46.312,
+    "longitude": 7.985,
+    "capacity_mw": 160.0,
+    "head_m": 680.0,
+    "design_flow_m3s": 26.0,
+    "catchment_area_km2": 520.0,
+    "preset": "glacial_melt"
+  },
+  {
+    "id": "sahyadri_falls",
+    "name": "Sahyadri Falls Monsoon Run",
+    "latitude": 18.521,
+    "longitude": 73.452,
+    "capacity_mw": 45.0,
+    "head_m": 88.0,
+    "design_flow_m3s": 58.0,
+    "catchment_area_km2": 1420.0,
+    "preset": "rain_fed"
+  },
+  {
+    "id": "marsyangdi_canyon",
+    "name": "Marsyangdi Canyon Station",
+    "latitude": 28.212,
+    "longitude": 84.385,
+    "capacity_mw": 72.0,
+    "head_m": 105.0,
+    "design_flow_m3s": 78.0,
+    "catchment_area_km2": 2650.0,
+    "preset": "monsoon"
+  },
+  {
+    "id": "inn_gorge",
+    "name": "Inn Gorge Alpine Facility",
+    "latitude": 47.125,
+    "longitude": 10.842,
+    "capacity_mw": 90.0,
+    "head_m": 215.0,
+    "design_flow_m3s": 46.0,
+    "catchment_area_km2": 1100.0,
+    "preset": "glacial_melt"
+  },
+  {
+    "id": "urubamba_cascade",
+    "name": "Urubamba Mountain Cascade",
+    "latitude": -13.163,
+    "longitude": -72.545,
+    "capacity_mw": 110.0,
+    "head_m": 350.0,
+    "design_flow_m3s": 35.0,
+    "catchment_area_km2": 1280.0,
+    "preset": "monsoon"
+  },
+  {
+    "id": "cauvery_rapid",
+    "name": "Cauvery Rapid Hydro Plant",
+    "latitude": 12.085,
+    "longitude": 77.452,
+    "capacity_mw": 38.0,
+    "head_m": 62.0,
+    "design_flow_m3s": 68.0,
+    "catchment_area_km2": 4200.0,
+    "preset": "rain_fed"
+  }
+]
