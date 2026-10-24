@@ -38,3 +38,12 @@
 - [ ] Prominent disclaimer banner present on `/`, `/demo`, `/safety`, `/evidence`, and `/about`.
 - [ ] All metrics labeled as simulated.
 - [ ] Advisory nature of dispatch explicitly declared (no claims of direct SCADA actuation).
+
+---
+
+## 6. Sprint 4 Multi-Tenancy & Security QA Checklist
+- [ ] Unauthenticated guests automatically receive guest_ ID with read-only access.
+- [ ] Free members strictly limited to 1 registered plant (second plant raises 403 QUOTA_EXCEEDED).
+- [ ] Private plants return uniform 404 to unauthorized viewers (BOLA/IDOR protection).
+- [ ] Coarsened coordinates (0.1°) verified on public global fleet maps.
+
