@@ -2,10 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import RevenueOutlookCard from "@/components/RevenueOutlookCard";
-import SoloCustomRadarCard from "@/components/SoloCustomRadarCard";
-import SatelliteFeedBox from "@/components/SatelliteFeedBox";
 import MountainLandscape from "@/components/MountainLandscape";
+import GlobalNav from "@/components/GlobalNav";
+import PowerhouseGrid, { PowerhouseStation } from "@/components/PowerhouseGrid";
+import InspectorPanel from "@/components/InspectorPanel";
+import LiveInspectorTab from "@/components/LiveInspectorTab";
+import SatelliteFeedBox from "@/components/SatelliteFeedBox";
+import UserJourneyModal, { JourneyPhase } from "@/components/UserJourneyModal";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+import GlobalFooter from "@/components/GlobalFooter";
+import RevenueOutlookCard from "@/components/RevenueOutlookCard";
 
 interface TelemetryPoint {
   ts: string;
@@ -52,7 +58,7 @@ interface FleetSite {
   name: string;
   coordinates: { lat: number; lon: number };
   capacity_mw: number;
-  alert_tier?: string;
+  alert_tier?: "NORMAL" | "WATCH" | "WARNING" | "CRITICAL";
   current_silt_ppm?: number;
   current_discharge_m3s?: number;
   preset?: string;
@@ -146,6 +152,10 @@ export default function DemoPage() {
   const [authPassword, setAuthPassword] = useState("");
   const [authFeedback, setAuthFeedback] = useState<{ err?: string; ok?: string }>({});
 
+  // Design System Modals & Drawers
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [journeyPhase, setJourneyPhase] = useState<JourneyPhase | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
 
   const API_BASE = "http://127.0.0.1:8000";
@@ -212,7 +222,7 @@ export default function DemoPage() {
 
   // Compute factual realistic telemetry for any selected Nepal plant
   const calculatePlantBaseline = (plant: NepalPlant): TelemetryPoint => {
-    const baseQ = plant.base_flow_m3s || (plant.design_flow_m3s * 0.55);
+    const baseQ = plant.base_flow_m3s || plant.design_flow_m3s * 0.55;
     const rawSilt = 2.096e-4 * Math.pow(baseQ, 2.432);
     const silt = Math.max(140, Math.min(520, Math.round(rawSilt)));
 
@@ -260,7 +270,6 @@ export default function DemoPage() {
         ws.onmessage = (event) => {
           try {
             const data: TelemetryPoint = JSON.parse(event.data);
-            // CRITICAL FIX: Only update telemetry if stream packet matches currently selected plant
             setSelectedPlantId((currentPlantId) => {
               if (currentPlantId === data.plant_id) {
                 setTelemetry(data);
@@ -475,20 +484,32 @@ export default function DemoPage() {
   const getAlertColor = (tier: string) => {
     switch (tier) {
       case "CRITICAL":
-        return "var(--color-red)";
+        return "var(--color-status-red, #E64C4C)";
       case "WARNING":
-        return "#E07C38";
+        return "var(--color-status-yellow, #E5B83B)";
       case "WATCH":
-        return "var(--color-yellow)";
+        return "#818CF8";
       default:
-        return "var(--color-green)";
+        return "var(--color-status-green, #4CAF82)";
     }
   };
 
-  // Filtered plants by river basin
-  const filteredPlants = plants.filter((p) => {
-    if (basinFilter === "All") return true;
-    return p.river_basin.toLowerCase().includes(basinFilter.toLowerCase());
+  // Transform NepalPlant[] to PowerhouseStation[]
+  const powerhouseStations: PowerhouseStation[] = plants.map((p) => {
+    const site = fleet?.sites.find((s) => s.id === p.id);
+    return {
+      id: p.id,
+      name: p.name,
+      capacity_mw: p.capacity_mw,
+      river_basin: p.river_basin,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      head_m: p.head_m,
+      design_flow_m3s: p.design_flow_m3s,
+      current_discharge_m3s: p.id === selectedPlantId ? telemetry.discharge_m3s : site?.current_discharge_m3s ?? (p.design_flow_m3s * 0.7),
+      current_silt_ppm: p.id === selectedPlantId ? telemetry.silt_ppm : site?.current_silt_ppm ?? 380,
+      alert_tier: p.id === selectedPlantId ? telemetry.alert_tier : site?.alert_tier ?? "NORMAL",
+    };
   });
 
   const renderSVGChart = () => {
@@ -505,816 +526,551 @@ export default function DemoPage() {
     const maxSilt = Math.max(3500, ...history.map((h) => h.silt_ppm));
     const maxQ = Math.max(1000, ...history.map((h) => h.discharge_m3s));
 
-    const pointsSilt = history.map((pt, i) => {
-      const x = (i / (history.length - 1)) * width;
-      const y = height - (pt.silt_ppm / maxSilt) * (height - 20) - 10;
-      return `${x},${y}`;
-    }).join(" ");
+    const pointsSilt = history
+      .map((pt, i) => {
+        const x = (i / (history.length - 1)) * width;
+        const y = height - (pt.silt_ppm / maxSilt) * (height - 20) - 10;
+        return `${x},${y}`;
+      })
+      .join(" ");
 
-    const pointsQ = history.map((pt, i) => {
-      const x = (i / (history.length - 1)) * width;
-      const y = height - (pt.discharge_m3s / maxQ) * (height - 20) - 10;
-      return `${x},${y}`;
-    }).join(" ");
+    const pointsQ = history
+      .map((pt, i) => {
+        const x = (i / (history.length - 1)) * width;
+        const y = height - (pt.discharge_m3s / maxQ) * (height - 20) - 10;
+        return `${x},${y}`;
+      })
+      .join(" ");
 
     const yWarn = height - (1200 / maxSilt) * (height - 20) - 10;
     const yCrit = height - (3000 / maxSilt) * (height - 20) - 10;
 
     return (
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
-        <line x1="0" y1={yWarn} x2={width} y2={yWarn} stroke="#E07C38" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
-        <text x="8" y={yWarn - 4} fill="#E07C38" fontSize="10" fontFamily="var(--font-mono)">1,200 PPM (Warning)</text>
+        {/* Warning Threshold 1,200 PPM */}
+        <line x1="0" y1={yWarn} x2={width} y2={yWarn} stroke="var(--color-status-yellow, #E5B83B)" strokeDasharray="4 4" strokeWidth="1" opacity="0.75" />
+        <text x="8" y={yWarn - 4} fill="var(--color-status-yellow, #E5B83B)" fontSize="10" fontFamily="var(--font-mono)">
+          1,200 PPM (Desander Flush SOP-04)
+        </text>
 
-        <line x1="0" y1={yCrit} x2={width} y2={yCrit} stroke="var(--color-red)" strokeDasharray="4 4" strokeWidth="1" opacity="0.6" />
-        <text x="8" y={yCrit - 4} fill="var(--color-red)" fontSize="10" fontFamily="var(--font-mono)">3,000 PPM (Critical)</text>
+        {/* Critical Threshold 3,000 PPM */}
+        <line x1="0" y1={yCrit} x2={width} y2={yCrit} stroke="var(--color-status-red, #E64C4C)" strokeDasharray="4 4" strokeWidth="1" opacity="0.85" />
+        <text x="8" y={yCrit - 4} fill="var(--color-status-red, #E64C4C)" fontSize="10" fontFamily="var(--font-mono)">
+          3,000 PPM (Emergency Shutoff SOP-09)
+        </text>
 
-        <polyline fill="none" stroke="#50B0D8" strokeWidth="2" points={pointsQ} opacity="0.7" />
-        <polyline fill="none" stroke="var(--color-accent)" strokeWidth="2.5" points={pointsSilt} />
+        {/* River Discharge Curve */}
+        <polyline fill="none" stroke="#6B72B5" strokeWidth="2" points={pointsQ} opacity="0.7" />
+        {/* Silt PPM Curve */}
+        <polyline fill="none" stroke="var(--color-cloud-rim, #D4B94A)" strokeWidth="2.5" points={pointsSilt} />
       </svg>
     );
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "var(--color-bg)",
-        color: "var(--color-text-primary)",
-        fontFamily: "var(--font-ui)",
-        padding: "var(--space-6) var(--space-8)",
-      }}
-    >
-      {/* 1. Header & Navigation Bar */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingBottom: "var(--space-4)",
-          borderBottom: "1px solid var(--color-border)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-          <Link
-            href="/"
-            style={{
-              color: "var(--color-accent)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-sm)",
-              textDecoration: "none",
-              fontWeight: 600,
-            }}
-          >
-            ← HydroMesh
-          </Link>
-          <span style={{ color: "var(--color-text-dim)" }}>|</span>
-          <span style={{ fontWeight: 700, fontSize: "var(--text-lg)", color: "var(--color-highlight)" }}>
-            Nepal Hydropower Mission Control
-          </span>
-          <span
-            style={{
-              background: "var(--color-surface-raised)",
-              color: "var(--color-accent)",
-              fontSize: "11px",
-              padding: "2px 8px",
-              borderRadius: "4px",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            25 Official NEA Stations
-          </span>
-        </div>
+    <div className="hydromesh-viewport-bg">
+      {/* 1. Mountain Landscape Fixed Backdrop Canvas */}
+      <MountainLandscape focusMode={false} />
 
-        {/* Mode Toggle */}
-        <div
-          style={{
-            display: "flex",
-            background: "var(--color-surface)",
-            borderRadius: "6px",
-            border: "1px solid var(--color-border)",
-            padding: "2px",
-          }}
-        >
-          <button
-            onClick={() => setMode("global")}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "4px",
-              border: "none",
-              background: mode === "global" ? "var(--color-surface-raised)" : "transparent",
-              color: mode === "global" ? "var(--color-highlight)" : "var(--color-text-secondary)",
-              fontWeight: mode === "global" ? 600 : 400,
-              cursor: "pointer",
-              fontSize: "var(--text-sm)",
-            }}
-          >
-            🇳🇵 Nepal Grid Fleet (25 Plants)
-          </button>
-          <button
-            onClick={() => setMode("individual")}
-            style={{
-              padding: "6px 14px",
-              borderRadius: "4px",
-              border: "none",
-              background: mode === "individual" ? "var(--color-surface-raised)" : "transparent",
-              color: mode === "individual" ? "var(--color-highlight)" : "var(--color-text-secondary)",
-              fontWeight: mode === "individual" ? 600 : 400,
-              cursor: "pointer",
-              fontSize: "var(--text-sm)",
-            }}
-          >
-            🏔️ Selected Dam Sandbox
-          </button>
-        </div>
-
-        {/* Connection & Auth */}
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              background: wsConnected ? "var(--color-green-bg)" : "var(--color-red-bg)",
-              border: `1px solid ${wsConnected ? "var(--color-green)" : "var(--color-red)"}`,
-              padding: "4px 10px",
-              borderRadius: "20px",
-              fontSize: "var(--text-xs)",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: wsConnected ? "var(--color-green)" : "var(--color-red)",
-                display: "inline-block",
-              }}
-            />
-            {wsConnected ? "LIVE 2.0s" : "CONNECTING..."}
-          </div>
-
-          <button
-            onClick={() => setAuthOpen(true)}
-            style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "6px",
-              padding: "6px 12px",
-              color: "var(--color-text-primary)",
-              fontSize: "var(--text-xs)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <span>👤</span>
-            <span>{user?.email || (user?.guest_id ? `${user.guest_id.slice(0, 12)}...` : "Guest")}</span>
-            <span style={{ color: "var(--color-accent)", fontSize: "10px" }}>
-              [{user?.role === "member" ? "Member" : "Guest"}]
-            </span>
-          </button>
-        </div>
-      </header>
-
-      {/* 2. Official NEA Plant Specification & Mountain Satellite Weather Card */}
-      {activePlant && (
-        <section
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            padding: "var(--space-5)",
-            marginBottom: "var(--space-6)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "var(--space-4)" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "4px" }}>
-                <h2 style={{ margin: 0, fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--color-highlight)" }}>
-                  {activePlant.name}
-                </h2>
-                <span
-                  style={{
-                    background: "rgba(212, 168, 48, 0.15)",
-                    color: "var(--color-accent)",
-                    border: "1px solid var(--color-accent)",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                  }}
-                >
-                  {activePlant.river_basin} River Basin
-                </span>
-                <span
-                  style={{
-                    background: "var(--color-surface-raised)",
-                    color: "var(--color-text-secondary)",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    fontSize: "11px",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {activePlant.capacity_mw} MW
-                </span>
-              </div>
-              <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-                Verified Official NEA Asset · Real Himalayan Hydrological Catchment & Quartz Silt Model
-              </p>
-            </div>
-
-            {/* Quick Switcher Dropdown */}
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              <label style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>Select Real Plant:</label>
-              <select
-                value={selectedPlantId}
-                onChange={(e) => {
-                  const p = plants.find((x) => x.id === e.target.value);
-                  if (p) selectPlant(p);
-                }}
-                style={{
-                  background: "var(--color-bg)",
-                  border: "1px solid var(--color-border)",
-                  color: "var(--color-text-primary)",
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "var(--text-xs)",
-                  fontFamily: "var(--font-mono)",
-                  cursor: "pointer",
-                }}
-              >
-                {plants.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.capacity_mw} MW) - {p.river_basin}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* 5 Technical Fact Columns */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "var(--space-3)",
-              marginTop: "var(--space-4)",
-              paddingTop: "var(--space-4)",
-              borderTop: "1px solid var(--color-border)",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Real GPS Coordinates</div>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                {activePlant.latitude.toFixed(3)}°N, {activePlant.longitude.toFixed(3)}°E
-              </div>
-              <a
-                href={`https://www.openstreetmap.org/?mlat=${activePlant.latitude}&mlon=${activePlant.longitude}#map=14/${activePlant.latitude}/${activePlant.longitude}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ fontSize: "10px", color: "var(--color-accent)", textDecoration: "none" }}
-              >
-                View on Map ↗
-              </a>
-            </div>
-
-            <div>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Hydraulic Head</div>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                {activePlant.head_m} m
-              </div>
-              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Penstock Pressure Elevation</div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Design Flow (Q)</div>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "#50B0D8", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                {activePlant.design_flow_m3s} m³/s
-              </div>
-              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Maximum Intake Rating</div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", textTransform: "uppercase" }}>Catchment Basin</div>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                {activePlant.catchment_area_km2.toLocaleString()} km²
-              </div>
-              <div style={{ fontSize: "10px", color: "var(--color-text-dim)" }}>Mountain Runoff Area</div>
-            </div>
-
-            {/* Live Open-Meteo Weather */}
-            <div style={{ background: "var(--color-surface-raised)", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--color-border)" }}>
-              <div style={{ fontSize: "10px", color: "var(--color-accent)", textTransform: "uppercase", fontWeight: 700 }}>
-                Live Satellite Weather (Open-Meteo)
-              </div>
-              <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--color-highlight)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>
-                {weatherLoading ? "Checking sky..." : `${liveWeather?.precipitation_mm_h.toFixed(1) || "0.0"} mm/h Rain`}
-              </div>
-              <div style={{ fontSize: "10px", color: "var(--color-text-secondary)" }}>
-                {liveWeather ? `${liveWeather.temperature_c.toFixed(1)}°C | ${liveWeather.cloud_cover_pct.toFixed(0)}% Clouds` : "Live mountain feed"}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 3. Active Alert Banner */}
-      <section
-        style={{
-          background:
-            telemetry.alert_tier === "CRITICAL"
-              ? "var(--color-red-bg)"
-              : telemetry.alert_tier === "WARNING"
-              ? "rgba(224, 124, 56, 0.15)"
-              : telemetry.alert_tier === "WATCH"
-              ? "var(--color-yellow-bg)"
-              : "var(--color-green-bg)",
-          border: `1px solid ${getAlertColor(telemetry.alert_tier)}`,
-          borderRadius: "8px",
-          padding: "var(--space-4) var(--space-6)",
-          marginBottom: "var(--space-6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-          <span style={{ fontSize: "24px" }}>
-            {telemetry.alert_tier === "CRITICAL" ? "🚨" : telemetry.alert_tier === "WARNING" ? "⚠️" : telemetry.alert_tier === "WATCH" ? "🟡" : "🟢"}
-          </span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: "var(--text-base)", color: getAlertColor(telemetry.alert_tier) }}>
-              ALERT LEVEL: {telemetry.alert_tier} ({telemetry.silt_ppm.toFixed(1)} PPM Sediment)
-            </div>
-            <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              {telemetry.alert_tier === "CRITICAL"
-                ? `Critical Quartz Silt Surge at ${activePlant?.name || "Upper Tamakoshi"}. Exceeds 3,000 PPM blade abrasion threshold.`
-                : telemetry.alert_tier === "WARNING"
-                ? `Sediment surge detected. Desander flushing advisory formulated. Safety kernel R1-R11 checks active.`
-                : telemetry.alert_tier === "WATCH"
-                ? "River silt rising above baseline. Monitoring glacier melt and precipitation."
-                : `Turbines safe. Baseline desander flushing active at ${activePlant?.name || "dam"}. Silt <800 PPM.`}
-            </div>
-          </div>
-        </div>
-
-        {(telemetry.alert_tier === "WARNING" || telemetry.alert_tier === "CRITICAL") && (
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--text-lg)",
-                fontWeight: 700,
-                color: countdown < 180 ? "var(--color-red)" : "var(--color-accent)",
-                background: "var(--color-surface)",
-                padding: "6px 14px",
-                borderRadius: "6px",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              ⏱️ {formatTime(countdown)}
-            </div>
-            <button
-              onClick={() => sendOverride("acknowledge")}
-              disabled={ackIncident}
-              style={{
-                background: ackIncident ? "var(--color-green)" : "var(--color-accent)",
-                color: "#1A1010",
-                fontWeight: 700,
-                border: "none",
-                borderRadius: "6px",
-                padding: "8px 16px",
-                cursor: ackIncident ? "default" : "pointer",
-                fontSize: "var(--text-xs)",
-              }}
-            >
-              {ackIncident ? "✓ Incident Acknowledged" : "Acknowledge Incident"}
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* 4. Live Physical Metrics Dials */}
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "var(--space-4)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
-          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Himalayan Quartz Silt
-          </div>
-          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: getAlertColor(telemetry.alert_tier), fontFamily: "var(--font-mono)" }}>
-            {telemetry.silt_ppm.toFixed(1)} <span style={{ fontSize: "var(--text-xs)" }}>PPM</span>
-          </div>
-          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Formula: Silt = 2.096e-4 × Q^2.432
-          </div>
-        </div>
-
-        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
-          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            River Discharge (Q)
-          </div>
-          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: "#50B0D8", fontFamily: "var(--font-mono)" }}>
-            {telemetry.discharge_m3s.toFixed(1)} <span style={{ fontSize: "var(--text-sm)" }}>m³/s</span>
-          </div>
-          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Design Flow: {activePlant?.design_flow_m3s || 66.0} m³/s
-          </div>
-        </div>
-
-        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
-          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Turbine Blade Sand Abrasion
-          </div>
-          <div style={{ fontSize: "var(--text-3xl)", fontWeight: 700, color: "var(--color-highlight)", fontFamily: "var(--font-mono)" }}>
-            {telemetry.runner_wear_pct.toFixed(3)}%
-          </div>
-          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            IEC 62364 Hydro-Abrasive Wear Standard
-          </div>
-        </div>
-
-        <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "var(--space-4)" }}>
-          <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-xs)", textTransform: "uppercase", marginBottom: "4px" }}>
-            Safety Kernel Verdict
-          </div>
-          <div
-            style={{
-              fontSize: "var(--text-lg)",
-              fontWeight: 700,
-              color: telemetry.safety_status === "approved" ? "var(--color-green)" : telemetry.safety_status === "rejected" ? "var(--color-red)" : "var(--color-yellow)",
-              fontFamily: "var(--font-mono)",
-              marginTop: "4px",
-            }}
-          >
-            {telemetry.safety_status.toUpperCase()}
-          </div>
-          <div style={{ fontSize: "11px", color: "var(--color-text-dim)", marginTop: "4px" }}>
-            Deterministic Rules R1–R11 Enforced
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Live Telemetry Trend Chart */}
-      <section
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "8px",
-          padding: "var(--space-5)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-              Live Telemetry Stream ({activePlant?.name || "Upper Tamakoshi"})
-            </h3>
-            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              Continuous real-time frames streamed over WebSocket (2.0s updates)
-            </span>
-          </div>
-          <div style={{ display: "flex", gap: "var(--space-4)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)" }}>
-            <span style={{ color: "var(--color-accent)" }}>● Silt (PPM)</span>
-            <span style={{ color: "#50B0D8" }}>● River Flow (m³/s)</span>
-          </div>
-        </div>
-        {renderSVGChart()}
-      </section>
-
-      {/* 6. Physical Scenario Testbench & Operator Controls */}
-      <section
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "8px",
-          padding: "var(--space-5)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-3)" }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-              ⚡ Real Himalayan Hydrology Scenario Testbench
-            </h3>
-            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              Simulate actual Himalayan extreme events (cloudbursts, glacial surges, sensor faults) on {activePlant?.name}.
-            </span>
-          </div>
-          <button
-            onClick={triggerAIEvaluation}
-            disabled={evaluatingAI}
-            style={{
-              background: "var(--color-surface-raised)",
-              color: "var(--color-accent)",
-              border: "1px solid var(--color-accent)",
-              borderRadius: "6px",
-              padding: "6px 14px",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {evaluatingAI ? "Evaluating 5 Agents..." : `🤖 Run AI Pipeline on ${activePlant?.name || "Plant"}`}
-          </button>
-        </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-          <button
-            onClick={() => injectScenario("monsoon_surge", 1.5)}
-            style={{
-              background: "rgba(224, 124, 56, 0.15)",
-              border: "1px solid #E07C38",
-              color: "#E07C38",
-              borderRadius: "6px",
-              padding: "8px 14px",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            🌊 Monsoon Silt Surge (1.5x)
-          </button>
-
-          <button
-            onClick={() => injectScenario("monsoon_surge", 2.2)}
-            style={{
-              background: "var(--color-red-bg)",
-              border: "1px solid var(--color-red)",
-              color: "var(--color-red)",
-              borderRadius: "6px",
-              padding: "8px 14px",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            ⚡ Cloudburst / Flash Flood (2.2x)
-          </button>
-
-          <button
-            onClick={() => injectScenario("sensor_drift", 1.0)}
-            style={{
-              background: "var(--color-yellow-bg)",
-              border: "1px solid var(--color-yellow)",
-              color: "var(--color-yellow)",
-              borderRadius: "6px",
-              padding: "8px 14px",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            🌫️ Sensor Drift Glitch (Fail-Closed Test)
-          </button>
-
-          <button
-            onClick={() => injectScenario("clear", 1.0)}
-            style={{
-              background: "var(--color-green-bg)",
-              border: "1px solid var(--color-green)",
-              color: "var(--color-green)",
-              borderRadius: "6px",
-              padding: "8px 14px",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            ☀️ Clear Mountain Baseflow
-          </button>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-3)",
-            paddingTop: "var(--space-3)",
-            borderTop: "1px solid var(--color-border)",
-          }}
-        >
-          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", fontWeight: 600 }}>
-            Control Room Action:
-          </span>
-          <button
-            onClick={() => sendOverride("approve")}
-            style={{
-              background: "var(--color-green-bg)",
-              border: "1px solid var(--color-green)",
-              color: "var(--color-green)",
-              borderRadius: "4px",
-              padding: "4px 10px",
-              fontSize: "11px",
-              cursor: "pointer",
-            }}
-          >
-            Approve Advisory Action
-          </button>
-          <button
-            onClick={() => sendOverride("reject")}
-            style={{
-              background: "var(--color-red-bg)",
-              border: "1px solid var(--color-red)",
-              color: "var(--color-red)",
-              borderRadius: "4px",
-              padding: "4px 10px",
-              fontSize: "11px",
-              cursor: "pointer",
-            }}
-          >
-            Reject Proposal
-          </button>
-        </div>
-
-        {(scenarioStatus || overrideMsg) && (
-          <div style={{ marginTop: "var(--space-3)", fontSize: "var(--text-xs)", fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}>
-            {scenarioStatus && <div>ℹ️ {scenarioStatus}</div>}
-            {overrideMsg && <div>🔒 {overrideMsg}</div>}
-          </div>
-        )}
-      </section>
-
-      {/* 7. Multi-Agent AI Pipeline Inspection */}
-      <section
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "8px",
-          padding: "var(--space-5)",
-          marginBottom: "var(--space-6)",
-        }}
-      >
-        <div style={{ marginBottom: "var(--space-4)" }}>
-          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🧠 Multi-Agent AI Pipeline Evaluation ({activePlant?.name || "Upper Tamakoshi"})
-          </h3>
-          <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-            5 autonomous agents collaborate to analyze satellite weather, query SHA-256 verified SOPs, and produce Grade-1 Plain English advisories.
-          </span>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-4)" }}>
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>1. Triage Agent</span>
-              <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--color-text-dim)" }}>
-                Conf: {latestEval?.anomaly?.confidence ? `${(latestEval.anomaly.confidence * 100).toFixed(0)}%` : "98%"}
-              </span>
-            </div>
-            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-              {latestEval?.anomaly?.description || `Classified river telemetry as ${telemetry.alert_tier}. Silt rating curve indicates quartz hazard.`}
-            </p>
-          </div>
-
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>2. SOP RAG Memory</span>
-              <span style={{ fontSize: "11px", color: "var(--color-green)", fontFamily: "var(--font-mono)" }}>SHA-256 Verified ✓</span>
-            </div>
-            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-              <strong>{latestEval?.sop?.title || "SOP-04: High Sediment Desander Flushing"}</strong>
-              <br />
-              {latestEval?.sop?.procedure || "Modulate intake gate to reduce abrasive sediment while keeping baseline desander flush open."}
-            </p>
-          </div>
-
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-accent)" }}>3. Dispatch Agent</span>
-              <span style={{ fontSize: "11px", color: "var(--color-accent)", fontFamily: "var(--font-mono)" }}>advisory=True</span>
-            </div>
-            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
-              {telemetry.active_decision !== "None" ? telemetry.active_decision : `Advisory: Modulate ${activePlant?.name || "dam"} intake gate flow target to 14.4 m³/s`}
-            </p>
-          </div>
-
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "6px", padding: "var(--space-4)", border: "1px solid var(--color-border)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--color-highlight)" }}>4. Explain Agent (Plain English)</span>
-              <span style={{ fontSize: "11px", color: "var(--color-text-dim)" }}>Grade 1</span>
-            </div>
-            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--color-text-primary)", lineHeight: 1.5 }}>
-              {latestEval?.explanation?.plain_english ||
-                `"The river entering ${activePlant?.name || "the plant"} is carrying sharp mountain quartz sand. We are slowing down intake flow so sand settles quietly in the desander basin before touching the spinning turbine blades."`}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 7.5 Energy Revenue Outlook Agent (Sprint 5) */}
-      <RevenueOutlookCard
-        plantId={selectedPlantId}
-        plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
-        capacityMw={activePlant?.capacity_mw || 456}
-        apiBase={API_BASE}
+      {/* 2. Top Global Navigation Bar */}
+      <GlobalNav
+        mode={mode}
+        onModeChange={setMode}
+        totalSites={plants.length || 20}
+        activeCriticalCount={fleet?.active_critical ?? (telemetry.alert_tier === "CRITICAL" ? 1 : 0)}
+        activeWarningCount={fleet?.active_warnings ?? (telemetry.alert_tier === "WARNING" ? 1 : 0)}
+        userEmail={user?.email}
+        userRole={user?.role}
+        onOpenAuth={() => setAuthOpen(true)}
+        onOpenInspector={() => setInspectorOpen(true)}
+        onReplayIntro={() => setJourneyPhase("intro")}
       />
 
-      {/* 7.8 Solo Operator GPS Radar & Real-Time Extraction */}
-      <SoloCustomRadarCard apiBase={API_BASE} />
-
-      {/* 8. 25 Official Nepal Hydropower Stations Grid */}
-      <section
+      {/* 3. Main Dashboard Workspace Canvas */}
+      <main
         style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "8px",
-          padding: "var(--space-5)",
+          position: "relative",
+          zIndex: 10,
+          maxWidth: "1520px",
+          margin: "0 auto",
+          padding: "20px 24px 60px 24px",
+          fontFamily: "var(--font-ui, sans-serif)",
+          color: "var(--color-text-primary, #F4F6FC)",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-3)", marginBottom: "var(--space-4)" }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
-              🇳🇵 All 25 Real Nepal Hydropower Stations (Official NEA Registry)
-            </h3>
-            <span style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)" }}>
-              Official coordinates, capacities, and river basins across Nepal. Click any station to focus live telemetry.
+        {/* Quick Simulation & Basin Navigation Strip */}
+        <section
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "14px",
+            background: "var(--color-surface, #1E2240)",
+            border: "1px solid var(--color-border-default, #3A436D)",
+            borderRadius: "8px",
+            padding: "12px 18px",
+            marginBottom: "24px",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          {/* River Basin Filter Tabs */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)", fontWeight: 600 }}>
+              River Basin:
             </span>
-          </div>
-
-          {/* Basin Filters */}
-          <div style={{ display: "flex", gap: "var(--space-2)" }}>
             {["All", "Koshi", "Gandaki", "Karnali", "Bagmati"].map((basin) => (
               <button
                 key={basin}
                 onClick={() => setBasinFilter(basin)}
                 style={{
-                  background: basinFilter === basin ? "var(--color-accent)" : "var(--color-surface-raised)",
-                  color: basinFilter === basin ? "#1A1010" : "var(--color-text-secondary)",
-                  border: "1px solid var(--color-border)",
+                  background: basinFilter === basin ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-surface-sunken, #15172C)",
+                  color: basinFilter === basin ? "#1A1010" : "var(--color-text-secondary, #A6B0CF)",
+                  border: "1px solid var(--color-border-subtle, #2E3557)",
                   borderRadius: "4px",
                   padding: "4px 10px",
                   fontSize: "11px",
-                  fontWeight: basinFilter === basin ? 700 : 400,
+                  fontWeight: basinFilter === basin ? 700 : 500,
                   cursor: "pointer",
+                  transition: "all 150ms ease",
                 }}
               >
                 {basin}
               </button>
             ))}
           </div>
-        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-3)" }}>
-          {filteredPlants.map((plant) => {
-            const isSelected = plant.id === selectedPlantId;
-            const fleetSite = fleet?.sites.find((s) => s.id === plant.id);
-            const alertTier = fleetSite?.alert_tier || "NORMAL";
+          {/* Quick Simulation Injectors & Math Proofs Button */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            {/* Live Hydrology Math Proofs Modal */}
+            <LiveInspectorTab
+              plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+              lat={activePlant?.latitude || 27.848}
+              lon={activePlant?.longitude || 86.136}
+              headM={activePlant?.head_m || 822}
+              baseFlowM3s={activePlant?.base_flow_m3s || 35.0}
+              rainfallMmH={liveWeather?.precipitation_mm_h || 12.4}
+              catchmentAreaKm2={activePlant?.catchment_area_km2 || 1745}
+              dischargeM3s={telemetry.discharge_m3s}
+              siltPpm={telemetry.silt_ppm}
+            />
 
-            return (
-              <div
-                key={plant.id}
-                onClick={() => selectPlant(plant)}
+            {/* Twin Scenario Triggers */}
+            <button
+              onClick={() => injectScenario("normal", 1.0)}
+              style={{
+                background: "rgba(76, 175, 130, 0.12)",
+                border: "1px solid rgba(76, 175, 130, 0.35)",
+                color: "#4CAF82",
+                borderRadius: "4px",
+                padding: "6px 10px",
+                fontSize: "11px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ✓ Normal Baseflow
+            </button>
+
+            <button
+              onClick={() => injectScenario("monsoon_surge", 1.5)}
+              style={{
+                background: "rgba(229, 184, 59, 0.12)",
+                border: "1px solid rgba(229, 184, 59, 0.35)",
+                color: "var(--color-cloud-rim, #D4B94A)",
+                borderRadius: "4px",
+                padding: "6px 10px",
+                fontSize: "11px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ⚡ Monsoon Pulse (1.5x)
+            </button>
+
+            <button
+              onClick={() => injectScenario("inflow_surge", 2.5)}
+              style={{
+                background: "rgba(230, 76, 76, 0.14)",
+                border: "1px solid rgba(230, 76, 76, 0.4)",
+                color: "var(--color-status-red, #E64C4C)",
+                borderRadius: "4px",
+                padding: "6px 10px",
+                fontSize: "11px",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              🌊 Flash Flood (2.5x)
+            </button>
+
+            {/* Run 5 AI Agents */}
+            <button
+              onClick={triggerAIEvaluation}
+              disabled={evaluatingAI}
+              style={{
+                background: "var(--color-cloud-rim, #D4B94A)",
+                color: "#1A1010",
+                border: "none",
+                borderRadius: "4px",
+                padding: "6px 14px",
+                fontSize: "11px",
+                fontWeight: 800,
+                cursor: evaluatingAI ? "not-allowed" : "pointer",
+              }}
+            >
+              {evaluatingAI ? "Evaluating 5 Agents..." : "🧠 Run AI Pipeline"}
+            </button>
+          </div>
+        </section>
+
+        {/* 4. The 20-Powerhouse Himalayan Grid (Section 9.3) */}
+        <PowerhouseGrid
+          plants={powerhouseStations}
+          selectedPlantId={selectedPlantId}
+          onSelectPlant={(plant) => {
+            const found = plants.find((p) => p.id === plant.id);
+            if (found) selectPlant(found);
+          }}
+          basinFilter={basinFilter}
+        />
+
+        {/* 5. Mission Control: Active Plant Deep-Dive Cockpit */}
+        <section
+          style={{
+            background: "var(--color-surface, #1E2240)",
+            border: "1px solid var(--color-border-bright, #546096)",
+            borderRadius: "8px",
+            padding: "20px",
+            marginBottom: "24px",
+            boxShadow: "var(--shadow-raised)",
+          }}
+        >
+          {/* Active Plant Headline Bar */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid var(--color-border-default, #3A436D)",
+              marginBottom: "18px",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "20px" }}>🏔️</span>
+                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
+                  {activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+                </h2>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontFamily: "var(--font-mono, monospace)",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    background: getAlertColor(telemetry.alert_tier),
+                    color: telemetry.alert_tier === "NORMAL" ? "#1A1010" : "#FFFFFF",
+                    fontWeight: 800,
+                  }}
+                >
+                  [{telemetry.alert_tier}]
+                </span>
+              </div>
+              <div style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)", marginTop: "4px" }}>
+                Basin: {activePlant?.river_basin} · GPS: {activePlant?.latitude}°N, {activePlant?.longitude}°E · Rated Head: {activePlant?.head_m}m · Installed: {activePlant?.capacity_mw} MW
+              </div>
+            </div>
+
+            {/* WebSocket Stream Badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
                 style={{
-                  background: isSelected ? "var(--color-surface-raised)" : "var(--color-bg)",
-                  border: `1px solid ${isSelected ? "var(--color-accent)" : "var(--color-border)"}`,
-                  borderRadius: "6px",
-                  padding: "var(--space-3) var(--space-4)",
-                  cursor: "pointer",
-                  transition: "all 150ms ease",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "#4CAF82" : "var(--color-status-red, #E64C4C)",
+                  boxShadow: wsConnected ? "0 0 8px #4CAF82" : "0 0 8px #E64C4C",
+                }}
+              />
+              <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: wsConnected ? "#4CAF82" : "var(--color-status-red, #E64C4C)" }}>
+                {wsConnected ? "RADIO STREAM LIVE (24/7)" : "RECONNECTING..."}
+              </span>
+            </div>
+          </div>
+
+          {/* Real-Time Satellite Weather & SCADA Gauges Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "14px",
+              marginBottom: "18px",
+            }}
+          >
+            {/* 1. River Discharge */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", border: "1px solid var(--color-border-subtle, #2E3557)", borderRadius: "6px", padding: "14px" }}>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", textTransform: "uppercase" }}>River Inflow Q</div>
+              <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--color-waterfall, #FFFFFF)", fontFamily: "var(--font-mono, monospace)", marginTop: "4px" }}>
+                {telemetry.discharge_m3s.toFixed(1)} <span style={{ fontSize: "12px", fontWeight: 400 }}>m³/s</span>
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", marginTop: "2px" }}>
+                Design Flow: {activePlant?.design_flow_m3s} m³/s
+              </div>
+            </div>
+
+            {/* 2. Quartz Silt */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", border: "1px solid var(--color-border-subtle, #2E3557)", borderRadius: "6px", padding: "14px" }}>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", textTransform: "uppercase" }}>Quartz Silt Sieve</div>
+              <div style={{ fontSize: "24px", fontWeight: 700, color: getAlertColor(telemetry.alert_tier), fontFamily: "var(--font-mono, monospace)", marginTop: "4px" }}>
+                {telemetry.silt_ppm.toFixed(0)} <span style={{ fontSize: "12px", fontWeight: 400 }}>PPM</span>
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", marginTop: "2px" }}>
+                Threshold: 1,200 / 3,000 PPM
+              </div>
+            </div>
+
+            {/* 3. Open-Meteo Satellite Precipitation */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", border: "1px solid var(--color-border-subtle, #2E3557)", borderRadius: "6px", padding: "14px" }}>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", textTransform: "uppercase" }}>Satellite Rain Rate</div>
+              <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--color-cloud-rim, #D4B94A)", fontFamily: "var(--font-mono, monospace)", marginTop: "4px" }}>
+                {weatherLoading ? "..." : `${liveWeather?.precipitation_mm_h ?? 12.4}`} <span style={{ fontSize: "12px", fontWeight: 400 }}>mm/h</span>
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", marginTop: "2px" }}>
+                ECMWF 9km Assimilation
+              </div>
+            </div>
+
+            {/* 4. Basin Temperature & Clouds */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", border: "1px solid var(--color-border-subtle, #2E3557)", borderRadius: "6px", padding: "14px" }}>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", textTransform: "uppercase" }}>Catchment Temp & Clouds</div>
+              <div style={{ fontSize: "24px", fontWeight: 700, color: "#60A5FA", fontFamily: "var(--font-mono, monospace)", marginTop: "4px" }}>
+                {liveWeather?.temperature_c ?? 14.2}°C
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", marginTop: "2px" }}>
+                Cloud Cover: {liveWeather?.cloud_cover_pct ?? 78}%
+              </div>
+            </div>
+
+            {/* 5. 10-Minute Alert Window */}
+            <div
+              style={{
+                background: "var(--color-surface-sunken, #15172C)",
+                border: `1px solid ${telemetry.alert_tier !== "NORMAL" ? "var(--color-status-yellow, #E5B83B)" : "var(--color-border-subtle, #2E3557)"}`,
+                borderRadius: "6px",
+                padding: "14px",
+              }}
+            >
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", textTransform: "uppercase" }}>Operator Window</div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: 700,
+                  color: countdown < 120 ? "var(--color-status-red, #E64C4C)" : "var(--color-cloud-rim, #D4B94A)",
+                  fontFamily: "var(--font-mono, monospace)",
+                  marginTop: "4px",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <span style={{ fontWeight: 600, fontSize: "var(--text-xs)", color: isSelected ? "var(--color-accent)" : "var(--color-highlight)" }}>
-                    {plant.name}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      background: alertTier === "CRITICAL" ? "var(--color-red-bg)" : "var(--color-green-bg)",
-                      color: alertTier === "CRITICAL" ? "var(--color-red)" : "var(--color-green)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {alertTier}
-                  </span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)" }}>
-                  <span>{plant.capacity_mw} MW</span>
-                  <span>{plant.river_basin} Basin</span>
-                  <span>{plant.head_m}m Head</span>
-                </div>
-                <div style={{ fontSize: "10px", color: "var(--color-text-dim)", marginTop: "4px", fontFamily: "var(--font-mono)" }}>
-                  📍 {plant.latitude.toFixed(3)}°N, {plant.longitude.toFixed(3)}°E
-                </div>
+                {formatTime(countdown)}
               </div>
-            );
-          })}
-        </div>
-      </section>
+              <div style={{ fontSize: "11px", color: "var(--color-text-dim, #6C7699)", marginTop: "2px" }}>
+                {ackIncident ? "✓ Operator Confirmed" : "Auto-ACK Window Active"}
+              </div>
+            </div>
+          </div>
 
-      {/* 9. Auth Modal */}
+          {/* Temporal Dual-Axis Forecast Chart */}
+          <div
+            style={{
+              background: "var(--color-surface-sunken, #15172C)",
+              border: "1px solid var(--color-border-subtle, #2E3557)",
+              borderRadius: "6px",
+              padding: "16px",
+              marginBottom: "18px",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-primary, #F4F6FC)" }}>
+                📈 Real-Time Rolling Telemetry: Inflow Q (Periwinkle) vs Silt PPM (Gold)
+              </span>
+              <span style={{ fontSize: "10px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)" }}>
+                Window: 30 Ticks
+              </span>
+            </div>
+            {renderSVGChart()}
+          </div>
+
+          {/* Control Room Operator Actions */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+              background: "var(--color-surface-sunken, #15172C)",
+              border: "1px solid var(--color-border-subtle, #2E3557)",
+              borderRadius: "6px",
+              padding: "12px 16px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-primary, #F4F6FC)" }}>
+                Operator Interlock Action:
+              </span>
+              <button
+                onClick={() => sendOverride("approve")}
+                style={{
+                  background: "rgba(76, 175, 130, 0.15)",
+                  border: "1px solid rgba(76, 175, 130, 0.4)",
+                  color: "#4CAF82",
+                  borderRadius: "4px",
+                  padding: "6px 12px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                ✓ Approve Advisory Action
+              </button>
+              <button
+                onClick={() => sendOverride("reject")}
+                style={{
+                  background: "rgba(230, 76, 76, 0.15)",
+                  border: "1px solid rgba(230, 76, 76, 0.4)",
+                  color: "var(--color-status-red, #E64C4C)",
+                  borderRadius: "4px",
+                  padding: "6px 12px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                ✕ Reject Proposal
+              </button>
+            </div>
+
+            {overrideMsg && (
+              <div style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-cloud-rim, #D4B94A)" }}>
+                🔒 {overrideMsg}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 6. Multi-Agent AI Pipeline Evaluation (5 Agents) */}
+        <section
+          style={{
+            background: "var(--color-surface, #1E2240)",
+            border: "1px solid var(--color-border-default, #3A436D)",
+            borderRadius: "8px",
+            padding: "20px",
+            marginBottom: "24px",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
+              🧠 Multi-Agent AI Pipeline Evaluation ({activePlant?.name || "Upper Tamakoshi"})
+            </h3>
+            <span style={{ fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)" }}>
+              5 autonomous agents collaborate to analyze satellite weather, query SHA-256 verified SOPs, and produce Grade-1 Plain English advisories.
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+            {/* 1. Triage */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", borderRadius: "6px", padding: "14px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--color-cloud-rim, #D4B94A)" }}>1. Triage Agent</span>
+                <span style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)" }}>
+                  Conf: {latestEval?.anomaly?.confidence ? `${(latestEval.anomaly.confidence * 100).toFixed(0)}%` : "98%"}
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)", lineHeight: 1.5 }}>
+                {latestEval?.anomaly?.description || `Classified river telemetry as ${telemetry.alert_tier}. Silt rating curve indicates quartz hazard.`}
+              </p>
+            </div>
+
+            {/* 2. SOP RAG */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", borderRadius: "6px", padding: "14px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--color-cloud-rim, #D4B94A)" }}>2. SOP RAG Memory</span>
+                <span style={{ fontSize: "10px", color: "#4CAF82", fontFamily: "var(--font-mono, monospace)" }}>SHA-256 Verified ✓</span>
+              </div>
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)", lineHeight: 1.5 }}>
+                <strong>{latestEval?.sop?.title || "SOP-04: High Sediment Desander Flushing"}</strong>
+                <br />
+                {latestEval?.sop?.procedure || "Modulate intake gate to reduce abrasive sediment while keeping baseline desander flush open."}
+              </p>
+            </div>
+
+            {/* 3. Dispatch */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", borderRadius: "6px", padding: "14px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--color-cloud-rim, #D4B94A)" }}>3. Dispatch Agent</span>
+                <span style={{ fontSize: "11px", color: "#60A5FA", fontFamily: "var(--font-mono, monospace)" }}>advisory=True</span>
+              </div>
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)", lineHeight: 1.5 }}>
+                {telemetry.active_decision !== "None" ? telemetry.active_decision : `Advisory: Modulate ${activePlant?.name || "dam"} intake gate flow target to 14.4 m³/s`}
+              </p>
+            </div>
+
+            {/* 4. Explain */}
+            <div style={{ background: "var(--color-surface-sunken, #15172C)", borderRadius: "6px", padding: "14px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "var(--color-text-amber, #F0C860)" }}>4. Explain Agent (Plain English)</span>
+                <span style={{ fontSize: "10px", color: "var(--color-text-dim, #6C7699)" }}>Grade 1</span>
+              </div>
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-primary, #F4F6FC)", lineHeight: 1.5 }}>
+                {latestEval?.explanation?.plain_english ||
+                  `"The river entering ${activePlant?.name || "the plant"} is carrying sharp mountain quartz sand. We are slowing down intake flow so sand settles quietly in the desander basin before touching the spinning turbine blades."`}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. Operational Economics: Energy Revenue Outlook Agent (Sprint 5) */}
+        <RevenueOutlookCard
+          plantId={selectedPlantId}
+          plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+          capacityMw={activePlant?.capacity_mw || 456}
+          apiBase={API_BASE}
+        />
+      </main>
+
+      {/* 8. Slideout Inspector Drawer */}
+      <InspectorPanel
+        isOpen={inspectorOpen}
+        onClose={() => setInspectorOpen(false)}
+        plantName={activePlant?.name || "Upper Tamakoshi"}
+        telemetry={telemetry}
+        tempC={liveWeather?.temperature_c ?? 14.2}
+        rainfallMmH={liveWeather?.precipitation_mm_h ?? 12.4}
+      />
+
+      {/* 9. Lower-Left Real-Time Satellite Feed Box */}
+      <SatelliteFeedBox
+        stationName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+        lat={activePlant?.latitude || 27.848}
+        lon={activePlant?.longitude || 86.136}
+        elevM={activePlant?.head_m || 822}
+        currentRainMmH={liveWeather?.precipitation_mm_h || 12.4}
+      />
+
+      {/* 10. Floating Cookie Consent Banner */}
+      <CookieConsentBanner />
+
+      {/* 11. 4-Phase Cinematic User Journey Modal */}
+      <UserJourneyModal
+        forceOpenPhase={journeyPhase}
+        onClose={() => setJourneyPhase(null)}
+        onGuestLogin={fetchUser}
+      />
+
+      {/* 12. Auth Modal */}
       {authOpen && (
         <div
           style={{
@@ -1323,7 +1079,7 @@ export default function DemoPage() {
             left: 0,
             width: "100%",
             height: "100%",
-            background: "rgba(10, 14, 25, 0.75)",
+            background: "rgba(10, 14, 25, 0.8)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
@@ -1333,21 +1089,21 @@ export default function DemoPage() {
         >
           <div
             style={{
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "10px",
-              padding: "var(--space-6)",
+              background: "var(--color-surface, #1E2240)",
+              border: "1px solid var(--color-border-bright, #546096)",
+              borderRadius: "8px",
+              padding: "24px",
               width: "380px",
               maxWidth: "90%",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
-              <h3 style={{ margin: 0, fontSize: "var(--text-lg)", fontWeight: 700 }}>
-                {user?.email ? "Operator Profile" : authTab === "login" ? "Sign In" : "Register Free Account"}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
+                {user?.email ? "Operator Profile" : authTab === "login" ? "Operator Sign In" : "Register Member Account"}
               </h3>
               <button
                 onClick={() => setAuthOpen(false)}
-                style={{ background: "transparent", border: "none", color: "var(--color-text-dim)", cursor: "pointer", fontSize: "16px" }}
+                style={{ background: "transparent", border: "none", color: "var(--color-text-dim, #6C7699)", cursor: "pointer", fontSize: "16px" }}
               >
                 ✕
               </button>
@@ -1355,10 +1111,10 @@ export default function DemoPage() {
 
             {user?.email ? (
               <div>
-                <p style={{ fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>
+                <p style={{ fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)", marginBottom: "12px" }}>
                   Signed in as: <strong>{user.email}</strong>
                 </p>
-                <div style={{ fontSize: "var(--text-xs)", background: "var(--color-bg)", padding: "10px", borderRadius: "6px", marginBottom: "var(--space-4)" }}>
+                <div style={{ fontSize: "11px", background: "var(--color-surface-sunken, #15172C)", padding: "10px", borderRadius: "6px", marginBottom: "16px" }}>
                   <div>Role: {user.role}</div>
                   <div>Tier: {user.tier}</div>
                   <div>Quota: Strictly {user.max_plants_allowed} registered plant</div>
@@ -1367,12 +1123,12 @@ export default function DemoPage() {
                   onClick={handleLogout}
                   style={{
                     width: "100%",
-                    background: "var(--color-red-bg)",
-                    border: "1px solid var(--color-red)",
-                    color: "var(--color-red)",
+                    background: "rgba(230, 76, 76, 0.15)",
+                    border: "1px solid var(--color-status-red, #E64C4C)",
+                    color: "var(--color-status-red, #E64C4C)",
                     borderRadius: "6px",
                     padding: "8px",
-                    fontSize: "var(--text-xs)",
+                    fontSize: "12px",
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
@@ -1382,19 +1138,20 @@ export default function DemoPage() {
               </div>
             ) : (
               <form onSubmit={handleAuthSubmit}>
-                <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                   <button
                     type="button"
                     onClick={() => setAuthTab("login")}
                     style={{
                       flex: 1,
                       padding: "6px",
-                      background: authTab === "login" ? "var(--color-surface-raised)" : "transparent",
-                      border: "1px solid var(--color-border)",
-                      color: authTab === "login" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+                      background: authTab === "login" ? "var(--color-surface-raised, #252B4A)" : "transparent",
+                      border: "1px solid var(--color-border-default, #3A436D)",
+                      color: authTab === "login" ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-text-secondary, #A6B0CF)",
                       borderRadius: "4px",
                       cursor: "pointer",
-                      fontSize: "var(--text-xs)",
+                      fontSize: "12px",
+                      fontWeight: 600,
                     }}
                   >
                     Sign In
@@ -1405,21 +1162,22 @@ export default function DemoPage() {
                     style={{
                       flex: 1,
                       padding: "6px",
-                      background: authTab === "register" ? "var(--color-surface-raised)" : "transparent",
-                      border: "1px solid var(--color-border)",
-                      color: authTab === "register" ? "var(--color-highlight)" : "var(--color-text-secondary)",
+                      background: authTab === "register" ? "var(--color-surface-raised, #252B4A)" : "transparent",
+                      border: "1px solid var(--color-border-default, #3A436D)",
+                      color: authTab === "register" ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-text-secondary, #A6B0CF)",
                       borderRadius: "4px",
                       cursor: "pointer",
-                      fontSize: "var(--text-xs)",
+                      fontSize: "12px",
+                      fontWeight: 600,
                     }}
                   >
                     Register
                   </button>
                 </div>
 
-                <div style={{ marginBottom: "var(--space-3)" }}>
-                  <label style={{ display: "block", fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "4px" }}>
-                    Email
+                <div style={{ marginBottom: "12px" }}>
+                  <label style={{ display: "block", fontSize: "11px", color: "var(--color-text-secondary, #A6B0CF)", marginBottom: "4px" }}>
+                    Email Address
                   </label>
                   <input
                     type="email"
@@ -1429,18 +1187,18 @@ export default function DemoPage() {
                     style={{
                       width: "100%",
                       padding: "8px",
-                      borderRadius: "6px",
-                      background: "var(--color-bg)",
-                      border: "1px solid var(--color-border)",
-                      color: "var(--color-text-primary)",
-                      fontSize: "var(--text-xs)",
+                      borderRadius: "4px",
+                      background: "var(--color-surface-sunken, #15172C)",
+                      border: "1px solid var(--color-border-default, #3A436D)",
+                      color: "var(--color-text-primary, #F4F6FC)",
+                      fontSize: "12px",
                       boxSizing: "border-box",
                     }}
                   />
                 </div>
 
-                <div style={{ marginBottom: "var(--space-4)" }}>
-                  <label style={{ display: "block", fontSize: "var(--text-xs)", color: "var(--color-text-secondary)", marginBottom: "4px" }}>
+                <div style={{ marginBottom: "16px" }}>
+                  <label style={{ display: "block", fontSize: "11px", color: "var(--color-text-secondary, #A6B0CF)", marginBottom: "4px" }}>
                     Password (min. 12 characters)
                   </label>
                   <input
@@ -1452,23 +1210,23 @@ export default function DemoPage() {
                     style={{
                       width: "100%",
                       padding: "8px",
-                      borderRadius: "6px",
-                      background: "var(--color-bg)",
-                      border: "1px solid var(--color-border)",
-                      color: "var(--color-text-primary)",
-                      fontSize: "var(--text-xs)",
+                      borderRadius: "4px",
+                      background: "var(--color-surface-sunken, #15172C)",
+                      border: "1px solid var(--color-border-default, #3A436D)",
+                      color: "var(--color-text-primary, #F4F6FC)",
+                      fontSize: "12px",
                       boxSizing: "border-box",
                     }}
                   />
                 </div>
 
                 {authFeedback.err && (
-                  <div style={{ color: "var(--color-red)", fontSize: "11px", marginBottom: "var(--space-3)" }}>
+                  <div style={{ color: "var(--color-status-red, #E64C4C)", fontSize: "11px", marginBottom: "12px" }}>
                     ✕ {authFeedback.err}
                   </div>
                 )}
                 {authFeedback.ok && (
-                  <div style={{ color: "var(--color-green)", fontSize: "11px", marginBottom: "var(--space-3)" }}>
+                  <div style={{ color: "#4CAF82", fontSize: "11px", marginBottom: "12px" }}>
                     ✓ {authFeedback.ok}
                   </div>
                 )}
@@ -1477,13 +1235,13 @@ export default function DemoPage() {
                   type="submit"
                   style={{
                     width: "100%",
-                    background: "var(--color-accent)",
+                    background: "var(--color-cloud-rim, #D4B94A)",
                     border: "none",
-                    borderRadius: "6px",
+                    borderRadius: "4px",
                     padding: "8px",
                     color: "#1A1010",
                     fontWeight: 700,
-                    fontSize: "var(--text-xs)",
+                    fontSize: "12px",
                     cursor: "pointer",
                   }}
                 >
@@ -1495,17 +1253,8 @@ export default function DemoPage() {
         </div>
       )}
 
-      {/* Background Animated Mountain Landscape */}
-      <MountainLandscape focusMode={false} />
-
-      {/* Docked Lower-Left Corner Satellite Telemetry Box */}
-      <SatelliteFeedBox
-        stationName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
-        lat={activePlant?.latitude || 27.8483}
-        lon={activePlant?.longitude || 86.1361}
-        elevM={activePlant?.head_m ? Math.round(activePlant.head_m * 1.8) : 822}
-        currentRainMmH={liveWeather?.precipitation_mm_h || 12.4}
-      />
-    </main>
+      {/* 13. Master 4-Column Global Footer */}
+      <GlobalFooter />
+    </div>
   );
 }

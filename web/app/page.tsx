@@ -1,234 +1,284 @@
 import Link from "next/link";
+import MountainLandscape from "@/components/MountainLandscape";
+import GlobalFooter from "@/components/GlobalFooter";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 
 export default function HomePage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "var(--color-bg)",
-        color: "var(--color-text-primary)",
-        fontFamily: "var(--font-ui)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Nav */}
+    <div className="hydromesh-viewport-bg" style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Mountain Landscape Fixed Backdrop */}
+      <MountainLandscape focusMode={true} />
+
+      {/* Top Navbar */}
       <nav
         style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "var(--space-4) var(--space-8)",
-          borderBottom: "1px solid var(--color-border)",
-          background: "var(--color-surface)",
+          padding: "14px 28px",
+          borderBottom: "1px solid var(--color-border-default, #3A436D)",
+          background: "rgba(30, 34, 64, 0.95)",
+          backdropFilter: "blur(8px)",
         }}
       >
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-lg)",
-            color: "var(--color-accent)",
-            fontWeight: 700,
-            letterSpacing: "0.04em",
-          }}
-        >
-          HydroMesh
-        </span>
-        <div style={{ display: "flex", gap: "var(--space-6)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Illuminated Amber Arch Window */}
+          <div
+            style={{
+              width: "22px",
+              height: "26px",
+              background: "#1A1010",
+              border: "2px solid #7A5C48",
+              borderRadius: "10px 10px 2px 2px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              style={{
+                width: "12px",
+                height: "16px",
+                background: "#F0C860",
+                borderRadius: "6px 6px 1px 1px",
+                boxShadow: "0 0 10px rgba(240, 200, 96, 0.8)",
+              }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: "18px",
+              color: "var(--color-text-primary, #F4F6FC)",
+              fontWeight: 800,
+              letterSpacing: "0.04em",
+            }}
+          >
+            Hydro<span style={{ color: "var(--color-cloud-rim, #D4B94A)" }}>Mesh</span>
+          </span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           {["Demo", "Safety", "Evidence", "About"].map((label) => (
             <Link
               key={label}
               href={`/${label.toLowerCase()}`}
               style={{
-                color: "var(--color-text-secondary)",
+                color: "var(--color-text-secondary, #A6B0CF)",
                 textDecoration: "none",
-                fontSize: "var(--text-sm)",
+                fontSize: "13px",
+                fontWeight: 600,
                 transition: "color 150ms ease",
               }}
             >
               {label}
             </Link>
           ))}
+          <Link
+            href="/demo"
+            style={{
+              background: "var(--color-cloud-rim, #D4B94A)",
+              color: "#1A1010",
+              padding: "6px 16px",
+              borderRadius: "4px",
+              textDecoration: "none",
+              fontWeight: 700,
+              fontSize: "12px",
+            }}
+          >
+            Launch SCADA Cockpit →
+          </Link>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section
         style={{
+          position: "relative",
+          zIndex: 10,
           flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "var(--space-20) var(--space-8)",
+          padding: "60px 24px 80px 24px",
           textAlign: "center",
-          gap: "var(--space-6)",
+          gap: "20px",
         }}
       >
         <span
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--text-xs)",
-            color: "var(--color-cloud-rim)",
-            letterSpacing: "0.12em",
+            fontFamily: "var(--font-mono, monospace)",
+            fontSize: "11px",
+            color: "var(--color-cloud-rim, #D4B94A)",
+            letterSpacing: "0.15em",
             textTransform: "uppercase",
-            border: "1px solid var(--color-cloud-rim)",
-            padding: "var(--space-1) var(--space-3)",
-            borderRadius: "4px",
+            border: "1px solid var(--color-cloud-rim, #D4B94A)",
+            padding: "4px 12px",
+            borderRadius: "20px",
+            background: "rgba(212, 185, 74, 0.12)",
           }}
         >
-          Digital Twin · Advisory Only · Simulated Results
+          Himalayan Hydropower Sentinel · Advisory Decision Support System
         </span>
 
         <h1
           style={{
-            fontSize: "var(--text-hero)",
-            fontWeight: 700,
-            color: "var(--color-highlight)",
+            fontSize: "clamp(32px, 6vw, 64px)",
+            fontWeight: 800,
+            color: "var(--color-highlight, #FFFFFF)",
             lineHeight: 1.15,
-            maxWidth: "800px",
+            maxWidth: "920px",
             margin: 0,
+            letterSpacing: "-0.02em",
           }}
         >
           Himalayan Hydropower
           <br />
-          <span style={{ color: "var(--color-accent)" }}>
+          <span style={{ color: "var(--color-cloud-rim, #D4B94A)" }}>
             Smart River Guardian
           </span>
         </h1>
 
         <p
           style={{
-            fontSize: "var(--text-lg)",
-            color: "var(--color-text-secondary)",
-            maxWidth: "600px",
+            fontSize: "16px",
+            color: "var(--color-text-secondary, #A6B0CF)",
+            maxWidth: "680px",
             lineHeight: 1.7,
             margin: 0,
           }}
         >
-          We watch mountain rivers so floating sand doesn’t scratch the spinning water wheels (turbines). 
-          We predict muddy floods 12–24 hours ahead, keeping our clean green power running safely!
+          Coupling deep-learning hydrology forecasting with operational economics. We predict quartz sediment influxes 12–24 hours ahead from satellite weather arrays, protecting turbine runners and maximizing clean generation revenue.
         </p>
 
-        <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)" }}>
+        <div style={{ display: "flex", gap: "16px", marginTop: "12px", flexWrap: "wrap", justifyContent: "center" }}>
           <Link
             href="/demo"
             style={{
-              background: "var(--color-accent)",
-              color: "#0A0A0F",
-              padding: "var(--space-3) var(--space-8)",
+              background: "var(--color-cloud-rim, #D4B94A)",
+              color: "#1A1010",
+              padding: "12px 28px",
               borderRadius: "4px",
               textDecoration: "none",
-              fontWeight: 600,
-              fontSize: "var(--text-base)",
-              transition: "background 150ms ease",
+              fontWeight: 800,
+              fontSize: "14px",
+              boxShadow: "0 0 20px rgba(212, 185, 74, 0.4)",
             }}
           >
-            See Live Demo
+            Launch 20-House Fleet SCADA →
           </Link>
           <Link
             href="/safety"
             style={{
-              border: "1px solid var(--color-border)",
-              color: "var(--color-text-secondary)",
-              padding: "var(--space-3) var(--space-8)",
+              border: "1px solid var(--color-border-bright, #546096)",
+              background: "var(--color-surface, #1E2240)",
+              color: "var(--color-text-primary, #F4F6FC)",
+              padding: "12px 24px",
               borderRadius: "4px",
               textDecoration: "none",
-              fontSize: "var(--text-base)",
+              fontSize: "14px",
+              fontWeight: 600,
             }}
           >
-            Safety Rules R1–R11
+            Safety Kernel Rules R1–R11
           </Link>
         </div>
 
-        {/* Alert status preview strip */}
+        {/* Alert Status Preview Strip */}
         <div
           style={{
             display: "flex",
-            gap: "var(--space-4)",
-            marginTop: "var(--space-12)",
+            gap: "16px",
+            marginTop: "32px",
             flexWrap: "wrap",
             justifyContent: "center",
           }}
         >
           {[
-            { label: "🟢 GREEN: Clean River", sub: "Under 1,200 PPM · Water is safe to spin wheels!", bg: "var(--color-green-bg)", border: "var(--color-green)" },
-            { label: "🟡 YELLOW: Muddy River", sub: "1,200 – 3,000 PPM · Sand traps filling up fast!", bg: "var(--color-yellow-bg)", border: "var(--color-yellow)" },
-            { label: "🔴 RED: Sand Flood", sub: "Over 3,000 PPM · Close gates to save the turbines!", bg: "var(--color-red-bg)", border: "var(--color-red)" },
+            { label: "🟢 NORMAL: Safe Baseload", sub: "< 1,200 PPM Silt · Clean mountain inflow", bg: "rgba(76, 175, 130, 0.12)", border: "#4CAF82" },
+            { label: "🟡 WATCH: Desander Flush", sub: "1,200 – 3,000 PPM · SOP-04 Sand exclusion active", bg: "rgba(229, 184, 59, 0.12)", border: "#E5B83B" },
+            { label: "🔴 CRITICAL: Gate Throttle", sub: "> 3,000 PPM · Emergency shutoff to save runners", bg: "rgba(230, 76, 76, 0.14)", border: "#E64C4C" },
           ].map(({ label, sub, bg, border }) => (
             <div
               key={label}
               style={{
                 background: bg,
                 borderLeft: `4px solid ${border}`,
-                borderRadius: "0 8px 8px 0",
-                padding: "var(--space-4) var(--space-6)",
-                minWidth: "220px",
+                borderRadius: "0 6px 6px 0",
+                padding: "14px 20px",
+                minWidth: "250px",
+                textAlign: "left",
+                border: "1px solid var(--color-border-subtle, #2E3557)",
+                borderLeftColor: border,
               }}
             >
-              <div style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "var(--text-base)" }}>
+              <div style={{ fontFamily: "var(--font-mono, monospace)", fontWeight: 700, fontSize: "13px", color: "var(--color-text-primary, #F4F6FC)" }}>
                 {label}
               </div>
-              <div style={{ color: "var(--color-text-secondary)", fontSize: "var(--text-sm)", marginTop: "var(--space-1)" }}>
+              <div style={{ color: "var(--color-text-secondary, #A6B0CF)", fontSize: "11px", marginTop: "4px" }}>
                 {sub}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Telemetry data row */}
+        {/* Telemetry Preview Grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "var(--space-4)",
-            marginTop: "var(--space-8)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "14px",
+            marginTop: "24px",
             width: "100%",
-            maxWidth: "760px",
+            maxWidth: "880px",
           }}
         >
           {[
-            { label: "WATER FLOW (How fast the river rushes)", value: "342.8", unit: "m³/s" },
-            { label: "RIVER SAND (Tiny sharp rocks in water)", value: "1,847", unit: "ppm" },
-            { label: "WHEEL WEAR (Scratch damage on metal)", value: "0.42", unit: "mm" },
+            { label: "RATED FLEET CAPACITY", value: "1,248", unit: "MW" },
+            { label: "SATELLITE INGESTION", value: "9.0", unit: "km (ECMWF)" },
+            { label: "IEC 62364 RUNNER SAVINGS", value: "NPR 15.3", unit: "Lakhs/day" },
           ].map(({ label, value, unit }) => (
             <div
               key={label}
               style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "8px",
-                padding: "var(--space-6)",
+                background: "var(--color-surface, #1E2240)",
+                border: "1px solid var(--color-border-default, #3A436D)",
+                borderRadius: "6px",
+                padding: "16px",
                 textAlign: "left",
               }}
             >
               <div
                 style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-xs)",
-                  color: "var(--color-text-dim)",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: "10px",
+                  color: "var(--color-text-dim, #6C7699)",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  marginBottom: "var(--space-2)",
+                  marginBottom: "6px",
                 }}
               >
                 {label}
               </div>
               <div
                 style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "var(--text-2xl)",
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: "22px",
                   fontWeight: 700,
-                  color: "var(--color-highlight)",
+                  color: "var(--color-highlight, #FFFFFF)",
                 }}
               >
                 {value}
                 <span
                   style={{
-                    fontSize: "var(--text-sm)",
-                    color: "var(--color-text-secondary)",
-                    marginLeft: "var(--space-1)",
-                    fontWeight: 400,
+                    fontSize: "12px",
+                    color: "var(--color-cloud-rim, #D4B94A)",
+                    marginLeft: "6px",
+                    fontWeight: 600,
                   }}
                 >
                   {unit}
@@ -239,20 +289,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer
-        style={{
-          padding: "var(--space-6) var(--space-8)",
-          borderTop: "1px solid var(--color-border)",
-          textAlign: "center",
-          color: "var(--color-text-dim)",
-          fontSize: "var(--text-xs)",
-          fontFamily: "var(--font-mono)",
-        }}
-      >
-        HydroMesh v0.1.0 · Digital Twin MVP · All metrics simulated · Advisory
-        only, never auto-actuates
-      </footer>
-    </main>
+      {/* Floating Cookie Consent */}
+      <CookieConsentBanner />
+
+      {/* Master 4-Column Footer */}
+      <GlobalFooter />
+    </div>
   );
 }
