@@ -79,3 +79,22 @@
 - **Visuals**:
   - Prominent amber button with pulsing countdown timer.
   - Clicking triggers immediate override mutation before expiration.
+
+---
+
+## 7. InspectorPanel (`web/components/InspectorPanel.tsx`)
+- **Role**: Left-docked telemetry & SOP markdown inspector panel.
+- **Features**:
+  - Real-time sensor feed (Discharge, Silt, Temperature, Vibration).
+  - Active SOP status with SHA-256 cryptographic verification token.
+  - Multi-agent live decision event stream with expandable rationales.
+
+---
+
+## 8. PowerhouseCard (`web/components/PowerhouseCard.tsx`)
+- **Role**: Stylized industrial powerhouse block representing 1 of 20 Nepal hydro stations.
+- **Visuals**:
+  - Gable roof silhouette, intake penstock line, glowing control room window.
+  - Monospace metrics: Capacity (MW), River Discharge (m³/s), Silt Level (PPM).
+  - Hover glow with `--color-cloud-rim` and click navigation to plant detail view.
+
