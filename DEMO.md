@@ -72,6 +72,26 @@ Open your browser to `http://localhost:3000/demo`.
 
 ---
 
+## Step 6: Live Satellite Ground-Truth Extraction
+
+Run the live European ECMWF satellite telemetry inspector directly from your terminal:
+
+```bash
+# Real-time satellite conditions for Upper Tamakoshi (456 MW):
+python live_extraction.py
+
+# Continuous live stream with 3-second delta detection:
+python live_extraction.py --plant upper_tamakoshi --stream
+
+# Scan all 25 landmark Nepal hydropower stations concurrently:
+python live_extraction.py --all
+```
+
+Observe real-time mountain temperature gradients (glacier stations at ~1.6°C vs valleys at 22.6°C) and live physical runoff calculations ($Q_{\text{calc}}$ and quartz silt PPM).
+
+---
+
 ## Expected Output & Live Stream Artifacts
 
-*(Screenshots and recording capture will be added during milestone T20)*
+All dispatches and alert logs are continuously streamed over WebSockets and verifiable via `scripts/verify_sprint3.py` and `scripts/verify_sprint4.py`.
+
