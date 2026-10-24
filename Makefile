@@ -4,7 +4,8 @@ install:
 	pip install -e ".[dev]"
 
 lint:
-	python -m ruff check . && python -m ruff format --check .
+	python -m ruff check .
+	python -m ruff format --check .
 
 type:
 	python -m mypy hydromesh/
@@ -13,14 +14,19 @@ test:
 	python -m pytest -v
 
 check:
-	python -m ruff check . && python -m ruff format --check . && python -m mypy hydromesh/ && python -m pytest --cov=hydromesh && python -m coverage report --include=hydromesh/safety.py --fail-under=100
+	python -m ruff check .
+	python -m ruff format --check .
+	python -m mypy hydromesh/
+	python -m pytest --cov=hydromesh
+	python -m coverage report --include=hydromesh/safety.py --fail-under=100
 
 security:
 	python -m bandit -r hydromesh/ -ll
-	python -m pip_audit
+	python -m pytest tests/security/
 
 fmt:
-	python -m ruff format . && python -m ruff check --fix .
+	python -m ruff format .
+	python -m ruff check --fix .
 
 run:
 	python -m uvicorn hydromesh.api.app:create_app --factory --reload

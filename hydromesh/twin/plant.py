@@ -181,8 +181,7 @@ class PlantTwin:
         return TwinSnapshot(
             ts=sp.epoch + timedelta(seconds=self._t),
             gates={
-                i: GateState(gate_id=i, flow_m3s=q, design_flow_m3s=sp.design_flow_m3s)
-                for i, q in enumerate(self._q)
+                i: GateState(gate_id=i, flow_m3s=q, design_flow_m3s=sp.design_flow_m3s) for i, q in enumerate(self._q)
             },
             basins={
                 i: BasinState(

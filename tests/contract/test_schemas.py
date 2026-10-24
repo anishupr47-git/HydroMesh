@@ -17,7 +17,7 @@ from tests.factories import T0, decide, make_twin
 
 def telemetry(**over: object) -> Telemetry:
     base = {"ts": T0, "discharge_m3s": 340.0, "silt_ppm": 300.0, "vibration_mm_s": 1.2, "grid_freq_hz": 50.0}
-    return Telemetry(**{**base, **over})  # type: ignore[arg-type]
+    return Telemetry(**{**base, **over})
 
 
 def test_json_round_trip_preserves_equality_and_union_types() -> None:
@@ -38,7 +38,7 @@ def test_snapshot_round_trip() -> None:
 
 def test_dispatch_must_stay_advisory() -> None:
     with pytest.raises(ValidationError):
-        ReallocateDispatch(mw_target=1.0, feeder_priority=("hospital",), advisory=False)  # type: ignore[arg-type]
+        ReallocateDispatch(mw_target=1.0, feeder_priority=("hospital",), advisory=False)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +146,7 @@ def test_f2_agent_event_payload_caps_and_rejects_nested_blobs() -> None:
             agent="triage",
             kind="info",
             message="ok",
-            payload={"nested": {"nested_key": "nested_val"}},  # type: ignore[dict-item]
+            payload={"nested": {"nested_key": "nested_val"}},
         )
 
     # Reject payload with >32 keys

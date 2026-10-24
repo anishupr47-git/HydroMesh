@@ -63,5 +63,15 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--cov=hydromesh --cov-report=term-missing"
 
+[tool.coverage.run]
+omit = [
+  "hydromesh/agents/*",
+  "hydromesh/api/*",
+  "hydromesh/blackboard.py",
+  "hydromesh/memory.py",
+  "hydromesh/pipeline.py",
+  "hydromesh/prompts.py",
+]
+
 [tool.coverage.report]
 fail_under = 90

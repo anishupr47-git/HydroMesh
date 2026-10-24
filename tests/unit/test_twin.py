@@ -124,4 +124,3 @@ def test_inflow_surge_scenario_and_agent_decision_batch_apply() -> None:
     crit = twin.snapshot().critical_feeders
     dispatch_act = ReallocateDispatch(mw_target=20.0, feeder_priority=(*crit, "other"))
     assert twin.apply((dispatch_act,)) is True
-

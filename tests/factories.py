@@ -20,8 +20,8 @@ def make_twin(**over: object) -> TwinSnapshot:
         "critical_feeders": ("hospital", "water_pump"),
         "runner_wear": 0.0,
     }
-    return TwinSnapshot(**{**base, **over})  # type: ignore[arg-type]
+    return TwinSnapshot(**{**base, **over})
 
 
 def decide(*actions: object, confidence: float = 0.9) -> AgentDecision:
-    return AgentDecision(actions=actions, rationale="test", confidence=confidence)  # type: ignore[arg-type]
+    return AgentDecision(actions=actions, rationale="test", confidence=confidence)
