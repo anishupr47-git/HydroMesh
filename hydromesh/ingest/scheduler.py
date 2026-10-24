@@ -42,9 +42,15 @@ class PlantScheduler:
         self.interval_s = interval_s
         self.sim_step_s = sim_step_s
 
-        self.twin = twin or PlantTwin(scenarios.monsoon_surge, spec=PlantSpec(), seed=42)
+        self.twin = twin or PlantTwin(scenarios.normal, spec=PlantSpec(), seed=42)
         self._running = False
         self._task: asyncio.Task[None] | None = None
+
+    def set_scenario(self, scenario_name: str) -> None:
+        """Switch active simulation scenario dynamically (normal, monsoon_surge, inflow_surge)."""
+        sc_fn = scenarios.SCENARIOS.get(scenario_name, scenarios.normal)
+        self.twin._scenario = sc_fn
+        self.twin._t = 0.0
 
     @property
     def is_running(self) -> bool:

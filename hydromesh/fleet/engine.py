@@ -85,10 +85,14 @@ def simulate_hourly_hydrology(site: Site, hour_of_day: int) -> tuple[float, floa
             # Scripted critical storyline: silt exceeds 3,000 PPM
             rain = 55.0 * diurnal
             discharge = base_flow + 950.0 * diurnal
-        else:
-            # Scripted warning storyline: silt between 1,200 and 2,500 PPM
+        elif site.id in ("upper_trishuli_3a", "rasuwagadhi") and 13 <= hour_of_day <= 17:
+            # Scripted warning storyline: peak afternoon surge between 1,200 and 2,500 PPM
             rain = 25.0 * diurnal
-            discharge = base_flow + 450.0 * diurnal
+            discharge = base_flow + 550.0 * diurnal
+        else:
+            # Factual Nepal baseline hydrology with gentle diurnal snow/rain variance
+            rain = 4.0 * diurnal
+            discharge = base_flow * (1.0 + 0.30 * diurnal)
     elif preset == "glacial_melt":
         # Alpine/Andean diurnal melt peaking with solar radiation (12:00 - 16:00)
         diurnal = max(0.0, math.sin(math.pi * (hour_of_day - 8) / 10.0))

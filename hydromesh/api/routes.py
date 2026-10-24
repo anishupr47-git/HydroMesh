@@ -37,7 +37,7 @@ router = APIRouter()
 _plants = load_nepal_plants()
 _blackboard = Blackboard()
 _weather_client = WeatherClient()
-_shared_twin = PlantTwin(scenarios.monsoon_surge, spec=PlantSpec(), seed=42)
+_shared_twin = PlantTwin(scenarios.normal, spec=PlantSpec(), seed=42)
 
 # Global pipelines per plant (lazy cache)
 _pipelines: dict[str, OrchestrationPipeline] = {}
@@ -237,6 +237,40 @@ async def run_orchestration_cycle(
         "applied": applied,
         "snapshot_after": _shared_twin.snapshot().model_dump(mode="json"),
         "report": incident.report.model_dump(mode="json") if incident.report else None,
+    }
+
+
+class TwinScenarioPayload(BaseModel):
+    scenario: str
+    severity: str = "warning"
+
+
+@router.post("/api/twin/scenario")
+async def trigger_twin_scenario(payload: TwinScenarioPayload, request: Request) -> dict[str, Any]:
+    """Switch the live simulation scenario between normal, monsoon surge, flash flood, and clear."""
+    sc_name = payload.scenario.lower()
+    target_scenario = (
+        "monsoon_surge" if "monsoon" in sc_name
+        else "inflow_surge" if ("flood" in sc_name or "inflow" in sc_name)
+        else "normal"
+    )
+
+    # 1. Update shared twin
+    sc_fn = scenarios.SCENARIOS.get(target_scenario, scenarios.normal)
+    _shared_twin._scenario = sc_fn
+    _shared_twin._t = 0.0
+
+    # 2. Update background scheduler twin if running
+    scheduler: Any = getattr(request.app.state, "scheduler", None)
+    if scheduler and hasattr(scheduler, "set_scenario"):
+        scheduler.set_scenario(target_scenario)
+
+    log.info("scenario_switched", scenario=target_scenario, severity=payload.severity)
+    return {
+        "status": "success",
+        "scenario": target_scenario,
+        "severity": payload.severity,
+        "message": f"Simulation twin switched to '{target_scenario}'",
     }
 
 
