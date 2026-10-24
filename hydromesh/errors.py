@@ -1,18 +1,22 @@
-"""Custom exception hierarchy for HydroMesh."""
+"""Typed exceptions. Catch these; never a bare `Exception`."""
 
 from __future__ import annotations
 
 
 class HydroMeshError(Exception):
-    """Base exception for all HydroMesh errors."""
+    """Base class for every expected, recoverable failure."""
 
 
-class LLMOutputError(HydroMeshError):
-    """Raised when an LLM produces output violating expected schema or constraints."""
+class LLMError(HydroMeshError):
+    """Any LLM failure that the caller recovers from with a deterministic fallback."""
 
 
-class SafetyViolation(HydroMeshError):
-    """Raised when a proposed action violates deterministic safety invariants."""
+class LLMUnavailable(LLMError):
+    """Backend unreachable, timed out, or the circuit breaker is open."""
+
+
+class LLMOutputError(LLMError):
+    """Backend answered, but never with schema-valid JSON."""
 
 
 class BlackboardError(HydroMeshError):

@@ -25,8 +25,8 @@ dependencies = [
   "numpy",
   "polars",
   "joblib",
-  "structlog",
-  "httpx",
+  "structlog>=24.1",
+  "httpx>=0.27",
   "celery[redis]",
   "apscheduler",
 ]
@@ -34,26 +34,34 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=8",
-  "pytest-asyncio",
-  "pytest-cov",
+  "pytest-asyncio>=0.23",
+  "pytest-cov>=5",
   "fakeredis",
-  "hypothesis",
-  "ruff",
-  "mypy",
+  "hypothesis>=6.100",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "bandit>=1.7",
+  "pip-audit>=2.7",
+  "detect-secrets>=1.5",
+  "semgrep",
 ]
 
 [tool.ruff]
 target-version = "py311"
-line-length = 100
+line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF"]
 
 [tool.mypy]
 strict = true
 python_version = "3.11"
+plugins = ["pydantic.mypy"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--cov=hydromesh --cov-report=term-missing"
+
+[tool.coverage.report]
+fail_under = 90

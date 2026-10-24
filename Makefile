@@ -1,10 +1,26 @@
-.PHONY: check test run seed eval demo fmt
+.PHONY: install lint type test check security fmt run seed eval demo
 
-check:
-	python -m ruff check . && python -m mypy hydromesh/ && python -m pytest
+install:
+	pip install -e ".[dev]"
+
+lint:
+	python -m ruff check . && python -m ruff format --check .
+
+type:
+	python -m mypy hydromesh/
 
 test:
 	python -m pytest -v
+
+check:
+	python -m ruff check . && python -m ruff format --check . && python -m mypy hydromesh/ && python -m pytest --cov=hydromesh && python -m coverage report --include=hydromesh/safety.py --fail-under=100
+
+security:
+	python -m bandit -r hydromesh/ -ll
+	python -m pip_audit
+
+fmt:
+	python -m ruff format . && python -m ruff check --fix .
 
 run:
 	python -m uvicorn hydromesh.api.app:create_app --factory --reload
@@ -17,6 +33,3 @@ eval:
 
 demo:
 	docker compose up -d redis && make seed && make run
-
-fmt:
-	python -m ruff format .
