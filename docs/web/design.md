@@ -644,6 +644,47 @@ Every component in the HydroMesh suite is styled explicitly in harmony with the 
 * **Hover State**: Elevates with `translateY(-2px)` and casts an amber radial glow (`0 0 24px rgba(240, 200, 96, 0.5)`).
 * **Active 600s Countdown Ring**: Circular SVG progress ring in golden rim yellow (`#D4B94A`) counting down the remaining operator acknowledgment window before deterministic safety fallback takes over.
 
+### 6.6 Live Satellite Ground-Truth & Hydrology Math Inspector Tab (`LiveInspectorTab.tsx`)
+A compact, non-interfering industrial telemetry dock anchored in the lower-left corner of the viewport, providing complete mathematical transparency to operators and judges without cluttering the primary SCADA control layout.
+
+* **Anchor & Docking Geometry**:
+  * Position: `position: fixed; bottom: 16px; left: 16px; z-index: 50;`.
+  * Mobile adaptation: Anchors to bottom-left with `bottom: 12px; left: 12px; max-width: calc(100vw - 24px);`.
+  * Zero Interference: Positioned safely below the main dashboard telemetry cards and clear of the central waterfall focal line.
+* **Collapsed State (The Ambient Satellite Pill)**:
+  * Dimensions: Height `34px`, padding `0 14px`, border-radius `var(--radius-full)` (pill geometry).
+  * Background: `rgba(21, 23, 44, 0.88)` with backdrop glassmorphic blur (`backdrop-filter: blur(8px)`).
+  * Border: `1px solid var(--color-border-subtle)` (`#2E3557`), transitioning to `var(--color-cloud-rim)` (`#D4B94A`) on hover.
+  * Live Beacon: 8px circular indicator pulsing in plant green (`#4CAF82`, `box-shadow: 0 0 8px rgba(76, 175, 130, 0.6)`).
+  * Typography: `var(--font-mono)`, `0.75rem` (`12px`), uppercase tracking-wider in `var(--color-text-primary)`:  
+    `LIVE SATELLITE: ECMWF 9km | 25 Plants Synced [INFO]`
+  * Interaction: Click or hover smoothly expands the inspection drawer.
+* **Expanded State (The Ground-Truth & Calculation Modal Card)**:
+  * Dimensions: Width `380px`, max-height `80vh`, overflow-y `auto`, border-radius `var(--radius-md)`.
+  * Background: `var(--color-surface)` (`#1E2240`) bounded by `1px solid var(--color-border-bright)` (`#546096`) and `var(--shadow-raised)`.
+  * Header: Dual-line badge displaying the active station's mountain coordinates:  
+    `UPPER TAMAKOSHI (KOSHI BASIN) — 27.848°N, 86.136°E (Head: 822m)`.
+  * **Tab Panel 1: Live Satellite Inflow Feed**:
+    * Raw Feed Source: *Open-Meteo European ECMWF 9km High-Resolution Satellite Array*.
+    * Real-Time Telemetry: Real-time precipitation ($\text{mm/h}$), temperature ($^\circ\text{C}$), cloud cover (%), and a 48-hour forward precipitation sparkline.
+    * Synchronization Latency: Monospace tag displaying real query response time (e.g. `SYNC: 142ms ago | is_live=True`).
+  * **Tab Panel 2: Physical Hydrology Calculation Card ("Under the Hood")**:
+    * Displays the exact physical formulas with live values dynamically substituted:
+      1. **Catchment Rational Runoff Formula**:
+         $$Q_{\text{river}} = Q_{\text{base}} + \left( \frac{C \times I \times A}{3.6} \right)$$
+         *Live Substitution*: $Q_{\text{base}} = 35.0\text{ m}^3/\text{s}$, $C = 0.42$ (rocky runoff coeff), $I = 0.0\text{ mm/h}$, $A = 1,745\text{ km}^2 \implies Q_{\text{river}} = 35.0\text{ m}^3/\text{s}$.
+      2. **Himalayan Quartz Sediment Rating Equation**:
+         $$\text{Silt (PPM)} = 2.096 \times 10^{-4} \times Q^{2.432}$$
+         *Live Substitution*: $35.0^{2.432} \times 2.096 \times 10^{-4} \implies 1.2\text{ PPM}$ (Safe Normal Generation / Green Tier).
+      3. **Catchment Concentration Travel Delay**:
+         Calculates the basin lag time ($t_c = 2.8\text{ hours}$): rain falling in the mountain peaks takes 2.8 hours to arrive at the intake weir, guaranteeing a 2.8-hour early warning window.
+  * **Tab Panel 3: Ground Truth Calibration & Safety Net**:
+    * Sensor Fusion Status: Acoustic Sand Monitor vs. Satellite Inflow.
+    * Fail-Closed Status: `Rules R1-R11 ACTIVE | Effective Confidence: 95% | Deterministic Floor Enforced`.
+* **CSS Motion & Transitions**:
+  * Entry/Exit: `transform: translateY(12px) scale(0.96); opacity: 0;` transitioning to `transform: translateY(0) scale(1.0); opacity: 1;` in `220ms cubic-bezier(0.16, 1, 0.3, 1)`.
+  * Gated by `@media (prefers-reduced-motion: reduce)`: collapses to instantaneous toggle with zero slide motion.
+
 ---
 
 ## 7. Device Performance & Battery Safety Guarantee
