@@ -199,7 +199,7 @@ export default function UserJourneyModal({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-            <span style={{ fontSize: "20px" }}>🛡️</span>
+            <span style={{ fontSize: "10px", padding: "2px 6px", background: "rgba(212,185,74,0.15)", border: "1px solid #D4B94A", borderRadius: "3px", color: "#D4B94A", fontFamily: "var(--font-mono, monospace)" }}>SAFETY</span>
             <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
               Step 1 & 2: Operational Terms & Access Gate
             </h2>
@@ -284,7 +284,7 @@ export default function UserJourneyModal({
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "20px" }}>🧭</span>
+              <span style={{ fontSize: "10px", padding: "2px 6px", background: "rgba(212,185,74,0.15)", border: "1px solid #D4B94A", borderRadius: "3px", color: "#D4B94A", fontFamily: "var(--font-mono, monospace)" }}>TOUR</span>
               <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
                 Product Tour: How to Use HydroMesh
               </h2>

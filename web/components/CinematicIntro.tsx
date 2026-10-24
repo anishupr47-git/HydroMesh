@@ -1,299 +1,260 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import ChakraBackground from "./ChakraBackground";
 
 interface CinematicIntroProps {
   onComplete: () => void;
 }
 
-interface LetterItem {
-  char: string;
-  delayMs: number;
-  wordIdx: number;
-}
-
-// "WELCOME TO HYDROMESH"
-const LETTERS: LetterItem[] = [
-  // WELCOME (120ms intervals)
-  { char: "W", delayMs: 100, wordIdx: 0 },
-  { char: "E", delayMs: 220, wordIdx: 0 },
-  { char: "L", delayMs: 340, wordIdx: 0 },
-  { char: "C", delayMs: 460, wordIdx: 0 },
-  { char: "O", delayMs: 580, wordIdx: 0 },
-  { char: "M", delayMs: 700, wordIdx: 0 },
-  { char: "E", delayMs: 820, wordIdx: 0 },
-
-  // Space / breath
-  // TO (+180ms breath)
-  { char: "T", delayMs: 1000, wordIdx: 1 },
-  { char: "O", delayMs: 1120, wordIdx: 1 },
-
-  // Space / breath
-  // HYDROMESH (tight cascade)
-  { char: "H", delayMs: 1300, wordIdx: 2 },
-  { char: "Y", delayMs: 1400, wordIdx: 2 },
-  { char: "D", delayMs: 1500, wordIdx: 2 },
-  { char: "R", delayMs: 1600, wordIdx: 2 },
-  { char: "O", delayMs: 1700, wordIdx: 2 },
-  { char: "M", delayMs: 1800, wordIdx: 2 },
-  { char: "E", delayMs: 1900, wordIdx: 2 },
-  { char: "S", delayMs: 2000, wordIdx: 2 },
-  { char: "H", delayMs: 2100, wordIdx: 2 },
-];
+// Letter definitions for sequential rain drop
+const WORD_WELCOME = ["W", "E", "L", "C", "O", "M", "E"];
+const WORD_TO = ["T", "O"];
+const WORD_HYDROMESH = ["H", "Y", "D", "R", "O", "M", "E", "S", "H"];
 
 export default function CinematicIntro({ onComplete }: CinematicIntroProps) {
-  // Track which letters have landed (triggered ripple)
-  const [landedIndices, setLandedIndices] = useState<Set<number>>(new Set());
-  const [sweepActive, setSweepActive] = useState(false);
-  const [fadingOut, setFadingOut] = useState(false);
+  // Current letter index that has started falling (0 means none dropped yet)
+  const [droppedCount, setDroppedCount] = useState<number>(0);
+  // Track landed letters (to show baseline ripple and lock into datum line)
+  const [landedSet, setLandedSet] = useState<Set<number>>(new Set());
+  // Complete assembly state
+  const [isAssembled, setIsAssembled] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  const totalLetters =
+    WORD_WELCOME.length + WORD_TO.length + WORD_HYDROMESH.length;
 
   useEffect(() => {
-    // Schedule letter landings
-    const timers: NodeJS.Timeout[] = [];
+    // 1. Initial 300ms pause with just rotating chakra in plain root background
+    const startTimer = setTimeout(() => {
+      // 2. Drop letters one by one sequentially like raindrops from above the viewport
+      let currentIdx = 0;
+      const dropInterval = setInterval(() => {
+        currentIdx++;
+        setDroppedCount(currentIdx);
 
-    LETTERS.forEach((item, index) => {
-      // Landing happens ~400ms after fall starts
-      const landTimer = setTimeout(() => {
-        setLandedIndices((prev) => {
-          const next = new Set(prev);
-          next.add(index);
-          return next;
-        });
-      }, item.delayMs + 380);
-      timers.push(landTimer);
-    });
+        // Mark as landed 360ms after drop starts
+        const letterIdx = currentIdx - 1;
+        setTimeout(() => {
+          setLandedSet((prev) => new Set(prev).add(letterIdx));
+        }, 360);
 
-    // Golden light beam sweeps at t = 2.8s
-    const sweepTimer = setTimeout(() => {
-      setSweepActive(true);
-    }, 2750);
-    timers.push(sweepTimer);
+        if (currentIdx >= totalLetters) {
+          clearInterval(dropInterval);
+          // 3. All letters assembled -> trigger golden horizon datum sweep
+          setTimeout(() => {
+            setIsAssembled(true);
+          }, 420);
 
-    // Cross-fade out to Phase 2 at t = 3.9s
-    const fadeTimer = setTimeout(() => {
-      setFadingOut(true);
-    }, 3850);
-    timers.push(fadeTimer);
+          // 4. Fade out intro and transition to next step
+          setTimeout(() => {
+            setIsFadingOut(true);
+          }, 2400);
 
-    // Complete call at t = 4.4s
-    const completeTimer = setTimeout(() => {
-      onComplete();
-    }, 4400);
-    timers.push(completeTimer);
+          setTimeout(() => {
+            onComplete();
+          }, 3100);
+        }
+      }, 130); // 130ms cadence between raindrops
 
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [onComplete]);
+      return () => clearInterval(dropInterval);
+    }, 350);
 
-  // Group letters into words for responsive layout
-  const word0 = LETTERS.filter((l) => l.wordIdx === 0);
-  const word1 = LETTERS.filter((l) => l.wordIdx === 1);
-  const word2 = LETTERS.filter((l) => l.wordIdx === 2);
+    return () => clearTimeout(startTimer);
+  }, [onComplete, totalLetters]);
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0B1424] overflow-hidden transition-opacity duration-700 ${
-        fadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-700 ${
+        isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
       style={{
-        backgroundColor: "#0B1424",
+        background:
+          "radial-gradient(circle at 50% 50%, rgba(15, 29, 56, 0.4) 0%, rgba(11, 20, 36, 0.94) 75%)",
       }}
     >
-      {/* Background Rotating Brass Turbine Chakra */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-        <div
-          className="relative"
-          style={{
-            transform: "scale(1.15)",
-            filter: "drop-shadow(0 0 60px rgba(201, 162, 75, 0.12))",
-          }}
+      {/* Top Right Quick Skip Button */}
+      <div className="absolute top-6 right-8 z-30">
+        <button
+          onClick={onComplete}
+          className="text-xs font-mono text-[#A3B0C8] hover:text-[#C9A24B] border border-[#C9A24B]/30 hover:border-[#C9A24B] px-3 py-1.5 rounded-sm transition-colors cursor-pointer bg-[#0F1A2E]/80 uppercase tracking-widest"
         >
-          <ChakraBackground size={860} opacity={0.22} />
-        </div>
+          [SKIP INTRO]
+        </button>
       </div>
 
-      {/* Atmospheric Vignette Overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(15, 29, 56, 0.4) 0%, rgba(11, 20, 36, 0.95) 100%)",
-        }}
-      />
-
-      {/* Skip Intro Button */}
-      <button
-        onClick={onComplete}
-        className="absolute top-6 right-8 z-50 px-4 py-2 text-xs font-mono tracking-widest text-[#C9A24B] hover:text-[#F0D27A] border border-[#C9A24B]/40 hover:border-[#C9A24B] bg-[#0F1A2E]/80 backdrop-blur-md rounded transition-all duration-200 cursor-pointer"
-        style={{
-          letterSpacing: "0.14em",
-        }}
-      >
-        [SKIP INTRO →]
-      </button>
-
-      {/* Center Cinematic Title Canvas */}
-      <div className="relative z-10 flex flex-col items-center justify-center px-4 max-w-4xl text-center">
-        {/* Subtitle kicker */}
+      {/* Center Rain Catchment Stage */}
+      <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 max-w-4xl">
+        {/* Subtle Pre-Drop Subtitle */}
         <div
-          className="text-xs uppercase tracking-[0.28em] text-[#C9A24B] font-mono mb-4 transition-opacity duration-1000 delay-300"
-          style={{
-            opacity: landedIndices.size > 2 ? 0.9 : 0,
-            textShadow: "0 0 12px rgba(201, 162, 75, 0.4)",
-          }}
+          className={`text-[11px] font-mono uppercase tracking-[0.3em] text-[#C9A24B] mb-8 transition-opacity duration-700 ${
+            droppedCount > 0 ? "opacity-80" : "opacity-0"
+          }`}
         >
           Himalayan Hydropower Autonomous Guardian
         </div>
 
-        {/* Rain of Letters Text Container */}
-        <div
-          className="relative inline-flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-[#F1EAD9] select-none py-4 px-6 overflow-hidden"
-          style={{
-            fontVariantNumeric: "lining-nums tabular-nums",
-          }}
-        >
-          {/* Golden Sweep Beam */}
-          {sweepActive && (
+        {/* Rain of Letters Grid: "WELCOME" "TO" "HYDROMESH" */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-3">
+          {/* Word 1: WELCOME */}
+          <div className="flex items-center">
+            {WORD_WELCOME.map((char, i) => {
+              const globalIdx = i;
+              const hasStarted = droppedCount > globalIdx;
+              const hasLanded = landedSet.has(globalIdx);
+
+              return (
+                <div
+                  key={`w0-${i}`}
+                  className="relative flex flex-col items-center justify-end px-1 sm:px-1.5"
+                  style={{ minWidth: "24px", height: "80px" }}
+                >
+                  {/* The Rain Letter: Hidden above until its exact turn arrives */}
+                  <span
+                    className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold select-none"
+                    style={{
+                      visibility: hasStarted ? "visible" : "hidden",
+                      opacity: hasStarted ? 1 : 0,
+                      animation: hasStarted
+                        ? "letter-rain 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards"
+                        : "none",
+                      textShadow: hasLanded
+                        ? "0 0 20px rgba(201, 162, 75, 0.5), 0 2px 8px rgba(0,0,0,0.8)"
+                        : "none",
+                      color: hasLanded ? "#F1EAD9" : "#C9A24B",
+                      transition: "text-shadow 0.3s ease, color 0.3s ease",
+                    }}
+                  >
+                    {char}
+                  </span>
+
+                  {/* Water splash ripple when letter lands */}
+                  {hasLanded && (
+                    <div
+                      className="absolute bottom-0 w-8 h-1 bg-[#C9A24B]/70 rounded-full animate-ping pointer-events-none"
+                      style={{
+                        animationDuration: "0.55s",
+                        animationIterationCount: 1,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Word 2: TO */}
+          <div className="flex items-center">
+            {WORD_TO.map((char, i) => {
+              const globalIdx = WORD_WELCOME.length + i;
+              const hasStarted = droppedCount > globalIdx;
+              const hasLanded = landedSet.has(globalIdx);
+
+              return (
+                <div
+                  key={`w1-${i}`}
+                  className="relative flex flex-col items-center justify-end px-1 sm:px-1.5"
+                  style={{ minWidth: "24px", height: "80px" }}
+                >
+                  <span
+                    className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold select-none"
+                    style={{
+                      visibility: hasStarted ? "visible" : "hidden",
+                      opacity: hasStarted ? 1 : 0,
+                      animation: hasStarted
+                        ? "letter-rain 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards"
+                        : "none",
+                      textShadow: hasLanded
+                        ? "0 0 20px rgba(201, 162, 75, 0.5), 0 2px 8px rgba(0,0,0,0.8)"
+                        : "none",
+                      color: hasLanded ? "#F1EAD9" : "#C9A24B",
+                      transition: "text-shadow 0.3s ease, color 0.3s ease",
+                    }}
+                  >
+                    {char}
+                  </span>
+
+                  {hasLanded && (
+                    <div
+                      className="absolute bottom-0 w-8 h-1 bg-[#C9A24B]/70 rounded-full animate-ping pointer-events-none"
+                      style={{
+                        animationDuration: "0.55s",
+                        animationIterationCount: 1,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Word 3: HYDROMESH */}
+          <div className="flex items-center">
+            {WORD_HYDROMESH.map((char, i) => {
+              const globalIdx = WORD_WELCOME.length + WORD_TO.length + i;
+              const hasStarted = droppedCount > globalIdx;
+              const hasLanded = landedSet.has(globalIdx);
+
+              return (
+                <div
+                  key={`w2-${i}`}
+                  className="relative flex flex-col items-center justify-end px-1 sm:px-1.5"
+                  style={{ minWidth: "24px", height: "80px" }}
+                >
+                  <span
+                    className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold select-none"
+                    style={{
+                      visibility: hasStarted ? "visible" : "hidden",
+                      opacity: hasStarted ? 1 : 0,
+                      animation: hasStarted
+                        ? "letter-rain 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) forwards"
+                        : "none",
+                      textShadow: hasLanded
+                        ? "0 0 24px rgba(240, 210, 122, 0.6), 0 2px 8px rgba(0,0,0,0.8)"
+                        : "none",
+                      color: hasLanded
+                        ? i >= 5
+                          ? "#F0D27A"
+                          : "#F1EAD9"
+                        : "#C9A24B",
+                      transition: "text-shadow 0.3s ease, color 0.3s ease",
+                    }}
+                  >
+                    {char}
+                  </span>
+
+                  {hasLanded && (
+                    <div
+                      className="absolute bottom-0 w-8 h-1 bg-[#F0D27A]/70 rounded-full animate-ping pointer-events-none"
+                      style={{
+                        animationDuration: "0.55s",
+                        animationIterationCount: 1,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Golden Horizontal Datum Line that lights up once all letters seat */}
+        <div className="relative w-full max-w-xl h-[1px] bg-[#C9A24B]/30 mt-5 overflow-hidden">
+          {isAssembled && (
             <div
-              className="absolute inset-y-0 w-32 pointer-events-none z-20"
-              style={{
-                background:
-                  "linear-gradient(90deg, transparent, rgba(240, 210, 122, 0.55), rgba(255, 255, 255, 0.9), rgba(240, 210, 122, 0.55), transparent)",
-                animation: "golden-sweep 1.2s ease-in-out forwards",
-                transform: "skewX(-20deg)",
-              }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-[#F0D27A] to-transparent animate-pulse"
+              style={{ animationDuration: "1.2s" }}
             />
           )}
-
-          {/* WORD 1: WELCOME */}
-          <div className="inline-flex">
-            {word0.map((item, localIdx) => {
-              const globalIdx = localIdx;
-              const hasLanded = landedIndices.has(globalIdx);
-
-              return (
-                <div key={globalIdx} className="relative inline-block px-[2px]">
-                  {/* Water Ripple Ring on Impact */}
-                  {hasLanded && (
-                    <span
-                      className="absolute left-1/2 bottom-1 -translate-x-1/2 pointer-events-none w-8 h-3 rounded-full border border-[#C9A24B]"
-                      style={{
-                        animation: "water-ripple 0.65s ease-out forwards",
-                      }}
-                    />
-                  )}
-
-                  {/* Falling Letter */}
-                  <span
-                    className="inline-block"
-                    style={{
-                      animation: `letter-drop 0.42s cubic-bezier(0.22, 1, 0.36, 1) ${item.delayMs}ms both`,
-                      textShadow: hasLanded
-                        ? "0 0 18px rgba(201, 162, 75, 0.65), 0 2px 4px rgba(0,0,0,0.8)"
-                        : "none",
-                    }}
-                  >
-                    {item.char}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* WORD 2: TO */}
-          <div className="inline-flex">
-            {word1.map((item, localIdx) => {
-              const globalIdx = word0.length + localIdx;
-              const hasLanded = landedIndices.has(globalIdx);
-
-              return (
-                <div key={globalIdx} className="relative inline-block px-[2px]">
-                  {hasLanded && (
-                    <span
-                      className="absolute left-1/2 bottom-1 -translate-x-1/2 pointer-events-none w-8 h-3 rounded-full border border-[#C9A24B]"
-                      style={{
-                        animation: "water-ripple 0.65s ease-out forwards",
-                      }}
-                    />
-                  )}
-                  <span
-                    className="inline-block"
-                    style={{
-                      animation: `letter-drop 0.42s cubic-bezier(0.22, 1, 0.36, 1) ${item.delayMs}ms both`,
-                      textShadow: hasLanded
-                        ? "0 0 18px rgba(201, 162, 75, 0.65), 0 2px 4px rgba(0,0,0,0.8)"
-                        : "none",
-                    }}
-                  >
-                    {item.char}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* WORD 3: HYDROMESH */}
-          <div className="inline-flex">
-            {word2.map((item, localIdx) => {
-              const globalIdx = word0.length + word1.length + localIdx;
-              const hasLanded = landedIndices.has(globalIdx);
-
-              return (
-                <div key={globalIdx} className="relative inline-block px-[2px]">
-                  {hasLanded && (
-                    <span
-                      className="absolute left-1/2 bottom-1 -translate-x-1/2 pointer-events-none w-8 h-3 rounded-full border border-[#C9A24B]"
-                      style={{
-                        animation: "water-ripple 0.65s ease-out forwards",
-                      }}
-                    />
-                  )}
-                  <span
-                    className="inline-block"
-                    style={{
-                      color:
-                        item.char === "M" ||
-                        item.char === "E" ||
-                        item.char === "S" ||
-                        item.char === "H"
-                          ? "#F0D27A"
-                          : "#F1EAD9",
-                      animation: `letter-drop 0.42s cubic-bezier(0.22, 1, 0.36, 1) ${item.delayMs}ms both`,
-                      textShadow: hasLanded
-                        ? "0 0 20px rgba(240, 210, 122, 0.75), 0 2px 4px rgba(0,0,0,0.8)"
-                        : "none",
-                    }}
-                  >
-                    {item.char}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        {/* Vernier Ticking Strip */}
+        {/* Status indicator once assembled */}
         <div
-          className="vernier-strip max-w-md w-full transition-opacity duration-1000 mt-2"
-          style={{
-            opacity: sweepActive ? 0.9 : 0,
-          }}
+          className={`mt-6 font-mono text-xs uppercase tracking-widest text-[#A3B0C8] transition-opacity duration-500 ${
+            isAssembled ? "opacity-100" : "opacity-0"
+          }`}
         >
-          <div className="vernier-jewel" />
+          [INITIALIZING REAL-TIME TELEMETRY STREAM...]
         </div>
-
-        {/* Tagline Footer */}
-        <p
-          className="text-sm font-sans text-[#A3B0C8] tracking-widest uppercase transition-opacity duration-700 mt-3"
-          style={{
-            opacity: sweepActive ? 0.85 : 0,
-            letterSpacing: "0.18em",
-          }}
-        >
-          Run-Of-River Silt & Flood Predictive Intelligence System
-        </p>
       </div>
     </div>
   );

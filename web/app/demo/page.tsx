@@ -113,8 +113,8 @@ interface AgentEvaluation {
 type EntryPhase = "intro" | "explainer" | "auth" | "dashboard";
 
 export default function DemoPage() {
-  // 4-Phase Cinematic Entry Flow State
-  const [entryPhase, setEntryPhase] = useState<EntryPhase>("dashboard");
+  // 4-Phase Cinematic Entry Flow State (Intro -> Explainer -> Auth -> Dashboard)
+  const [entryPhase, setEntryPhase] = useState<EntryPhase>("intro");
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // View Mode: individual (My Plant) vs global (Global Fleet Matrix)
@@ -165,14 +165,17 @@ export default function DemoPage() {
   // Check Onboarding status on mount
   useEffect(() => {
     try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("intro") === "replay") {
+        setEntryPhase("intro");
+        return;
+      }
       const dismissed = localStorage.getItem("hydromesh_onboarding_dismissed");
       if (dismissed !== "true") {
         setEntryPhase("intro");
-      } else {
-        setEntryPhase("dashboard");
       }
     } catch {
-      setEntryPhase("dashboard");
+      setEntryPhase("intro");
     }
   }, []);
 
@@ -661,7 +664,34 @@ export default function DemoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B1424] text-[#F1EAD9] flex flex-col font-sans selection:bg-[#C9A24B] selection:text-[#0B1424]">
+  return (
+    <div className="min-h-screen bg-[#0B1424] text-[#F1EAD9] flex flex-col font-sans selection:bg-[#C9A24B] selection:text-[#0B1424] relative overflow-x-hidden">
+      {/* =========================================================================
+          THE UNIFIED ROOT CHAKRA (EXACT TEMPLATE POSITION: LEFT CALC(80% - 470px), TOP 0)
+          Working with the light lowly from Welcome to End
+          ========================================================================= */}
+      <div
+        className="fixed pointer-events-none z-0 overflow-hidden"
+        style={{
+          left: "calc(80% - 470px)",
+          top: "0px",
+          width: "940px",
+          height: "940px",
+          opacity: 0.22,
+        }}
+      >
+        <ChakraBackground size={940} />
+      </div>
+
+      {/* Atmospheric radial vignette */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background:
+            "radial-gradient(circle at 75% 25%, rgba(19, 38, 74, 0.45) 0%, rgba(11, 20, 36, 0.95) 75%)",
+        }}
+      />
+
       {/* =========================================================================
           PHASE 1: THE CINEMATIC INTRO ("RAIN OF LETTERS" & CHAKRA)
           ========================================================================= */}
@@ -705,32 +735,36 @@ export default function DemoPage() {
       {/* =========================================================================
           PHASE 4: LIVE SCADA CONTROL ROOM COCKPIT
           ========================================================================= */}
-      {/* 4.1 Header Bar */}
-      <GlobalNav
-        mode={mode}
-        onModeChange={(m) => setMode(m)}
-        activeCriticalCount={fleet?.active_critical || 0}
-        activeWarningCount={fleet?.active_warnings || 0}
-        totalSites={plants.length || 20}
-        userEmail={user?.email}
-        userRole={user?.role || "guest"}
-        onOpenAuth={() => setAuthModalOpen(true)}
-        onOpenInspector={() => setInspectorOpen(true)}
-        onReplayIntro={() => setEntryPhase("intro")}
-      />
+      {entryPhase === "dashboard" && (
+        <>
+          {/* 4.1 Header Bar */}
+          <GlobalNav
+            mode={mode}
+            onModeChange={(m) => setMode(m)}
+            activeCriticalCount={fleet?.active_critical || 0}
+            activeWarningCount={fleet?.active_warnings || 0}
+            totalSites={plants.length || 20}
+            userEmail={user?.email}
+            userRole={user?.role || "guest"}
+            onOpenAuth={() => setAuthModalOpen(true)}
+            onLogout={() => {
+              setUser(null);
+              try {
+                localStorage.removeItem("hydromesh_session");
+              } catch {}
+              setEntryPhase("auth");
+            }}
+            onOpenInspector={() => setInspectorOpen(true)}
+            onReplayIntro={() => setEntryPhase("intro")}
+          />
 
-      {/* Main SCADA Viewport Canvas (Zero Side-Bar Guarantee: Centered max-w-[1440px]) */}
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* =======================================================================
-            4.2 HERO BANNER & 940px RUNNER STUDY CHAKRA
-            ======================================================================= */}
-        <div className="relative w-full bg-[#0F1D38] border border-[#C9A24B] shadow-2xl pn p-6 sm:p-10 overflow-hidden">
-          {/* 940px Rotating Brass Runner Study Chakra in Upper Right Background */}
-          <div className="absolute -top-32 -right-32 pointer-events-none opacity-25">
-            <ChakraBackground size={940} speed="slow" />
-          </div>
-
-          <div className="relative z-10 max-w-3xl space-y-4">
+          {/* Main SCADA Viewport Canvas (Zero Side-Bar Guarantee: Centered max-w-[1440px]) */}
+          <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 relative z-10">
+            {/* =======================================================================
+                4.2 HERO BANNER (Chakra shines through from root background)
+                ======================================================================= */}
+            <div className="relative w-full bg-[#0F1D38]/85 border border-[#C9A24B] shadow-2xl pn p-6 sm:p-10 overflow-hidden">
+              <div className="relative z-10 max-w-3xl space-y-4">
             {/* Station Kicker & Selector */}
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#C9A24B]">
@@ -806,19 +840,19 @@ export default function DemoPage() {
                 onClick={() => injectScenario("normal", 1.0)}
                 className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#5FB3A8]/40 hover:border-[#5FB3A8] text-xs font-mono text-[#5FB3A8] rounded-sm transition-all cursor-pointer"
               >
-                ✓ Normal Baseflow
+                [NORMAL BASEFLOW]
               </button>
               <button
                 onClick={() => injectScenario("monsoon_surge", 1.5)}
                 className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#E0A43A]/40 hover:border-[#E0A43A] text-xs font-mono text-[#E0A43A] rounded-sm transition-all cursor-pointer"
               >
-                ⚡ Monsoon Pulse (1.5x)
+                [MONSOON PULSE 1.5X]
               </button>
               <button
                 onClick={() => injectScenario("inflow_surge", 2.5)}
                 className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#E0705A]/40 hover:border-[#E0705A] text-xs font-mono text-[#E0705A] rounded-sm transition-all cursor-pointer font-bold"
               >
-                🌊 Flash Flood (2.5x)
+                [FLASH FLOOD 2.5X]
               </button>
 
               <LiveInspectorTab
@@ -836,7 +870,7 @@ export default function DemoPage() {
 
             {scenarioStatus && (
               <div className="text-xs font-mono text-[#F0D27A] animate-pulse">
-                ⚙️ {scenarioStatus}
+                [SCENARIO ACTIVE] {scenarioStatus}
               </div>
             )}
           </div>
@@ -927,7 +961,7 @@ export default function DemoPage() {
                 {formatTime(countdown)}
               </div>
               <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                {ackIncident ? "✓ Operator Confirmed" : "Auto-ACK Window Active"}
+                {ackIncident ? "[OPERATOR CONFIRMED]" : "Auto-ACK Window Active"}
               </div>
             </div>
           </div>
@@ -978,13 +1012,13 @@ export default function DemoPage() {
                 onClick={() => sendOverride("approve")}
                 className="px-4 py-1.5 bg-[#5FB3A8]/20 hover:bg-[#5FB3A8]/30 border border-[#5FB3A8] text-xs font-mono text-[#5FB3A8] font-semibold rounded-sm transition-colors cursor-pointer"
               >
-                ✓ APPROVE ADVISORY
+                [APPROVE ADVISORY]
               </button>
               <button
                 onClick={() => sendOverride("reject")}
                 className="px-4 py-1.5 bg-[#E0705A]/20 hover:bg-[#E0705A]/30 border border-[#E0705A] text-xs font-mono text-[#E0705A] font-semibold rounded-sm transition-colors cursor-pointer"
               >
-                ✕ REJECT PROPOSAL
+                [REJECT PROPOSAL]
               </button>
             </div>
 
@@ -1021,14 +1055,14 @@ export default function DemoPage() {
                 disabled={evaluatingAI}
                 className="px-5 py-2 bg-[#C9A24B] hover:bg-[#F0D27A] text-[#0B1424] font-serif font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-[0_2px_10px_rgba(201,162,75,0.35)] disabled:opacity-50 cursor-pointer"
               >
-                {evaluatingAI ? "EVALUATING PIPELINE..." : "[⚡ PREDICT / RUN AI PIPELINE]"}
+                {evaluatingAI ? "EVALUATING PIPELINE..." : "[RUN PREDICTIVE VAR PIPELINE]"}
               </button>
 
               <button
                 onClick={() => setVarScreenOpen((prev) => !prev)}
                 className="px-4 py-2 bg-[#13264A] hover:bg-[#1a3364] border border-[#C9A24B] text-xs font-mono text-[#F1EAD9] rounded-sm transition-colors cursor-pointer"
               >
-                {varScreenOpen ? "[▲ COLLAPSE VAR HUD]" : "[🔍 EXPAND AI 'VAR' SCREEN HUD]"}
+                {varScreenOpen ? "[COLLAPSE VAR HUD]" : "[EXPAND VAR SCREEN HUD]"}
               </button>
             </div>
           </div>
@@ -1064,7 +1098,7 @@ export default function DemoPage() {
                     II · SOP Memory Agent
                   </span>
                   <span className="text-[10px] font-mono text-[#5FB3A8]">
-                    SHA-256 ✓
+                    [SHA-256 VERIFIED]
                   </span>
                 </div>
                 <p className="text-xs text-[#D9D2BF] font-sans leading-relaxed">
@@ -1224,7 +1258,7 @@ export default function DemoPage() {
                           }`}
                         >
                           <td className="py-2.5 px-3 text-[#F1EAD9] font-sans font-medium flex items-center gap-2">
-                            {isCurr && <span className="text-[#C9A24B]">▶</span>}
+                            {isCurr && <span className="text-[#C9A24B] font-mono text-xs">&gt;</span>}
                             {station.name}
                           </td>
                           <td className="py-2.5 px-3 text-[#A3B0C8]">{station.river_basin}</td>

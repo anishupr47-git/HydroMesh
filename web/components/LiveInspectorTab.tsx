@@ -53,7 +53,7 @@ export default function LiveInspectorTab({
           boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
         }}
       >
-        <span>📐</span>
+        <span>[MATH]</span>
         <span>Hydrology Math & Proofs</span>
       </button>
 
@@ -93,7 +93,7 @@ export default function LiveInspectorTab({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
-                  🔬 Ground-Truth Hydrology Math Inspector
+                  Ground-Truth Hydrology Math Inspector
                 </h3>
                 <div style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-cloud-rim, #D4B94A)", marginTop: "2px" }}>
                   {plantName} ({lat.toFixed(3)}°N, {lon.toFixed(3)}°E · Head: {headM}m)
@@ -101,9 +101,9 @@ export default function LiveInspectorTab({
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                style={{ background: "transparent", border: "none", color: "var(--color-text-secondary, #A6B0CF)", fontSize: "18px", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "var(--color-text-secondary, #A6B0CF)", fontSize: "13px", fontFamily: "var(--font-mono)", cursor: "pointer" }}
               >
-                ✕
+                [X]
               </button>
             </div>
 
@@ -197,7 +197,7 @@ export default function LiveInspectorTab({
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "12px", color: "var(--color-text-secondary, #A6B0CF)" }}>
                 <div style={{ background: "var(--color-surface-sunken, #15172C)", padding: "12px", borderRadius: "6px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
                   <div style={{ fontWeight: 700, color: "#4CAF82", marginBottom: "4px" }}>
-                    ✓ Sensor Fusion Calibration
+                    [CALIBRATED] Sensor Fusion Calibration
                   </div>
                   <div>
                     Acoustic sand impact sensors calibrate against optical satellite backscatter. Correlation coefficient r = 0.94 across monsoon flood cycles.
@@ -206,7 +206,7 @@ export default function LiveInspectorTab({
 
                 <div style={{ background: "var(--color-surface-sunken, #15172C)", padding: "12px", borderRadius: "6px", border: "1px solid var(--color-border-subtle, #2E3557)" }}>
                   <div style={{ fontWeight: 700, color: "var(--color-cloud-rim, #D4B94A)", marginBottom: "4px" }}>
-                    🔒 Deterministic Safety Kernel
+                    [KERNEL BOUNDED] Deterministic Safety Kernel
                   </div>
                   <div>
                     Rules R1 through R11 enforce strict boundary clamping. If effective model confidence drops below 80%, the system revokes AI recommendations and defaults to deterministic safety envelopes.

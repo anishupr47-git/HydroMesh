@@ -143,7 +143,7 @@ export function PowerhouseCard({
           {plant.name}
         </h4>
         <div style={{ fontSize: "10px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)" }}>
-          📍 {plant.latitude?.toFixed(2) ?? "27.85"}°N, {plant.longitude?.toFixed(2) ?? "86.14"}°E · {plant.head_m ?? 120}m Head
+          GPS: {plant.latitude?.toFixed(2) ?? "27.85"}°N, {plant.longitude?.toFixed(2) ?? "86.14"}°E · {plant.head_m ?? 120}m Head
         </div>
       </div>
 
@@ -231,7 +231,7 @@ export default function PowerhouseGrid({
       >
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "16px" }}>⚡</span>
+            <span style={{ fontSize: "10px", padding: "2px 6px", background: "rgba(212,185,74,0.15)", border: "1px solid #D4B94A", borderRadius: "3px", color: "#D4B94A", fontFamily: "var(--font-mono, monospace)" }}>GRID</span>
             <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
               The 20-Powerhouse Himalayan Grid (Official NEA Registry)
             </h3>

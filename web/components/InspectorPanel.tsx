@@ -63,7 +63,7 @@ export default function InspectorPanel({
       >
         <div>
           <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
-            📋 Telemetry & SOP Inspector
+            [SCADA] Telemetry & SOP Inspector
           </div>
           <div style={{ fontSize: "11px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-cloud-rim, #D4B94A)" }}>
             {plantName}
@@ -73,13 +73,16 @@ export default function InspectorPanel({
           onClick={onClose}
           style={{
             background: "transparent",
-            border: "none",
+            border: "1px solid rgba(212,185,74,0.3)",
+            borderRadius: "3px",
             color: "var(--color-text-secondary, #A6B0CF)",
-            fontSize: "18px",
+            fontSize: "11px",
+            fontFamily: "var(--font-mono, monospace)",
+            padding: "2px 6px",
             cursor: "pointer",
           }}
         >
-          ✕
+          [CLOSE]
         </button>
       </div>
 
@@ -163,7 +166,7 @@ export default function InspectorPanel({
                 fontSize: "11px",
               }}
             >
-              🔒 SHA-256 HASH: <strong>88c4b1e94a02f78b</strong> (Verified)
+              [SHA-256 SECURED] HASH: <strong>88c4b1e94a02f78b</strong> (Verified)
             </div>
 
             <h4 style={{ margin: "0 0 6px 0", color: "var(--color-text-primary, #F4F6FC)", fontSize: "13px" }}>

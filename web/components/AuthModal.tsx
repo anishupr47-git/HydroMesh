@@ -16,19 +16,18 @@ export default function AuthModal({ onSuccess, onGuestAccess }: AuthModalProps) 
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Lantern is DIMMED OFF when password is being focused or contains characters
-  const isLanternDimmed = passwordFocused || password.length > 0;
+  // Lantern is LIT when idle or typing email; LANTERN IS COMPLETELY OFF when entering password!
+  const isLanternOff = passwordFocused || password.length > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setErrorMsg("Please enter both email and station access key.");
+      setErrorMsg("Please enter operator email and station cryptographic key.");
       return;
     }
     setErrorMsg("");
     setLoading(true);
 
-    // Save auth token / state to localStorage
     setTimeout(() => {
       try {
         localStorage.setItem(
@@ -43,7 +42,7 @@ export default function AuthModal({ onSuccess, onGuestAccess }: AuthModalProps) 
       } catch {}
       setLoading(false);
       onSuccess({ role, email });
-    }, 600);
+    }, 450);
   };
 
   const handleGuest = () => {
@@ -55,301 +54,178 @@ export default function AuthModal({ onSuccess, onGuestAccess }: AuthModalProps) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#0B1424]/95 backdrop-blur-md overflow-y-auto transition-colors duration-500"
-      style={{
-        backgroundColor: isLanternDimmed
-          ? "rgba(6, 10, 18, 0.98)"
-          : "rgba(11, 20, 36, 0.94)",
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#0B1424]/90 backdrop-blur-sm overflow-y-auto"
+      style={{ backgroundColor: "rgba(11, 20, 36, 0.92)" }}
     >
-      {/* Background radial atmosphere responsive to lantern */}
+      {/* Dynamic atmospheric radial vignette influenced by lantern light */}
       <div
         className="absolute inset-0 pointer-events-none transition-all duration-700"
         style={{
-          background: isLanternDimmed
-            ? "radial-gradient(circle at 75% 35%, rgba(20, 30, 45, 0.25) 0%, rgba(6, 10, 18, 0.98) 70%)"
-            : "radial-gradient(circle at 75% 35%, rgba(240, 200, 96, 0.15) 0%, rgba(15, 29, 56, 0.35) 45%, rgba(11, 20, 36, 0.95) 90%)",
+          background: isLanternOff
+            ? "radial-gradient(circle at 50% 50%, rgba(6, 10, 18, 0.85) 0%, rgba(11, 20, 36, 0.98) 80%)"
+            : "radial-gradient(circle at 50% 45%, rgba(240, 200, 96, 0.14) 0%, rgba(15, 29, 56, 0.5) 50%, rgba(11, 20, 36, 0.96) 85%)",
         }}
       />
 
-      {/* Main Console Box */}
-      <div className="relative z-10 w-full max-w-4xl bg-[#0F1A2E] border border-[#C9A24B] shadow-2xl pn grid grid-cols-1 md:grid-cols-12 overflow-hidden my-auto">
+      {/* Clean, Simple Authentication Card Sticking to Root Background */}
+      <div className="relative z-10 w-full max-w-lg bg-[#0F1A2E] border border-[#C9A24B] shadow-2xl pn p-6 sm:p-8 my-auto">
         {/* Perched Badge */}
-        <div className="np">PHASE III · OPERATOR AUTHENTICATION</div>
+        <div className="np">OPERATOR AUTHENTICATION</div>
 
-        {/* LEFT COLUMN: Kinetic Francis Runner Wheel & Dynamo Shaft (5 cols) */}
-        <div className="md:col-span-5 bg-[#0B1424] border-b md:border-b-0 md:border-r border-[#C9A24B]/30 p-6 flex flex-col items-center justify-between text-center relative overflow-hidden">
-          {/* Subtle Chamber Ambient Lighting */}
-          <div
-            className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-            style={{
-              background: isLanternDimmed
-                ? "none"
-                : "radial-gradient(circle at 50% 50%, rgba(240, 200, 96, 0.08) 0%, transparent 70%)",
-            }}
-          />
-
-          <div className="w-full text-left">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-[#C9A24B] block">
-              Hydraulic Coupling
+        {/* Header: Title and the Powerhouse Lantern */}
+        <div className="flex items-start justify-between pb-4 border-b border-[#C9A24B]/30 mb-6 mt-1">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C9A24B] block">
+              SCADA Security Protocol
             </span>
-            <span className="text-sm font-serif font-semibold text-[#F1EAD9]">
-              Francis Runner 120 RPM
-            </span>
+            <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#F1EAD9]">
+              {isRegistering ? "Register Operator" : "Operator Authentication"}
+            </h3>
+            <p className="text-xs text-[#A3B0C8] font-mono mt-0.5">
+              Access the 20-Powerhouse Himalayan Grid Cockpit
+            </p>
           </div>
 
-          {/* Kinetic Francis Wheel SVG */}
-          <div className="my-6 relative flex items-center justify-center">
-            {/* Spinning Rotor Ring */}
+          {/* The Brass Powerhouse Lantern */}
+          <div className="flex flex-col items-center pl-4">
             <div
-              className="w-48 h-48 rounded-full border-2 border-[#C9A24B]/40 flex items-center justify-center animate-chakra-fast"
+              className="relative transition-all duration-500"
               style={{
-                boxShadow: isLanternDimmed
-                  ? "0 0 10px rgba(201, 162, 75, 0.15)"
-                  : "0 0 24px rgba(240, 200, 96, 0.35)",
-                willChange: "transform",
+                filter: isLanternOff
+                  ? "grayscale(1) opacity(0.2)"
+                  : "drop-shadow(0 0 16px rgba(240, 200, 96, 0.95))",
               }}
+              title={isLanternOff ? "Lantern OFF (Password Secrecy Active)" : "Lantern LIT (Powerhouse Active)"}
             >
-              <svg viewBox="0 0 200 200" className="w-full h-full">
-                <defs>
-                  <linearGradient id="bladeGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#F0D27A" />
-                    <stop offset="60%" stopColor="#C9A24B" />
-                    <stop offset="100%" stopColor="#6F5A2C" />
-                  </linearGradient>
-                </defs>
-                {/* 12 Runner Blades */}
-                <g transform="translate(100, 100)">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <path
-                      key={i}
-                      d="M 0 -25 C 18 -40, 36 -60, 24 -92 C 16 -92, 5 -55, 0 -25 Z"
-                      fill="url(#bladeGrad)"
-                      stroke="#C9A24B"
-                      strokeWidth="0.8"
-                      transform={`rotate(${i * 30})`}
-                    />
-                  ))}
-                  {/* Central Hub */}
-                  <circle cx="0" cy="0" r="24" fill="#13264A" stroke="#C9A24B" strokeWidth="2" />
-                  <circle cx="0" cy="0" r="10" fill="#F0D27A" stroke="#6F5A2C" strokeWidth="1" />
-                </g>
+              <svg width="36" height="50" viewBox="0 0 40 56" fill="none">
+                {/* Hanger Ring */}
+                <circle cx="20" cy="8" r="6" stroke="#C9A24B" strokeWidth="2" />
+                {/* Lantern Roof */}
+                <path d="M6 16L20 12L34 16L30 22H10L6 16Z" fill="#7A5C48" stroke="#C9A24B" />
+                {/* Glass Chamber */}
+                <rect x="10" y="22" width="20" height="24" stroke="#C9A24B" strokeWidth="1.5" fill="#1A1010" />
+                {/* Glowing Filament Core */}
+                <circle
+                  cx="20"
+                  cy="34"
+                  r="6"
+                  fill={isLanternOff ? "#2A1F18" : "#FFF0B3"}
+                />
+                <path
+                  d="M18 38L20 30L22 38"
+                  stroke={isLanternOff ? "#4A3520" : "#F0C860"}
+                  strokeWidth="1.5"
+                />
+                {/* Base */}
+                <rect x="8" y="46" width="24" height="6" fill="#7A5C48" stroke="#C9A24B" />
               </svg>
             </div>
-
-            {/* Center Dynamo Shaft Pin */}
-            <div className="absolute w-6 h-6 rounded-full bg-[#C9A24B] border-2 border-[#F0D27A] shadow-[0_0_8px_#F0D27A]" />
-          </div>
-
-          {/* Wheel Telemetry Info */}
-          <div className="w-full bg-[#13264A]/50 border border-[#C9A24B]/20 p-2.5 rounded-sm">
-            <div className="flex items-center justify-between text-[11px] font-mono text-[#A3B0C8]">
-              <span>Dynamo Output:</span>
-              <span className="text-[#5FB3A8] font-bold">220V · 50 Hz</span>
-            </div>
-            <div className="flex items-center justify-between text-[11px] font-mono text-[#A3B0C8] mt-1">
-              <span>Secrecy Interlock:</span>
-              <span
-                className={`font-bold transition-colors ${
-                  isLanternDimmed ? "text-[#E0705A]" : "text-[#5FB3A8]"
-                }`}
-              >
-                {isLanternDimmed ? "ACTIVE (AIR-GAP)" : "DISENGAGED"}
-              </span>
-            </div>
+            <span
+              className="text-[9px] font-mono uppercase tracking-wider mt-1 transition-colors whitespace-nowrap"
+              style={{ color: isLanternOff ? "#A3B0C8" : "#F0D27A" }}
+            >
+              {isLanternOff ? "LANTERN OFF" : "LANTERN LIT"}
+            </span>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Auth Console & Nepali Edison Lantern (7 cols) */}
-        <div className="md:col-span-7 p-6 sm:p-8 flex flex-col justify-between">
-          {/* Header Row with Lantern */}
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-[#C9A24B]">
-                Himalayan SCADA Cockpit
-              </p>
-              <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#F1EAD9]">
-                {isRegistering ? "Register Operator Station" : "Operator Authentication"}
-              </h3>
-            </div>
+        {errorMsg && (
+          <div className="mb-4 p-2 bg-[#E0705A]/15 border border-[#E0705A] text-[#E0705A] text-xs font-mono">
+            [ERROR] {errorMsg}
+          </div>
+        )}
 
-            {/* Brass Nepali Powerhouse Edison Lantern */}
-            <div className="flex flex-col items-center">
-              <div
-                className="relative transition-all duration-500"
-                style={{
-                  filter: isLanternDimmed
-                    ? "grayscale(80%) brightness(0.35)"
-                    : "drop-shadow(0 0 20px rgba(240, 200, 96, 0.85))",
-                }}
-              >
-                {/* Lantern Vector Graphic */}
-                <svg width="42" height="62" viewBox="0 0 42 62" fill="none">
-                  {/* Top Hanging Ring */}
-                  <circle cx="21" cy="6" r="4.5" stroke="#C9A24B" strokeWidth="2" fill="none" />
-                  {/* Brass Cap */}
-                  <path
-                    d="M 12 12 L 30 12 L 34 18 L 8 18 Z"
-                    fill="#6F5A2C"
-                    stroke="#C9A24B"
-                    strokeWidth="1.5"
-                  />
-                  {/* Glass Chamber */}
-                  <rect
-                    x="10"
-                    y="18"
-                    width="22"
-                    height="30"
-                    rx="3"
-                    fill={isLanternDimmed ? "rgba(20, 25, 40, 0.6)" : "rgba(255, 240, 180, 0.3)"}
-                    stroke="#C9A24B"
-                    strokeWidth="1.5"
-                  />
-                  {/* Glowing Edison Filament */}
-                  <path
-                    d="M 17 38 L 19 24 L 23 24 L 25 38"
-                    stroke={isLanternDimmed ? "#554422" : "#FFF5D0"}
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Brass Base */}
-                  <rect
-                    x="8"
-                    y="48"
-                    width="26"
-                    height="8"
-                    rx="1"
-                    fill="#6F5A2C"
-                    stroke="#C9A24B"
-                    strokeWidth="1.5"
-                  />
-                </svg>
+        {/* Login / Register Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] mb-1">
+              Operator Identifier / Email
+            </label>
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="operator@nea.gov.np"
+              className="w-full bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#C9A24B] px-3 py-2 text-xs font-mono text-[#F1EAD9] outline-none rounded-sm transition-colors"
+              required
+            />
+          </div>
 
-                {/* Lantern Amber Glow Bloom */}
-                {!isLanternDimmed && (
-                  <div
-                    className="absolute inset-0 rounded-full pointer-events-none"
-                    style={{
-                      background:
-                        "radial-gradient(circle, rgba(240, 200, 96, 0.85) 0%, rgba(240, 200, 96, 0) 70%)",
-                      transform: "scale(1.8)",
-                      zIndex: -1,
-                    }}
-                  />
-                )}
-              </div>
-
-              <span
-                className="text-[9px] font-mono tracking-wider uppercase mt-1 transition-colors duration-300"
-                style={{
-                  color: isLanternDimmed ? "#E0705A" : "#F0D27A",
-                }}
-              >
-                {isLanternDimmed ? "● DIMMED (SECRET)" : "● LANTERN LIT"}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8]">
+                Station Cryptographic Key
+              </label>
+              <span className="text-[10px] font-mono text-[#C9A24B]">
+                {isLanternOff ? "[EYE SHIELD ACTIVE]" : ""}
               </span>
             </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              placeholder="••••••••••••"
+              className="w-full bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#C9A24B] px-3 py-2 text-xs font-mono text-[#F1EAD9] outline-none rounded-sm transition-colors tracking-widest"
+              required
+            />
+            <div className="text-[9px] font-mono text-[#A3B0C8] mt-1">
+              * Note: The powerhouse lantern dims dark when entering credentials to prevent shoulder-surfing.
+            </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {errorMsg && (
-              <div className="p-2.5 bg-[#E0705A]/20 border border-[#E0705A] text-[#F1EAD9] text-xs font-mono rounded-sm">
-                {errorMsg}
-              </div>
-            )}
-
-            {/* Email / Operator ID */}
+          {isRegistering && (
             <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-[#A3B0C8] mb-1.5">
-                Operator Identifier / Email
+              <label className="block text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] mb-1">
+                Operational Authority Role
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="operator@nea.gov.np"
-                className="w-full px-3 py-2 bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#C9A24B] text-[#F1EAD9] font-mono text-sm rounded-sm outline-none transition-all placeholder:text-[#A3B0C8]/40"
-              />
-            </div>
-
-            {/* Password / Access Key */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-mono uppercase tracking-wider text-[#A3B0C8]">
-                  Station Cryptographic Key
-                </label>
-                <span className="text-[10px] font-mono text-[#E0A43A]">
-                  {isLanternDimmed ? "🔒 Lantern Dimmed for Secrecy" : "Eye Shield Active"}
-                </span>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full px-3 py-2 bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#F0D27A] text-[#F1EAD9] font-mono text-sm rounded-sm outline-none transition-all placeholder:text-[#A3B0C8]/40"
-              />
-              <p className="text-[10px] font-sans text-[#A3B0C8] mt-1 italic">
-                * Note: The powerhouse lantern dims dark when entering credentials to prevent
-                shoulder-surfing.
-              </p>
-            </div>
-
-            {/* Role Selection (If registering) */}
-            {isRegistering && (
-              <div>
-                <label className="block text-xs font-mono uppercase tracking-wider text-[#A3B0C8] mb-1.5">
-                  Authority Delegation Role
-                </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#C9A24B] text-[#F1EAD9] font-mono text-xs rounded-sm outline-none"
-                >
-                  <option value="Control Room Engineer">Control Room Engineer (Full Actuation)</option>
-                  <option value="NEA Dispatcher">NEA Grid Dispatcher (Read + Dispatch Target)</option>
-                  <option value="Chief Hydrologist">Chief Hydrologist (Silt / Forecast Audit)</option>
-                </select>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-[#C9A24B] hover:bg-[#F0D27A] text-[#0B1424] font-serif font-bold text-sm tracking-wider uppercase rounded-sm transition-all shadow-[0_2px_12px_rgba(201,162,75,0.3)] disabled:opacity-50 cursor-pointer"
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full bg-[#0B1424] border border-[#C9A24B]/40 focus:border-[#C9A24B] px-3 py-2 text-xs font-mono text-[#F1EAD9] outline-none rounded-sm transition-colors cursor-pointer"
               >
-                {loading
-                  ? "Authenticating Session..."
-                  : isRegistering
-                  ? "REGISTER NEW OPERATOR"
-                  : "LOGIN AS STATION OPERATOR"}
-              </button>
+                <option value="Control Room Engineer">Control Room Engineer</option>
+                <option value="Basin Hydrologist">Basin Hydrologist</option>
+                <option value="Plant General Manager">Plant General Manager</option>
+                <option value="NEA Grid Dispatcher">NEA Grid Dispatcher</option>
+              </select>
             </div>
-          </form>
+          )}
 
-          {/* Toggle Register / Login & Guest Option */}
-          <div className="pt-4 border-t border-[#C9A24B]/20 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono">
-            <button
-              onClick={() => setIsRegistering(!isRegistering)}
-              className="text-[#C9A24B] hover:text-[#F0D27A] transition-colors cursor-pointer"
-            >
-              {isRegistering
-                ? "← Existing Operator? Login"
-                : "Need Account? Register Station →"}
-            </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-[#C9A24B] hover:bg-[#F0D27A] text-[#0B1424] font-serif font-bold text-xs uppercase tracking-widest rounded-sm transition-all shadow-[0_2px_8px_rgba(201,162,75,0.4)] disabled:opacity-50 cursor-pointer mt-2"
+          >
+            {loading
+              ? "AUTHENTICATING..."
+              : isRegistering
+              ? "REGISTER OPERATOR CREDENTIALS"
+              : "LOGIN AS STATION OPERATOR"}
+          </button>
+        </form>
 
-            <button
-              onClick={handleGuest}
-              className="px-3 py-1 bg-[#13264A] hover:bg-[#1a3364] text-[#F1EAD9] border border-[#C9A24B]/30 rounded-sm transition-all cursor-pointer"
-            >
-              CONTINUE AS GUEST OPERATOR →
-            </button>
-          </div>
+        {/* Simple Secondary Actions */}
+        <div className="pt-4 border-t border-[#C9A24B]/20 flex flex-wrap items-center justify-between gap-3 text-xs font-mono mt-6">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setErrorMsg("");
+            }}
+            className="text-[#C9A24B] hover:text-[#F0D27A] underline cursor-pointer"
+          >
+            {isRegistering ? "Existing Operator? Login" : "Need Account? Register Station"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGuest}
+            className="px-3 py-1.5 bg-[#13264A] hover:bg-[#1a3364] border border-[#C9A24B]/50 text-[#F1EAD9] rounded-sm transition-colors cursor-pointer"
+          >
+            CONTINUE AS GUEST OPERATOR →
+          </button>
         </div>
       </div>
     </div>

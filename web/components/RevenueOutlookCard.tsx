@@ -83,19 +83,19 @@ export default function RevenueOutlookCard({
 
   const stanceLabels: Record<RevenueOutlookData['illustrative_stance'], { text: string; bg: string; color: string; border: string }> = {
     accumulate_generation: {
-      text: '⚡ Maximize Generation (High Inflow)',
+      text: '[MAXIMIZE GENERATION: HIGH INFLOW]',
       bg: 'rgba(16, 185, 129, 0.12)',
       color: 'var(--color-green, #10B981)',
       border: 'rgba(16, 185, 129, 0.3)',
     },
     maintain_baseload: {
-      text: '⚖️ Maintain Baseload Commitment',
+      text: '[MAINTAIN BASELOAD COMMITMENT]',
       bg: 'rgba(59, 130, 246, 0.12)',
       color: '#60A5FA',
       border: 'rgba(59, 130, 246, 0.3)',
     },
     preserve_capital_protect_equipment: {
-      text: '🛡️ Preserve Capital (Quartz Protection)',
+      text: '[PRESERVE CAPITAL: QUARTZ PROTECTION]',
       bg: 'rgba(239, 68, 68, 0.12)',
       color: 'var(--color-red, #EF4444)',
       border: 'rgba(239, 68, 68, 0.3)',
@@ -145,7 +145,6 @@ export default function RevenueOutlookCard({
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>📊</span>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary, #F3F4F6)' }}>
               Energy Revenue Outlook Agent ({plantName || 'Plant'})
             </h3>
@@ -187,7 +186,7 @@ export default function RevenueOutlookCard({
               color: 'var(--color-green, #10B981)',
             }}
           >
-            🔒 Air-Gapped Advisory (advisory=True)
+            [AIR-GAPPED ADVISORY]
           </span>
           <button
             onClick={fetchOutlook}
@@ -290,7 +289,7 @@ export default function RevenueOutlookCard({
             marginBottom: '16px',
           }}
         >
-          ✕ Error loading revenue outlook: {error}
+          [ERROR] Error loading revenue outlook: {error}
         </div>
       )}
 
@@ -509,7 +508,6 @@ export default function RevenueOutlookCard({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '14px' }}>🎯</span>
                 <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary, #F3F4F6)' }}>
                   Top Deterministic Economic Drivers
                 </span>
@@ -537,7 +535,6 @@ export default function RevenueOutlookCard({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '14px' }}>🧠</span>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent, #F59E0B)' }}>
                       Executive Economic Narrative (Ollama Qwen 2.5)
                     </span>
@@ -576,7 +573,6 @@ export default function RevenueOutlookCard({
               gap: '10px',
             }}
           >
-            <span style={{ fontSize: '14px' }}>⚠️</span>
             <div style={{ fontSize: '10px', color: '#FBBF24', lineHeight: 1.5, letterSpacing: '0.2px' }}>
               <strong>STATUTORY DISCLAIMER:</strong> {data.disclaimer}
             </div>

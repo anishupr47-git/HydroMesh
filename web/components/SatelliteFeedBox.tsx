@@ -146,7 +146,7 @@ export default function SatelliteFeedBox({
       {/* Station Grounding */}
       <div style={{ marginBottom: "8px", fontSize: "10px", color: "var(--color-text-secondary, #A6B0CF)" }}>
         <div style={{ color: "var(--color-text-primary, #F4F6FC)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          🛰️ {stationName}
+          [STATION] {stationName}
         </div>
         <div>
           GPS: {lat.toFixed(3)}°N, {lon.toFixed(3)}°E | Elev: {elevM}m
@@ -282,9 +282,9 @@ export default function SatelliteFeedBox({
               </span>
               <button
                 onClick={() => setShowJson(false)}
-                style={{ background: "transparent", border: "none", color: "#FFF", cursor: "pointer" }}
+                style={{ background: "transparent", border: "1px solid rgba(212,185,74,0.3)", borderRadius: "3px", color: "#FFF", fontSize: "10px", fontFamily: "var(--font-mono, monospace)", padding: "1px 4px", cursor: "pointer" }}
               >
-                ✕
+                [CLOSE]
               </button>
             </div>
             <pre style={{ margin: 0, fontSize: "11px", color: "#E8EEF4", whiteSpace: "pre-wrap" }}>

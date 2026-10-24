@@ -12,6 +12,7 @@ interface GlobalNavProps {
   userEmail?: string | null;
   userRole?: string;
   onOpenAuth?: () => void;
+  onLogout?: () => void;
   onOpenInspector?: () => void;
   onReplayIntro?: () => void;
 }
@@ -25,6 +26,7 @@ export default function GlobalNav({
   userEmail = null,
   userRole = "guest",
   onOpenAuth,
+  onLogout,
   onOpenInspector,
   onReplayIntro,
 }: GlobalNavProps) {
@@ -62,7 +64,7 @@ export default function GlobalNav({
       : "#5FB3A8";
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0F1A2E]/95 backdrop-blur-md border-b border-[#C9A24B] px-4 sm:px-6 py-2.5 flex items-center justify-between flex-wrap gap-3">
+    <header className="sticky top-0 z-40 bg-[#0F1A2E]/95 backdrop-blur-md border-b border-[#C9A24B] px-4 sm:px-6 py-2.5 flex items-center justify-between flex-wrap gap-3">
       {/* Left: Francis Runner Glyph + HydroMesh Branding + Mode Switcher */}
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2.5 group">
@@ -147,14 +149,14 @@ export default function GlobalNav({
         </span>
       </div>
 
-      {/* Right: NST Clock, Replay Intro & Operator Profile */}
-      <div className="flex items-center gap-3">
+      {/* Right: NST Clock, Replay Intro & Operator Profile (Zero Emojis!) */}
+      <div className="flex items-center gap-2.5">
         {/* Live NST Clock */}
         <div
           className="font-mono text-xs text-[#F0D27A] font-semibold tracking-wider bg-[#0B1424] px-2.5 py-1 border border-[#C9A24B]/30 rounded-sm"
           title="Nepal Standard Time (UTC+5:45)"
         >
-          ⏱️ {nstTime || "12:00:00 NST"}
+          {nstTime || "12:00:00 NST"}
         </div>
 
         {/* Replay Cinematic Intro Button */}
@@ -164,17 +166,17 @@ export default function GlobalNav({
             className="px-2.5 py-1 text-xs font-mono text-[#C9A24B] hover:text-[#F0D27A] border border-[#C9A24B]/40 hover:border-[#C9A24B] bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
             title="Replay 4-Phase Cinematic Entry Flow"
           >
-            [↺ REPLAY INTRO]
+            [REPLAY INTRO]
           </button>
         )}
 
-        {/* Inspector Button */}
+        {/* Audit Inspector Button */}
         {onOpenInspector && (
           <button
             onClick={onOpenInspector}
             className="hidden sm:block px-2.5 py-1 text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] border border-[#C9A24B]/30 bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
           >
-            [📋 AUDIT]
+            [AUDIT]
           </button>
         )}
 
@@ -182,7 +184,7 @@ export default function GlobalNav({
           href="/safety"
           className="hidden md:block px-2.5 py-1 text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] border border-[#C9A24B]/30 bg-[#0B1424] rounded-sm transition-colors"
         >
-          [🛡️ R1–R11]
+          [SAFETY R1-R11]
         </Link>
 
         {/* Operator Badge & Auth Trigger */}
@@ -193,9 +195,20 @@ export default function GlobalNav({
           <span className="w-1.5 h-1.5 rounded-full bg-[#5FB3A8]" />
           <span>{userEmail ? userEmail.split("@")[0] : "GUEST OPERATOR"}</span>
           <span className="text-[10px] text-[#C9A24B]">
-            [{userRole === "guest" ? "GUEST" : "STATION PRO"}]
+            [{userRole === "guest" ? "GUEST" : "OPERATOR"}]
           </span>
         </button>
+
+        {/* Simple Logout / Sign Out Button */}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="px-2.5 py-1 text-xs font-mono text-[#E0705A] hover:text-[#F0D27A] border border-[#E0705A]/40 bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
+            title="Sign Out / Switch Operator"
+          >
+            [LOGOUT]
+          </button>
+        )}
       </div>
     </header>
   );

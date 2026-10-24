@@ -46,7 +46,7 @@ export default function CookieConsentBanner() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-        <span style={{ fontSize: "16px" }}>🍪</span>
+        <span style={{ fontSize: "10px", padding: "2px 6px", background: "rgba(212,185,74,0.15)", border: "1px solid #D4B94A", borderRadius: "3px", color: "#D4B94A", fontFamily: "var(--font-mono, monospace)" }}>SEC</span>
         <h4 style={{ margin: 0, fontSize: "13px", fontWeight: 700, color: "var(--color-cloud-rim, #D4B94A)" }}>
           Essential Security & Preference Cookies
         </h4>

@@ -657,6 +657,28 @@ body {
   }
 }
 
+/* True Rain Drop Plunge from Above Viewport */
+@keyframes letter-rain {
+  0% {
+    transform: translateY(-85vh) scale(0.88);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(8px) scale(1.05);
+    opacity: 1;
+  }
+  88% {
+    transform: translateY(-3px) scale(0.98);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Golden sweep */
 @keyframes golden-sweep {
   0% {
@@ -667,8 +689,48 @@ body {
     opacity: 0.8;
   }
   100% {
-    transform: translateX(200%);
+    transform: translateX(100%);
     opacity: 0;
   }
 }
+
+/* ==========================================================================
+   EXACT TEMPLATE KINETIC ANIMATIONS & KEYFRAMES
+   ========================================================================== */
+
+.rot { transform-origin: 50% 50%; }
+.rT { animation: chakra-spin 160s linear infinite; }
+.rA { animation: chakra-spin 90s linear infinite; }
+.rB { animation: chakra-spin-reverse 36s linear infinite; }
+.rC { animation: chakra-spin-reverse 20s linear infinite; }
+.bl { fill: #6f5a2c; stroke: #c9a24b; stroke-width: 1; animation: glint 6s linear infinite; }
+.bl2 { animation-duration: 4.8s; }
+.tk1 { animation: tick1 1.2s linear infinite; }
+.tk2 { animation: tick2 6s linear infinite; }
+.spin2 { animation: chakra-spin 9s linear infinite; transform-origin: 50% 50%; }
+.spinA { animation: chakra-spin 14s linear infinite; transform-origin: 50% 50%; }
+.spinB { animation: chakra-spin-reverse 5s linear infinite; transform-origin: 50% 50%; }
+.bobc { animation: bob 3s ease-in-out infinite; }
+.hop { animation: hop 1.7s cubic-bezier(.3,.7,.4,1) infinite; }
+.rise { animation: rise 8s ease-in-out infinite; }
+.sl { animation: silt 5s ease-in infinite; }
+.bk { animation: blink 1.4s ease-in-out infinite; }
+.fw { stroke-dasharray: 10 14; animation: dash 2s linear infinite; }
+.pl { stroke-dasharray: 3 45; animation: dash2 1.6s linear infinite; }
+
+@keyframes glint {
+  0%, 60%, 100% { fill: #6f5a2c; }
+  8% { fill: #f0d27a; }
+  24% { fill: #c9a24b; }
+  40% { fill: #8a7236; }
+}
+@keyframes tick1 { to { transform: translateX(-16px); } }
+@keyframes tick2 { to { transform: translateX(-80px); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-26px); } }
+@keyframes rise { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-46px); } }
+@keyframes silt { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateY(100px); opacity: 1; } }
+@keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+@keyframes dash { to { stroke-dashoffset: -24px; } }
+@keyframes dash2 { to { stroke-dashoffset: -48px; } }
 

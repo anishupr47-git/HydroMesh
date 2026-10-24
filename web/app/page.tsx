@@ -199,9 +199,9 @@ export default function HomePage() {
           }}
         >
           {[
-            { label: "🟢 NORMAL: Safe Baseload", sub: "< 1,200 PPM Silt · Clean mountain inflow", bg: "rgba(76, 175, 130, 0.12)", border: "#4CAF82" },
-            { label: "🟡 WATCH: Desander Flush", sub: "1,200 – 3,000 PPM · SOP-04 Sand exclusion active", bg: "rgba(229, 184, 59, 0.12)", border: "#E5B83B" },
-            { label: "🔴 CRITICAL: Gate Throttle", sub: "> 3,000 PPM · Emergency shutoff to save runners", bg: "rgba(230, 76, 76, 0.14)", border: "#E64C4C" },
+            { label: "[NORMAL] Safe Baseload", sub: "< 1,200 PPM Silt · Clean mountain inflow", bg: "rgba(76, 175, 130, 0.12)", border: "#4CAF82" },
+            { label: "[WATCH] Desander Flush", sub: "1,200 – 3,000 PPM · SOP-04 Sand exclusion active", bg: "rgba(229, 184, 59, 0.12)", border: "#E5B83B" },
+            { label: "[CRITICAL] Gate Throttle", sub: "> 3,000 PPM · Emergency shutoff to save runners", bg: "rgba(230, 76, 76, 0.14)", border: "#E64C4C" },
           ].map(({ label, sub, bg, border }) => (
             <div
               key={label}
