@@ -47,4 +47,6 @@ FastAPI Server (:8000)
 - **W05 (T19)**: Render animated `HeroIllustration` SVG and finalize styling.
 - **W06 (Sprint 4)**: Implement 4-Phase User Journey State Machine (`splash` -> `auth` -> `intro` -> `dashboard`).
 - **W07 (Sprint 4)**: Implement 20-Powerhouse Grid with interactive station cards, left-docked inspector panel, and individual plant deep-dive.
+- **W08 (Sprint 4)**: Implement `GlobalFooter` with Statutory Safe Harbor disclaimers, essential cookie policies, and operator support placeholders.
+
 
