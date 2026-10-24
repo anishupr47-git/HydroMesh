@@ -727,4 +727,303 @@ HydroMesh is engineered to be deployed in field hydro plant control rooms, often
 | **Ground Strip** | Deep Void | `--color-fg-ground` | `#0F1218` | Terminal Bed Background |
 
 ---
-*HydroMesh Engineering & Design System — Complete, Validated, Ready for Frontend Assembly.*
+
+## 9. End-to-End User Journey, Navigation State Machine & 20-House Grid
+
+### 9.1 The Four Sequential Journey Phases & State Machine
+
+The HydroMesh web application enforces an uninterrupted, cinematic, and industrial UX state machine. State is managed via a dedicated finite state machine (`UserJourneyState`):
+
+```
+┌─────────────────┐       Auto (1.2s delay) / Skip       ┌────────────────────────┐
+│  Phase 1:       │ ───────────────────────────────────> │  Phase 2:              │
+│  SPLASH SCREEN  │                                      │  ONBOARDING & AUTH     │
+│  Typewriter     │                                      │  Terms → Login → Perms │
+└─────────────────┘                                      └────────────────────────┘
+                                                                      │
+                                                                      ▼
+┌──────────────────────────────────────────────┐         Complete All 3 Steps
+│  Phase 4: GLOBAL OPERATIONS DASHBOARD        │                      │
+│  ┌─────────────────┬──────────────────────┐  │                      ▼
+│  │ Left Docked     │ 20-Powerhouse Grid   │  │         ┌────────────────────────┐
+│  │ Inspector Panel │ 5-Col Scaled Houses  │  │ <────── │  Phase 3:              │
+│  └─────────────────┴──────────────────────┘  │         │  PRODUCT INTRO TUTORIAL│
+│          ▲                    │              │         │  3 Tooltip Cards + CTA │
+│          │ Return             ▼ Deep Dive    │         └────────────────────────┘
+│    ┌──────────────────────────────────────┐  │
+│    │ Individual Plant Page (/plant/[id])  │  │
+│    └──────────────────────────────────────┘  │
+└──────────────────────────────────────────────┘
+```
+
+#### Phase 1: Splash Screen & Letter-by-Letter Typewriter Reveal (`phase === 'splash'`)
+* **Visual Canvas**: Fullscreen viewport centered on `--color-sky-deep` (`#2A2C6B`) with the subtle dark indigo silhouette of the Himalayan mountain cliff citadel.
+* **Typographic Animation**:
+  * Letter-by-letter staggered typewriter reveal spelling:
+    `"WELCOME TO HYDROMESH"`
+  * Monospaced subtitle: `"AUTONOMOUS HIMALAYAN RUN-OF-RIVER GUARDIAN"`
+  * Stagger timing: `55ms` per character with a glowing golden cursor (`--color-cloud-rim`).
+* **Transition Behavior**:
+  * Once the typewriter sequence finishes, the glowing cursor transitions into a soft breathing pulse (`scale(1.0) -> scale(1.04)`).
+  * Automatically transitions to **Phase 2** after a `1.2s` hold delay.
+  * Includes an interactive `[Skip Intro →]` keyboard/mouse bypass in the top-right corner.
+
+#### Phase 2: Onboarding, Consent & Auth Gates (`phase === 'auth'`)
+A focused modal card sequence anchored over the dim twilight mountain canvas:
+1. **Step 1: Terms of Service & SOP Synthetic Disclaimers**:
+   * Explicitly sets the legal and engineering premise: *HydroMesh is an advisory AI digital twin. All automated actuation commands require human operator confirmation (Advisory: True). Telemetry is derived from European ECMWF 9km satellite arrays and calibrated physics models.*
+   * "I Understand and Accept Operational Invariants" checkbox.
+2. **Step 2: Authentication Gate**:
+   * Dual-entry access:
+     * **Instant Guest Access**: Mint immediate `guest_<random>` token for read-only fleet exploration.
+     * **Lead Operator Login**: Email + Argon2id passphrase for registered operators (includes 1 private plant slot).
+3. **Step 3: Permission Approval Check**:
+   * Grants permissions for WebSocket live telemetry streaming, local alert sound notifications, and session storage caching.
+   * Action button: `"Enter System Onboarding →"`.
+
+#### Phase 3: Product Intro & Tutorial ("How to Use") (`phase === 'intro'`)
+* **Layout**: A high-density industrial mission briefing layout.
+* **Three Interactive Guided Walkthrough Cards**:
+  1. **Card 1 — The 20-Powerhouse Grid**:
+     * How to read the isometric powerhouse blocks, real-time river discharge ($m^3/s$), and operational generation capacity (MW).
+  2. **Card 2 — Quartz Silt Influx & Turbine Health**:
+     * Color-coded erosion thresholds:
+       * `SAFE`: $< 1,200\text{ PPM}$ (Normal generation).
+       * `ELEVATED`: $1,200\text{–}3,000\text{ PPM}$ (Sand flushing advisory).
+       * `CRITICAL`: $> 3,000\text{ PPM}$ (Immediate gate modulation to prevent catastrophic runner wear).
+  3. **Card 3 — Multi-Agent AI & Safety Kernel**:
+     * Explains the 5-agent pipeline (Triage $\to$ Predictive $\to$ SOP RAG $\to$ Dispatch $\to$ Safety Kernel).
+     * Reassures the operator that **Safety Kernel Rules R1–R11** enforce strict fail-closed validation.
+* **Primary CTA**: Prominent radiant amber button (`--color-arch-window-glow`) labeled `"Continue to Dashboard →"`.
+
+---
+
+### 9.2 Phase 4: Global Operations Dashboard Architecture
+
+#### Top Global Navigation Bar (`<GlobalNav />`)
+* **Left**: HydroMesh brand logo with illuminated amber arch beacon (`#D4A830`) and active mode toggle (`Individual Site` vs `Global Fleet`).
+* **Center**: Real-Time Fleet Health Pill:
+  * Total Sites: `20 Active Stations`
+  * Active Alert Beacon: Green (Normal), Yellow (Watch), Red (Critical).
+  * Satellite Radar Link: `ECMWF 9km [Connected · 820ms]`
+* **Right**:
+  * Live Nepal Standard Time (`NST = UTC + 5:45` formatted as `HH:MM:SS NST`).
+  * Quick Links: `Inspector`, `Safety SOPs`, `Replay Intro`.
+  * User Identity Badge (`Guest Operator` or member email).
+
+#### Left Side Docked Panel: Telemetry & MD Plan Inspector (`<InspectorPanel />`)
+* **Position**: Persistent left-docked collapsible sidebar (`w-80` to `w-96`, or collapsible to a `48px` icon strip on mobile/tablet).
+* **Tab 1: Live Telemetry Stream**:
+  * Real-time river flow $Q$, mountain temperature ($^\circ\text{C}$), rainfall rate ($\text{mm/h}$), and vibration ($\text{mm/s}$).
+* **Tab 2: Active SOP & Trigger Thresholds**:
+  * Parses and displays markdown SOPs (`HIGH_SILT_SOP.md`, `CAVITATION_SOP.md`) with cryptographic SHA-256 integrity hashes (`88c4b1...`).
+  * Threshold matrix matching `docs/web/plan.md`.
+* **Tab 3: Agent Event Log**:
+  * Streaming audit trail of autonomous events: `TriageAgent`, `PredictiveAgent`, `SafetyKernel`, and `ExplainerAgent`.
+
+---
+
+### 9.3 Main View: The 20 Hydropower "House" Grid (`<PowerhouseGrid />`)
+
+The core workspace displays an interactive array of **exactly 20 distinct hydropower stations** from the verified Nepal registry, styled visually as **industrial powerhouses / isometric substation blocks**:
+
+#### Visual Anatomy of a Powerhouse Block Card (`<PowerhouseCard />`):
+1. **Architectural Gable Roof & Ventilation Slits**:
+   * Faceted roof silhouette with slate masonry borders (`--color-cliff-mid`).
+   * Stylized transformer substation insulator bushings and penstock pipe intake line.
+2. **Control Room Hearth Window**:
+   * Rectangular arched illuminated window glowing in amber (`#F0C860`) if active, or pulsing red during severe silt ingress.
+3. **Telemetry Metrics Monospace Strip**:
+   * **Name & River Basin**: E.g., `Upper Tamakoshi · Koshi Basin`.
+   * **Installed Capacity**: Monospace `456.0 MW`.
+   * **River Flow Rate**: Monospace `35.0 m³/s`.
+   * **Quartz Silt PPM**: Color-coded badge (`1.2 PPM` normal, `>3000 PPM` critical).
+   * **Operational Status**: `NORMAL`, `WATCH`, `WARNING`, `CRITICAL`.
+4. **Interactive Hover Mechanics**:
+   * On hover: Golden cloud-rim highlight border (`--color-cloud-rim` `#D4B94A`), subtle `translateY(-3px)` elevation.
+   * On click: Smoothly navigates to the dedicated plant detail view (`/plant/[id]`).
+
+---
+
+### 9.4 Individual Plant Detail View (`/plant/[id]`)
+
+When an operator clicks any powerhouse card, the system opens the full single-plant deep-dive:
+* **Header**: Back navigation button (`← Back to 20-House Fleet Overview`), plant headline, head ($m$), and basin location.
+* **Twin Gauges (`<TwinGauges />`)**:
+  * High-contrast SVG arc gauge for **Discharge** ($0\text{–}100\text{ m}^3/\text{s}$).
+  * Non-linear calibrated gauge for **Quartz Silt Concentration** ($0\text{–}5,000\text{ PPM}$).
+* **Temporal Forecast Chart (`<ForecastChart />`)**:
+  * 48-hour forward projection showing expected precipitation peaks and river inflow surges.
+* **Manual Override & Advisory Control (`<OverrideButton />`)**:
+  * Penstock intake gate slider ($0\text{–}100\%$).
+  * Sand flushing basin trigger ($15\text{–}60\text{ mins}$).
+  * Human-in-the-loop cryptographic nonce submission.
+
+---
+
+### 9.5 Responsive Breakpoints & Viewport Scaling
+
+The 20-powerhouse grid scales fluidly without horizontal scrollbars:
+* **Mobile (`< 640px`, `sm`)**: `grid-cols-1` (single vertical column of powerhouses, inspector panel docks to bottom drawer).
+* **Tablet (`640px – 1024px`, `md` / `lg`)**: `grid-cols-2` or `grid-cols-3`.
+* **Desktop (`1024px – 1440px`, `xl`)**: `grid-cols-4`.
+* **Wide Workstation (`> 1440px`, `2xl`)**: `grid-cols-5` (clean 4 rows of 5 powerhouse blocks).
+* **Accessibility**: All animations respect `@media (prefers-reduced-motion: reduce)` by immediately displaying final text/layouts with zero motion delay.
+
+---
+
+## 10. Legal, Privacy, AI Ethics, Cookie Governance & Footer Architecture (Lawsuit Protection & Trust Shield)
+
+### 10.1 Lawsuit Protection & Statutory Non-Liability Shield
+
+HydroMesh operates in high-consequence river management environments where heavy sediment, flash floods, and glacier outbursts pose physical and financial hazards. To safeguard developers, operators, and hosting entities from civil liability or catastrophic lawsuits, the interface and documentation enforce an uncompromising legal safe harbor:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        STATUTORY NON-LIABILITY ARCHITECTURE                            │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│  1. ADVISORY-ONLY INVARIANT     │ Dispatches carry strict `advisory: Literal[True]`.   │
+│                                 │ AI never directly trips breakers or opens penstocks. │
+├─────────────────────────────────┼──────────────────────────────────────────────────────┤
+│  2. CERTIFIED OPERATOR GATE     │ All physical actions require human operator signoff  │
+│                                 │ with cryptographic nonce audit recording.            │
+├─────────────────────────────────┼──────────────────────────────────────────────────────┤
+│  3. FAIL-CLOSED SAFETY KERNEL   │ Confidence < 0.80 or sensor dropout immediately      │
+│                                 │ revokes AI recommendations; falls back to R1–R11.    │
+├─────────────────────────────────┼──────────────────────────────────────────────────────┤
+│  4. COMPLETE WAIVER OF DAMAGES  │ Explicit disclaimer of all consequential, flood,     │
+│                                 │ abrasion, cavitation, or lost generation damages.    │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Plain-English Legal Disclaimer (Rendered in Modal & Footer):
+> **IMPORTANT NOTICE & LIMITATION OF LIABILITY**:  
+> HydroMesh is an AI-assisted Decision Support System (DSS) and mathematical digital twin provided strictly for informational and advisory engineering simulation. HydroMesh does **not** directly actuate or control physical hydro dams, penstock intake gates, desilting basins, or transmission grid interconnects. **All automated dispatches and sediment flushes are strictly advisory (`advisory: true`) and must be independently verified and authorized by a certified human plant operator.**  
+> Under no circumstances shall the authors, maintainers, copyright holders, or operating organizations be liable for any direct, indirect, incidental, special, punitive, or consequential damages (including, but not limited to: downstream flooding, dam breach, turbine runner erosion, equipment cavitation, loss of grid synchronization, or interruption of electric revenue) arising from any reliance on or interaction with this software.
+
+---
+
+### 10.2 Privacy Policy (Zero-Creep Data Minimization)
+
+HydroMesh is built around an uncompromising **Data Minimization & Sovereign Protection** standard:
+
+1. **Zero Commercial Tracking**:
+   * HydroMesh never sells, rents, monetizes, or shares user emails, plant metrics, or operational logs with third-party advertisers, brokers, or data analytics consortiums.
+2. **Cryptographic Identity Defense**:
+   * Operator passwords are never stored in plaintext. They are salted and hashed using the memory-hard **Argon2id** algorithm (`time_cost=3`, `memory_cost=64MB`).
+   * Timing-neutral dummy hashes (`verify_dummy_timing()`) eliminate account enumeration attacks.
+3. **Mountain Coordinate Coarsening (Anti-Espionage Protocol)**:
+   * Private user plant coordinates are automatically coarsened to a **0.1° grid** ($\approx 11\text{ km}$ buffer) when displayed on aggregate global maps:
+     ```python
+     lat_coarsened = round(math.floor(lat / 0.1) * 0.1, 2)
+     lon_coarsened = round(math.floor(lon / 0.1) * 0.1, 2)
+     ```
+   * This strictly prevents unauthorized location intelligence or competitive reconnaissance of private infrastructure.
+4. **GDPR / Privacy Right to Erasure**:
+   * Users can terminate sessions via `/api/auth/logout-all` and request complete hard deletion of their registered plant and credentials from the SQLite WAL repository.
+
+---
+
+### 10.3 AI Ethics, Machine Learning Transparency & Safety Boundaries
+
+Operators must have total confidence that the autonomous AI decision pipeline is transparent, ethical, and contained:
+
+1. **Zero Training on Proprietary Dam Data**:
+   * Live river flows, plant geometries, head measurements, and operator notes are **never** used to train commercial public foundation models.
+2. **Deterministic Envelopes (No "Hallucinated" Actuations)**:
+   * AI agents cannot invent new tools or arbitrary electrical setpoints. Every proposed action is constrained to a strictly typed, frozen schema (`ModulateIntake`, `TriggerFlush`, `ReallocateDispatch`).
+   * The **Safety Kernel (Rules R1–R11)** independently audits all proposals against physical river limits, ensuring no dispatch exceeds turbine design flow ($Q_{\text{max}}$) or violates environmental minimum baseflow ($Q_{\text{base}}$).
+3. **Transparent Explainability ("Why did the AI say this?")**:
+   * The `ExplainerAgent` generates concise, jargon-free non-technical briefings explaining the exact physical reason for each alert (e.g., *"Heavy rain in Langtang basin upstream will arrive at the intake in 2.8 hours. We recommend flushing Basin 1 for 45 minutes"*).
+
+---
+
+### 10.4 Cookie Governance & Cache Management Policy
+
+#### 1. Zero Surveillance Cookies:
+HydroMesh rejects invasive third-party ad networks, Google Analytics cookies, and social tracking pixels. Only **strictly essential, security-hardened tokens** are deployed:
+
+| Cookie / Key | Type | Storage Location | Expiry | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `session` | Essential Security | HTTP-Only, Secure, SameSite=Lax | 12 Hours (30m Idle) | Cryptographic bearer token identifying authenticated operator. |
+| `hydromesh_csrf` | Essential Security | Request Header / State | Per Session | Prevents Cross-Site Request Forgery (CSRF) on manual overrides. |
+| `hydromesh_ui_prefs`| User Experience | `localStorage` | Persistent | Stores dark mode contrast, preferred river basin, and metric units. |
+| `hydromesh_onboarding_dismissed` | User Experience | `localStorage` | 30 Days | Prevents the 4-phase introductory tutorial from repeating on refresh. |
+| `hydromesh_cookie_consent` | Legal Trust | `localStorage` | 1 Year | Remembers user acknowledgment of essential security cookies. |
+
+#### 2. Cache & Telemetry Freshness Protocols:
+* **In-Memory & Redis Blackboard TTL**: Telemetry values expire after **30 to 300 seconds** to ensure operators never make life-critical water decisions based on stale cached sensor feeds.
+* **Satellite Model Refresh Transparency**: Weather radar models refresh hourly. The UI prominently displays the age of the satellite assimilation frame so operators know the exact freshness of mountain precipitation vectors.
+* **Audit Trail Retention**: Local SQLite WAL records operator overrides and incident audits for **7 days** to satisfy regulatory post-incident reviews, after which logs are automatically trimmed.
+
+#### 3. Friendly Cookie Consent Banner Design:
+* An elegant, non-intrusive floating card in the lower-right corner styled with `--color-surface-raised` (`#252B4A`) and a subtle golden rim border (`--color-cloud-rim`).
+* **Friendly Copy**:
+  > *"We only use essential security cookies to keep your control room session safe and remember your display preferences. No ad trackers, no third-party data brokers, ever."*
+* **Action Buttons**: `[Acknowledge & Close]` (Primary amber button) and `[Review Privacy Policy]`.
+
+---
+
+### 10.5 Friendly, Non-Tech Human Tone Guidelines
+
+Engineering control rooms are high-stress environments during monsoons and floods. The interface must remain calming, human, and crystal-clear:
+* **No Intimidating Legalese**: Legal terms are summarized with a single-sentence plain-English callout box (*"In plain English: This is an assistant tool. A human engineer always has the final say before touching any valves."*).
+* **Positive Status Affirmations**: Instead of cryptic error codes, use encouraging industrial phrasing:
+  * `[OK] All 25 Himalayan Stations Connected & Calibrated`
+  * `[Protected] Safety Kernel R1–R11 Invariants Enforced`
+  * `[Advisory Only] Human Authorization Required for Valve Movement`
+
+---
+
+### 10.6 Master Footer Architecture (`<GlobalFooter />`)
+
+The application footer serves as the operational anchor, compliance ledger, and support clearinghouse. It is designed using a 4-column responsive layout built on `--color-surface` (`#1E2240`), `--color-sky-zenith` (`#1E1A38`), and `--color-border` (`#3A4060`).
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   HYDROMESH FOOTER                                     │
+├────────────────────┬────────────────────┬────────────────────┬─────────────────────────┤
+│  1. MISSION & CORE │  2. SCADA FLEET    │  3. TRUST & SAFETY │  4. FIELD DISPATCH      │
+│  Himalayan River   │  • 20-House Grid   │  • Privacy Policy  │  [OPERATOR ENTITY]      │
+│  Smart Guardian    │  • Live Inspector  │  • Terms of Service│  [DISPATCH HOTLINE]     │
+│  Advisory DSS      │  • SOP Procedures  │  • AI Ethics / Safe│  [STATION HQ ADDRESS]   │
+│  Status: All Green │  • Twin Sandboxes  │  • Cookie Settings │  [REGULATORY LICENSE #] │
+├────────────────────┴────────────────────┴────────────────────┴─────────────────────────┤
+│  © 2026 HydroMesh · Himalayan Hydropower Autonomous Digital Twin · Version 0.4.0-sprint4 │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Detailed Footer Columns:
+1. **Column 1 — Brand, Mission & System Health**:
+   * Brand name: `HydroMesh` with glowing amber hearth indicator.
+   * Mission: *Autonomous Spatio-Temporal Digital Twin & Early Warning Sentinel for Himalayan Run-of-River Hydropower.*
+   * Live Status Beacon: `● All Systems Operational · Satellite Link Active (ECMWF 9km)`.
+2. **Column 2 — SCADA Operations & Telemetry**:
+   * `20-Powerhouse Fleet Overview`
+   * `Live Satellite Telemetry Inspector (live_extraction.py)`
+   * `SOP RAG Procedural Memory (SHA-256 Verified)`
+   * `Hydraulic Digital Twin Sandbox & Scenarios`
+   * `FastAPI Engine Health (/api/health)`
+3. **Column 3 — Trust, Governance & Legal Protection**:
+   * `Privacy Policy & Sovereign Data Minimization`
+   * `Terms of Use & Statutory Non-Liability Safe Harbor`
+   * `AI Ethics & Advisory Dispatch Invariant (Advisory: True)`
+   * `Essential Cookie & Local Storage Preferences`
+   * `Security Vulnerability Reporting & PGP Key`
+4. **Column 4 — Field Dispatch & Regulatory Information (User-Customizable Slots)**:
+   * Explicit placeholder slots provided for the user/operator to inject their personal/company credentials:
+     * **Operating Entity**: `[Your Company / Hydropower Consortium Name]`
+     * **Emergency Control Room Dispatch**: `[24/7 Field Phone / Dispatch Radio Channel]`
+     * **Regional Headquarters**: `[Physical Office Address / River Basin Division]`
+     * **Regulatory Environmental Permit**: `[DOED / NEA Water Use License #]`
+     * **Primary Support Desk**: `[support@yourdomain.org]`
+
+#### Bottom Legal Micro-Bar:
+* **Copyright**: `© 2026 HydroMesh. Open-source under MIT / Apache-2.0. Built for Himalayan Energy Resilience.`
+* **Safety Affirmation**: `Advisory Decision Support System. Does not actuate physical equipment without human signoff.`
+* **Version & SHA-256 Token**: `Release v0.4.0 (Sprint 4) · SOP Manifest SHA: 88c4b1...`
+
+---
+*HydroMesh Master Design System — Complete, Lawsuit-Protected, Ethically Sound, and Ready for Deployment.*
+
+
