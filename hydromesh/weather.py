@@ -42,12 +42,63 @@ def load_nepal_plants(path: Path | str = REGISTRY_PATH) -> tuple[HydroPlantSpec,
 
 
 def get_plant_by_id(plant_id: str, plants: tuple[HydroPlantSpec, ...] | None = None) -> HydroPlantSpec | None:
-    """Find a plant by its unique string identifier."""
+    """Find a plant by its unique string identifier, falling back to registered user sites in DB."""
     registry = plants if plants is not None else load_nepal_plants()
     for plant in registry:
         if plant.id == plant_id:
             return plant
+
+    # Fallback to SQLite DB for user-registered custom sites
+    try:
+        from hydromesh.db.database import db
+
+        site = db.get_site(plant_id)
+        if site is not None:
+            return HydroPlantSpec(
+                id=site.id,
+                name=site.name,
+                capacity_mw=site.capacity_mw,
+                river_basin="Custom Basin",
+                latitude=site.coordinates.lat,
+                longitude=site.coordinates.lon,
+                design_flow_m3s=site.design_flow_m3s,
+                head_m=site.head_m,
+                catchment_area_km2=site.catchment_area_km2,
+                base_flow_m3s=round(site.design_flow_m3s * 0.70, 2),
+                runoff_coeff=0.65,
+            )
+    except Exception:
+        pass
+
     return None
+
+
+def make_custom_plant_spec(
+    name: str = "Custom Hydropower Project",
+    latitude: float = 27.848,
+    longitude: float = 86.136,
+    capacity_mw: float = 50.0,
+    head_m: float = 120.0,
+    design_flow_m3s: float = 40.0,
+    catchment_area_km2: float = 250.0,
+    river_basin: str = "Custom Basin",
+    plant_id: str | None = None,
+) -> HydroPlantSpec:
+    """Construct an ad-hoc HydroPlantSpec for any arbitrary coordinates on Earth."""
+    clean_id = plant_id or f"custom_{abs(hash((name, latitude, longitude))) % 1000000:06d}"
+    return HydroPlantSpec(
+        id=clean_id,
+        name=name,
+        capacity_mw=capacity_mw,
+        river_basin=river_basin,
+        latitude=latitude,
+        longitude=longitude,
+        design_flow_m3s=design_flow_m3s,
+        head_m=head_m,
+        catchment_area_km2=catchment_area_km2,
+        base_flow_m3s=round(design_flow_m3s * 0.70, 2),
+        runoff_coeff=0.65,
+    )
 
 
 class WeatherClient:

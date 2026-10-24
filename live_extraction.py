@@ -31,7 +31,7 @@ if sys.platform == "win32":
 
 from hydromesh.ingest.live import LiveIngestionEngine
 from hydromesh.schemas import HydroPlantSpec
-from hydromesh.weather import WeatherClient, get_plant_by_id, load_nepal_plants
+from hydromesh.weather import WeatherClient, get_plant_by_id, load_nepal_plants, make_custom_plant_spec
 
 # ANSI Color Codes for clean industrial terminal presentation
 CYAN = "\033[96m"
@@ -57,7 +57,9 @@ def print_banner() -> None:
     print(f"{DIM}Connecting to Open-Meteo European (ECMWF 9km) & NOAA GFS satellite arrays...{RESET}\n")
 
 
-async def inspect_plant_live(plant: HydroPlantSpec, client: WeatherClient, iteration: int = 1) -> None:
+async def inspect_plant_live(
+    plant: HydroPlantSpec, client: WeatherClient, iteration: int = 1, run_ai: bool = False
+) -> None:
     """Fetch and display real-time satellite telemetry and physical formulas for one plant."""
     t0 = time.perf_counter()
     obs = await client.fetch_weather(plant.latitude, plant.longitude)
@@ -145,6 +147,43 @@ async def inspect_plant_live(plant: HydroPlantSpec, client: WeatherClient, itera
     )
     print(f"     • Live Quartz Silt:       {BOLD}{telemetry.silt_ppm:.1f} PPM{RESET} [{tier}]")
     print(f"     • Estimated Turbine Vib:  {BOLD}{telemetry.vibration_mm_s:.2f} mm/s{RESET}")
+
+    if run_ai:
+        print(f"\n  {CYAN}{BOLD}6. AI MULTI-AGENT INFERENCE & SAFETY KERNEL VERIFICATION:{RESET}")
+        try:
+            from hydromesh.pipeline import OrchestrationPipeline
+
+            pipeline = OrchestrationPipeline(plant=plant)
+            incident = await pipeline.run_cycle(telemetry=telemetry, weather=obs)
+
+            if incident.anomaly:
+                sev = incident.anomaly.severity.value
+                sev_color = GREEN if sev == "normal" else (YELLOW if sev in ("watch", "warning") else RED)
+                print(f"     • TriageAgent Severity:   {sev_color}{BOLD}{sev.upper()}{RESET} (Confidence: {incident.anomaly.confidence:.2f}, Silt Risk: {incident.anomaly.silt_risk:.2f})")
+
+            if incident.forecast:
+                print(
+                    f"     • PredictiveAgent (TFT):  Peak Flow {incident.forecast.peak_discharge_m3s:.1f} m³/s at T+{incident.forecast.horizon_h}h (Confidence: {incident.forecast.confidence:.2f}, Risk: {incident.forecast.risk.value.upper()})"
+                )
+
+            if incident.sop_matches:
+                top_sop = incident.sop_matches[0]
+                print(
+                    f"     • SOP RAG Mitigation:    {BOLD}{top_sop.doc_id}{RESET} [{top_sop.section}] (Score: {top_sop.score:.3f})"
+                )
+
+            if incident.verdict:
+                v_color = GREEN if incident.verdict.status == "approved" else RED
+                print(f"     • Safety Kernel Verdict:  {v_color}{BOLD}{incident.verdict.status.upper()}{RESET} | Rules R1-R11 Verified")
+                for reason in incident.verdict.reasons:
+                    print(f"       [RULE] {reason}")
+
+            if incident.decision:
+                print(f"\n  {CYAN}{BOLD}7. DETERMINISTIC EXPLAINER RATIONALE:{RESET}")
+                for line in incident.decision.rationale.splitlines():
+                    print(f"     {line}")
+        except Exception as e:
+            print(f"     {RED}AI evaluation note: {e}{RESET}")
     print()
 
 
@@ -234,8 +273,55 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="HydroMesh Live Satellite & Hydrology Extraction")
     parser.add_argument(
         "--plant",
-        default="upper_tamakoshi",
+        default=None,
         help="Plant ID to inspect (e.g. upper_tamakoshi, kali_gandaki_a, rasuwagadhi)",
+    )
+    parser.add_argument(
+        "--lat",
+        type=float,
+        default=None,
+        help="Latitude for custom solo plant (e.g. 28.14)",
+    )
+    parser.add_argument(
+        "--lon",
+        type=float,
+        default=None,
+        help="Longitude for custom solo plant (e.g. 84.82)",
+    )
+    parser.add_argument(
+        "--name",
+        type=str,
+        default="Custom Hydropower Project",
+        help="Name of custom plant",
+    )
+    parser.add_argument(
+        "--capacity",
+        type=float,
+        default=50.0,
+        help="Installed capacity in MW (default: 50.0)",
+    )
+    parser.add_argument(
+        "--head",
+        type=float,
+        default=120.0,
+        help="Rated head in meters (default: 120.0)",
+    )
+    parser.add_argument(
+        "--flow",
+        type=float,
+        default=40.0,
+        help="Design flow in m3/s (default: 40.0)",
+    )
+    parser.add_argument(
+        "--area",
+        type=float,
+        default=250.0,
+        help="Catchment area in km2 (default: 250.0)",
+    )
+    parser.add_argument(
+        "--ai",
+        action="store_true",
+        help="Run 5-agent AI pipeline reasoning and safety kernel verification on live telemetry",
     )
     parser.add_argument(
         "--all", action="store_true", help="Scan all 25 landmark Nepal hydropower stations concurrently"
@@ -256,20 +342,38 @@ def main() -> None:
         asyncio.run(scan_all_25_plants())
         return
 
-    plant = get_plant_by_id(args.plant)
-    if not plant:
-        print(f"{RED}Error: Plant ID '{args.plant}' not found in registry.{RESET}")
-        print("Available IDs: upper_tamakoshi, kali_gandaki_a, rasuwagadhi, middle_marsyangdi, trishuli, etc.")
-        sys.exit(1)
+    if args.lat is not None and args.lon is not None:
+        plant = make_custom_plant_spec(
+            name=args.name,
+            latitude=args.lat,
+            longitude=args.lon,
+            capacity_mw=args.capacity,
+            head_m=args.head,
+            design_flow_m3s=args.flow,
+            catchment_area_km2=args.area,
+        )
+    else:
+        plant_id = args.plant or "upper_tamakoshi"
+        plant = get_plant_by_id(plant_id)
+        if not plant:
+            print(f"{RED}Error: Plant ID '{plant_id}' not found in registry or database.{RESET}")
+            print("Tip: Provide custom coordinates with: --lat <LAT> --lon <LON> --name '<NAME>'")
+            sys.exit(1)
 
     if args.stream:
         asyncio.run(stream_live_plant(plant, interval_s=args.interval))
     else:
-        asyncio.run(inspect_plant_live(plant, WeatherClient()))
+        asyncio.run(inspect_plant_live(plant, WeatherClient(), run_ai=args.ai))
         print(f"{DIM}Tip: Run with --stream to watch numbers update continuously over time:{RESET}")
-        print(f"  {CYAN}python live_extraction.py --plant {plant.id} --stream{RESET}")
-        print(f"{DIM}Or view all 25 stations across Nepal:{RESET}")
-        print(f"  {CYAN}python live_extraction.py --all{RESET}\n")
+        if args.lat is not None and args.lon is not None:
+            print(f"  {CYAN}python live_extraction.py --lat {args.lat} --lon {args.lon} --name '{args.name}' --stream{RESET}")
+        else:
+            print(f"  {CYAN}python live_extraction.py --plant {plant.id} --stream{RESET}")
+        print(f"{DIM}Or run complete 5-agent AI pipeline reasoning on live satellite data:{RESET}")
+        if args.lat is not None and args.lon is not None:
+            print(f"  {CYAN}python live_extraction.py --lat {args.lat} --lon {args.lon} --ai{RESET}\n")
+        else:
+            print(f"  {CYAN}python live_extraction.py --plant {plant.id} --ai{RESET}\n")
 
 
 if __name__ == "__main__":

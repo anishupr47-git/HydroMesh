@@ -162,3 +162,66 @@ def test_legacy_and_dashboard_routes(client: TestClient) -> None:
     res_dash = client.get("/")
     assert res_dash.status_code == 200
     assert "HydroMesh" in res_dash.text
+
+
+def test_live_query_endpoints(client: TestClient) -> None:
+    """Assert POST /api/live-query and GET /api/live-query fetch weather and run AI."""
+    # Test POST
+    payload = {
+        "name": "Custom Valley Station",
+        "latitude": 28.14,
+        "longitude": 84.82,
+        "capacity_mw": 75.0,
+        "head_m": 150.0,
+        "design_flow_m3s": 55.0,
+        "catchment_area_km2": 320.0,
+        "run_ai": True,
+    }
+    resp_post = client.post("/api/live-query", json=payload)
+    assert resp_post.status_code == 200
+    data_post = resp_post.json()
+    assert data_post["plant"]["name"] == "Custom Valley Station"
+    assert "weather" in data_post
+    assert "telemetry" in data_post
+    assert data_post["incident"] is not None
+    assert data_post["incident"]["verdict"]["status"] in ("approved", "rejected", "needs_human")
+
+    # Test GET
+    resp_get = client.get("/api/live-query?lat=28.14&lon=84.82&name=ValleyStation&run_ai=false")
+    assert resp_get.status_code == 200
+    data_get = resp_get.json()
+    assert data_get["plant"]["name"] == "ValleyStation"
+    assert data_get["incident"] is None
+
+
+def test_registered_site_weather_and_evaluate(client: TestClient) -> None:
+    """Assert /api/sites/{id}/weather and /api/sites/{id}/evaluate function for DB sites."""
+    from hydromesh.db.database import db
+    from hydromesh.schemas import Coordinates, SiteSpecInput
+
+    spec = SiteSpecInput(
+        name="Unit Test Member Dam",
+        coordinates=Coordinates(lat=28.25, lon=85.35),
+        capacity_mw=40.0,
+        head_m=110.0,
+        design_flow_m3s=30.0,
+        catchment_area_km2=180.0,
+    )
+    site = db.create_site(spec, user_id=None, is_seeded=True)
+
+    # Site weather
+    resp_w = client.get(f"/api/sites/{site.id}/weather")
+    assert resp_w.status_code == 200
+    assert "temperature_c" in resp_w.json()
+
+    # Site evaluate
+    resp_e = client.post(f"/api/sites/{site.id}/evaluate?rainfall_override_mm_h=20.0")
+    assert resp_e.status_code == 200
+    assert resp_e.json()["verdict"]["status"] in ("approved", "rejected", "needs_human")
+
+    # Also verify /api/plants/{id}/weather DB fallback
+    resp_pw = client.get(f"/api/plants/{site.id}/weather")
+    assert resp_pw.status_code == 200
+
+    resp_pe = client.post(f"/api/plants/{site.id}/evaluate")
+    assert resp_pe.status_code == 200

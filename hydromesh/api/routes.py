@@ -321,6 +321,90 @@ async def trigger_twin_scenario(payload: TwinScenarioPayload, request: Request) 
     }
 
 
+class CustomLiveQuery(BaseModel):
+    name: str = Field(default="Custom Hydropower Station", min_length=2, max_length=120)
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    capacity_mw: float = Field(default=50.0, gt=0, le=5000)
+    head_m: float = Field(default=120.0, gt=0, le=2500)
+    design_flow_m3s: float = Field(default=40.0, gt=0, le=2000)
+    catchment_area_km2: float = Field(default=250.0, gt=0, le=50000)
+    runoff_coeff: float = Field(default=0.65, gt=0, le=1.0)
+    run_ai: bool = Field(default=True)
+    rainfall_override_mm_h: float | None = Field(default=None, ge=0.0, le=300.0)
+
+
+@router.post("/api/live-query")
+async def execute_custom_live_query(query: CustomLiveQuery) -> dict[str, Any]:
+    """Dynamically fetch live satellite weather and compute telemetry + AI decision for any coordinates."""
+    from hydromesh.ingest.live import LiveIngestionEngine
+    from hydromesh.weather import make_custom_plant_spec
+
+    plant = make_custom_plant_spec(
+        name=query.name,
+        latitude=query.latitude,
+        longitude=query.longitude,
+        capacity_mw=query.capacity_mw,
+        head_m=query.head_m,
+        design_flow_m3s=query.design_flow_m3s,
+        catchment_area_km2=query.catchment_area_km2,
+    )
+
+    # 1. Fetch live real-world satellite weather from ECMWF/NOAA for these exact coordinates
+    obs = await _weather_client.fetch_weather(query.latitude, query.longitude)
+    if query.rainfall_override_mm_h is not None:
+        obs = obs.model_copy(update={"precipitation_mm_h": query.rainfall_override_mm_h})
+
+    # 2. Ingest live satellite data through physical hydrology equations
+    engine = LiveIngestionEngine(plant)
+    telemetry = engine.ingest(obs)
+
+    result: dict[str, Any] = {
+        "plant": plant.model_dump(mode="json"),
+        "weather": obs.model_dump(mode="json"),
+        "telemetry": telemetry.model_dump(mode="json"),
+        "incident": None,
+    }
+
+    # 3. If requested, run the complete 5-agent AI pipeline
+    if query.run_ai:
+        pipeline = _get_pipeline_for_plant(plant)
+        incident = await pipeline.run_cycle(
+            telemetry=telemetry,
+            weather=obs,
+            snapshot=_shared_twin.snapshot(),
+        )
+        result["incident"] = incident.model_dump(mode="json")
+
+    return result
+
+
+@router.get("/api/live-query")
+async def get_custom_live_query(
+    lat: float = Query(..., ge=-90.0, le=90.0),
+    lon: float = Query(..., ge=-180.0, le=180.0),
+    name: str = Query(default="Custom Hydropower Station"),
+    capacity_mw: float = Query(default=50.0, gt=0, le=5000),
+    head_m: float = Query(default=120.0, gt=0, le=2500),
+    design_flow_m3s: float = Query(default=40.0, gt=0, le=2000),
+    catchment_area_km2: float = Query(default=250.0, gt=0, le=50000),
+    run_ai: bool = Query(default=True),
+) -> dict[str, Any]:
+    """GET variant of live-query for instant browser or curl testing with any coordinates."""
+    return await execute_custom_live_query(
+        CustomLiveQuery(
+            name=name,
+            latitude=lat,
+            longitude=lon,
+            capacity_mw=capacity_mw,
+            head_m=head_m,
+            design_flow_m3s=design_flow_m3s,
+            catchment_area_km2=catchment_area_km2,
+            run_ai=run_ai,
+        )
+    )
+
+
 @router.get("/", response_class=HTMLResponse)
 def dashboard() -> HTMLResponse:
     """Interactive visual dashboard."""

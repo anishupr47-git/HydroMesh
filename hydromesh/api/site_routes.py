@@ -28,10 +28,12 @@ from hydromesh.logging import get_logger
 from hydromesh.schemas import FleetSnapshot, Site, SiteSpecInput
 from hydromesh.twin import scenarios
 from hydromesh.twin.plant import PlantSpec, PlantTwin
+from hydromesh.weather import WeatherClient
 
 log = get_logger(__name__)
 
 site_router = APIRouter(tags=["Sites & Fleet"])
+_weather_client = WeatherClient()
 
 # Rate limit tracker for scenario injections: user_id -> list of timestamps
 _scenario_rate_limits: dict[str, list[float]] = defaultdict(list)
@@ -106,6 +108,62 @@ def delete_user_plant(
     if not deleted:
         raise HTTPException(status_code=404, detail="Plant not found or delete unauthorized.")
     return {"status": "success", "message": f"Plant '{site_id}' deleted successfully."}
+
+
+@site_router.get("/api/sites/{site_id}/weather")
+async def get_site_weather(
+    site_id: str,
+    principal: Principal = Depends(current_principal),
+) -> dict[str, Any]:
+    """Fetch live mountain satellite weather for a registered member plant."""
+    site = db.get_site(site_id)
+    require_site_access(site, principal, write=False)
+    assert site is not None
+
+    obs = await _weather_client.fetch_weather(site.coordinates.lat, site.coordinates.lon)
+    return obs.model_dump(mode="json")
+
+
+@site_router.post("/api/sites/{site_id}/evaluate")
+async def evaluate_site(
+    site_id: str,
+    principal: Principal = Depends(current_principal),
+    rainfall_override_mm_h: float | None = Query(default=None, ge=0.0, le=300.0),
+) -> dict[str, Any]:
+    """Run the complete 5-agent AI pipeline and safety verification on live satellite data for this site."""
+    from hydromesh.ingest.live import LiveIngestionEngine
+    from hydromesh.pipeline import OrchestrationPipeline
+    from hydromesh.schemas import HydroPlantSpec
+
+    site = db.get_site(site_id)
+    require_site_access(site, principal, write=False)
+    assert site is not None
+
+    plant_spec = HydroPlantSpec(
+        id=site.id,
+        name=site.name,
+        capacity_mw=site.capacity_mw,
+        river_basin="Custom Basin",
+        latitude=site.coordinates.lat,
+        longitude=site.coordinates.lon,
+        design_flow_m3s=site.design_flow_m3s,
+        head_m=site.head_m,
+        catchment_area_km2=site.catchment_area_km2,
+        base_flow_m3s=round(site.design_flow_m3s * 0.70, 2),
+        runoff_coeff=0.65,
+    )
+
+    obs = await _weather_client.fetch_weather(site.coordinates.lat, site.coordinates.lon)
+    if rainfall_override_mm_h is not None:
+        obs = obs.model_copy(update={"precipitation_mm_h": rainfall_override_mm_h})
+
+    ingestion = LiveIngestionEngine(plant_spec)
+    telemetry = ingestion.ingest(obs)
+
+    pipeline = OrchestrationPipeline(plant=plant_spec)
+    incident = await pipeline.run_cycle(telemetry=telemetry, weather=obs)
+
+    return incident.model_dump(mode="json")
 
 
 # --- Operator ACK & Scenario Injection Sandbox -----------------------------------------

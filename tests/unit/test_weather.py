@@ -128,3 +128,46 @@ async def test_weather_client_circuit_breaker() -> None:
         obs3 = await client.fetch_weather(27.848, 86.136)
         assert obs3.is_live is False
         assert call_count == 2
+
+
+def test_make_custom_plant_spec() -> None:
+    """Assert make_custom_plant_spec constructs valid HydroPlantSpec with custom coordinates."""
+    from hydromesh.weather import make_custom_plant_spec
+
+    spec = make_custom_plant_spec(
+        name="Solo Alpine Hydro",
+        latitude=28.45,
+        longitude=84.15,
+        capacity_mw=120.0,
+        head_m=350.0,
+        design_flow_m3s=45.0,
+        catchment_area_km2=600.0,
+    )
+    assert spec.name == "Solo Alpine Hydro"
+    assert spec.latitude == 28.45
+    assert spec.longitude == 84.15
+    assert spec.capacity_mw == 120.0
+    assert spec.id.startswith("custom_")
+
+
+def test_get_plant_by_id_db_fallback() -> None:
+    """Assert get_plant_by_id resolves registered sites from database."""
+    from hydromesh.db.database import db
+    from hydromesh.schemas import Coordinates, SiteSpecInput
+    from hydromesh.weather import get_plant_by_id
+
+    spec = SiteSpecInput(
+        name="Fallback Site Test",
+        coordinates=Coordinates(lat=27.7, lon=85.4),
+        capacity_mw=30.0,
+        head_m=90.0,
+        design_flow_m3s=25.0,
+        catchment_area_km2=150.0,
+    )
+    site = db.create_site(spec, user_id=None, is_seeded=True)
+
+    found = get_plant_by_id(site.id)
+    assert found is not None
+    assert found.name == "Fallback Site Test"
+    assert found.latitude == 27.7
+    assert found.longitude == 85.4
