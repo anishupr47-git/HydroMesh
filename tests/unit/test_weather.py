@@ -88,6 +88,7 @@ async def test_weather_client_mock_success() -> None:
 @pytest.mark.asyncio
 async def test_weather_client_network_failure_fallback() -> None:
     """Assert network errors trigger the fallback profile with is_live=False."""
+
     def error_handler(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("Network down")
 
