@@ -26,3 +26,12 @@ Every public page and documentation surface must display the following disclaime
 1. **Monetary Savings**: Quote as *"Simulated savings of up to NPR 80 Lakhs per monsoon season based on runner overhaul avoidance"*. Never present as empirical historical savings without benchmark qualifiers.
 2. **Alert Windows**: Always specify the **10-minute operator acknowledgement window** for RED alerts.
 3. **Safety Rules**: Highlight that all agent proposals must clear **Rules R1 through R11** before being surfaced to operators.
+
+---
+
+## 4. Plain-English Legal Summary Box Copy
+
+When displaying the terms of service, AI policy, or cookies, use this standardized plain-English summary box:
+
+> **In Plain English**: HydroMesh is your digital control room assistant. It uses real European satellite radar and hydrological math to forecast river surges. The AI never moves valves on its own—a certified human engineer always has the final say. We do not sell your data or use tracking cookies.
+
