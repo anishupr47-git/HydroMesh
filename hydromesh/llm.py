@@ -14,6 +14,7 @@ Think of this file as the Phone Line connecting the plant to our local AI Brain!
 from __future__ import annotations
 
 import asyncio
+import random
 import time
 from collections import deque
 from collections.abc import Callable
@@ -97,7 +98,8 @@ class CircuitBreaker:
     def fail(self) -> None:
         self._fails += 1
         if self._fails >= self._threshold:
-            self._open_until = self._clock() + self._cooldown_s
+            jittered = self._cooldown_s * (1.0 + random.uniform(0.0, 0.5))
+            self._open_until = self._clock() + jittered
 
 
 @cache

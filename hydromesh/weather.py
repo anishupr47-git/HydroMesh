@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import random
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -128,8 +129,9 @@ class WeatherClient:
     def _record_failure(self) -> None:
         self._fail_count += 1
         if self._fail_count >= self._breaker_threshold:
-            self._circuit_open_until = time.monotonic() + self._breaker_cooldown_s
-            log.warning("weather_circuit_opened", cooldown_s=self._breaker_cooldown_s)
+            jittered_cooldown = self._breaker_cooldown_s * (1.0 + random.uniform(0.0, 0.5))
+            self._circuit_open_until = time.monotonic() + jittered_cooldown
+            log.warning("weather_circuit_opened", cooldown_s=jittered_cooldown)
 
     def _make_fallback_observation(self, lat: float, lon: float) -> WeatherObservation:
         """Deterministic mountain weather profile when satellite network is unavailable."""

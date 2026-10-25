@@ -67,7 +67,7 @@ async def test_breaker_opens_after_two_connection_failures_and_recovers() -> Non
     with pytest.raises(LLMUnavailable, match="circuit open"):
         await c.generate_structured(system="s", user="u", schema=RoutingPlan)
     assert stub.calls == 2  # the open breaker never touched the backend
-    now[0] = 31.0  # cooldown elapsed -> half-open probe succeeds
+    now[0] = 60.0  # cooldown elapsed past max jitter -> half-open probe succeeds
     assert await c.generate_structured(system="s", user="u", schema=RoutingPlan) == PLAN
 
 

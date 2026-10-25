@@ -8,6 +8,7 @@ import AuthModal from "@/components/AuthModal";
 import PlantMotionVarHUD from "@/components/PlantMotionVarHUD";
 import RevenueOutlookCard from "@/components/RevenueOutlookCard";
 import PowerhouseGrid, { PowerhouseStation } from "@/components/PowerhouseGrid";
+import { GlobalFleetAnalytics } from "@/components/GlobalFleetAnalytics";
 import GlobalNav from "@/components/GlobalNav";
 import GlobalFooter from "@/components/GlobalFooter";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
@@ -113,12 +114,12 @@ interface AgentEvaluation {
 type EntryPhase = "intro" | "explainer" | "auth" | "dashboard";
 
 export default function DemoPage() {
-  // 4-Phase Cinematic Entry Flow State (Intro -> Explainer -> Auth -> Dashboard)
-  const [entryPhase, setEntryPhase] = useState<EntryPhase>("intro");
+  // 4-Phase Cinematic Entry Flow State (Direct to Dashboard)
+  const [entryPhase, setEntryPhase] = useState<EntryPhase>("dashboard");
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // View Mode: individual (My Plant) vs global (Global Fleet Matrix)
-  const [mode, setMode] = useState<"global" | "individual">("individual");
+  const [mode, setMode] = useState<"global" | "individual">("global");
   const [plants, setPlants] = useState<NepalPlant[]>([]);
   const [selectedPlantId, setSelectedPlantId] = useState("upper_tamakoshi");
   const [basinFilter, setBasinFilter] = useState("All");
@@ -155,8 +156,8 @@ export default function DemoPage() {
   const [evaluatingAI, setEvaluatingAI] = useState(false);
   const [scenarioStatus, setScenarioStatus] = useState<string | null>(null);
   const [overrideMsg, setOverrideMsg] = useState<string | null>(null);
-  const [varScreenOpen, setVarScreenOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [liveFleetTelemetry, setLiveFleetTelemetry] = useState<Record<string, TelemetryPoint>>({});
 
   const wsRef = useRef<WebSocket | null>(null);
   const API_BASE = "http://127.0.0.1:8000";
@@ -265,9 +266,11 @@ export default function DemoPage() {
     setActivePlant(plant);
     fetchPlantWeather(plant.id);
 
-    const baseline = calculatePlantBaseline(plant);
-    setTelemetry(baseline);
-    setHistory((prev) => [...prev.slice(-20), baseline]);
+    // If live real-time telemetry is already streaming for this plant, use it immediately!
+    const livePoint = liveFleetTelemetry[plant.id];
+    const initial = livePoint || calculatePlantBaseline(plant);
+    setTelemetry(initial);
+    setHistory((prev) => [...prev.slice(-20), initial]);
   };
 
   // WebSocket Connection
@@ -277,6 +280,7 @@ export default function DemoPage() {
     fetchFleet();
 
     let retryTimer: NodeJS.Timeout;
+    let retryAttempt = 0;
 
     const connectWS = () => {
       try {
@@ -284,12 +288,20 @@ export default function DemoPage() {
         wsRef.current = ws;
 
         ws.onopen = () => {
+          retryAttempt = 0;
           setWsConnected(true);
         };
 
         ws.onmessage = (event) => {
           try {
             const data: TelemetryPoint = JSON.parse(event.data);
+
+            // Record live real-time point for this specific plant in fleet map
+            setLiveFleetTelemetry((prev) => ({
+              ...prev,
+              [data.plant_id]: data,
+            }));
+
             setSelectedPlantId((currentPlantId) => {
               if (currentPlantId === data.plant_id) {
                 setTelemetry(data);
@@ -311,7 +323,10 @@ export default function DemoPage() {
 
         ws.onclose = () => {
           setWsConnected(false);
-          retryTimer = setTimeout(connectWS, 2500);
+          const baseDelay = Math.min(30000, 1000 * Math.pow(2, retryAttempt));
+          const jitteredDelay = baseDelay * (0.5 + Math.random() * 0.5);
+          retryAttempt++;
+          retryTimer = setTimeout(connectWS, jitteredDelay);
         };
 
         ws.onerror = () => {
@@ -319,7 +334,10 @@ export default function DemoPage() {
         };
       } catch {
         setWsConnected(false);
-        retryTimer = setTimeout(connectWS, 3000);
+        const baseDelay = Math.min(30000, 1000 * Math.pow(2, retryAttempt));
+        const jitteredDelay = baseDelay * (0.5 + Math.random() * 0.5);
+        retryAttempt++;
+        retryTimer = setTimeout(connectWS, jitteredDelay);
       }
     };
 
@@ -498,6 +516,7 @@ export default function DemoPage() {
   // Powerhouse stations mapping
   const powerhouseStations: PowerhouseStation[] = plants.map((p) => {
     const site = fleet?.sites.find((s) => s.id === p.id);
+    const live = liveFleetTelemetry[p.id];
     return {
       id: p.id,
       name: p.name,
@@ -510,15 +529,15 @@ export default function DemoPage() {
       current_discharge_m3s:
         p.id === selectedPlantId
           ? telemetry.discharge_m3s
-          : site?.current_discharge_m3s ?? p.design_flow_m3s * 0.7,
+          : live?.discharge_m3s ?? site?.current_discharge_m3s ?? p.design_flow_m3s * 0.7,
       current_silt_ppm:
         p.id === selectedPlantId
           ? telemetry.silt_ppm
-          : site?.current_silt_ppm ?? 380,
+          : live?.silt_ppm ?? site?.current_silt_ppm ?? 380,
       alert_tier:
         p.id === selectedPlantId
           ? telemetry.alert_tier
-          : (site?.alert_tier?.toUpperCase() as any) ?? "NORMAL",
+          : (live?.alert_tier ?? (site?.alert_tier?.toUpperCase() as any) ?? "NORMAL"),
     };
   });
 
@@ -754,409 +773,483 @@ export default function DemoPage() {
               setEntryPhase("auth");
             }}
             onOpenInspector={() => setInspectorOpen(true)}
-            onReplayIntro={() => setEntryPhase("intro")}
           />
 
           {/* Main SCADA Viewport Canvas (Zero Side-Bar Guarantee: Centered max-w-[1440px]) */}
           <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8 relative z-10">
-            {/* =======================================================================
-                4.2 HERO BANNER (Chakra shines through from root background)
-                ======================================================================= */}
-            <div className="relative w-full bg-[#0F1D38]/85 border border-[#C9A24B] shadow-2xl pn p-6 sm:p-10 overflow-hidden">
-              <div className="relative z-10 max-w-3xl space-y-4">
-            {/* Station Kicker & Selector */}
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#C9A24B]">
-                STATION · {activePlant?.river_basin?.toUpperCase() || "GANDAKI"} BASIN
-              </span>
-
-              {/* Station Switcher Dropdown */}
-              <div className="relative inline-block">
-                <select
-                  value={selectedPlantId}
-                  onChange={(e) => {
-                    const found = plants.find((p) => p.id === e.target.value);
-                    if (found) selectPlant(found);
-                  }}
-                  className="bg-[#0B1424] border border-[#C9A24B]/50 hover:border-[#C9A24B] text-[#F1EAD9] text-xs font-mono py-1 px-3 pr-8 rounded-sm outline-none transition-colors cursor-pointer"
-                >
-                  {plants.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-[#0B1424] text-[#F1EAD9]">
-                      {p.name} ({p.capacity_mw} MW)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Station Condition Pill */}
-              <span
-                className="px-3 py-0.5 text-xs font-mono font-bold tracking-wider uppercase rounded-sm border"
-                style={{
-                  color: tierColor,
-                  borderColor: tierColor,
-                  backgroundColor: `${tierColor}18`,
+            {mode === "global" ? (
+              <GlobalFleetAnalytics
+                plants={plants}
+                powerhouseStations={powerhouseStations}
+                liveFleetTelemetry={liveFleetTelemetry}
+                onSelectPlant={(plant) => {
+                  selectPlant(plant);
+                  setMode("individual");
                 }}
-              >
-                ● {telemetry.alert_tier}
-              </span>
-
-              {/* Radio WebSocket Live Indicator */}
-              <div className="flex items-center gap-2 bg-[#0B1424] border border-[#C9A24B]/30 px-2.5 py-0.5 rounded-sm text-xs font-mono">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    backgroundColor: wsConnected ? "#5FB3A8" : "#E0705A",
-                    boxShadow: wsConnected ? "0 0 8px #5FB3A8" : "none",
-                  }}
-                />
-                <span className={wsConnected ? "text-[#5FB3A8]" : "text-[#E0705A]"}>
-                  {wsConnected ? "RADIO STREAM LIVE" : "OFFLINE"}
-                </span>
-              </div>
-            </div>
-
-            {/* Station Headline Display */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight text-[#F1EAD9] leading-tight">
-              {activePlant?.name || "Upper Tamakoshi Hydropower Project"}
-            </h1>
-
-            {/* Factual Technical Specifications */}
-            <p className="text-sm font-sans text-[#A3B0C8] tracking-wide leading-relaxed max-w-2xl">
-              High-head run-of-river hydropower station ·{" "}
-              <strong className="text-[#F1EAD9]">{activePlant?.capacity_mw || 456} MW</strong> capacity ·{" "}
-              Rated head: <strong className="text-[#F1EAD9]">{activePlant?.head_m || 822} m</strong> ·{" "}
-              GPS: {activePlant?.latitude || 27.848}°N, {activePlant?.longitude || 86.136}°E ·{" "}
-              Catchment Area: {activePlant?.catchment_area_km2 || 1745} km² ·{" "}
-              Design Flow: {activePlant?.design_flow_m3s || 66} m³/s
-            </p>
-
-            {/* Twin Simulation Controls Strip */}
-            <div className="pt-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-mono text-[#A3B0C8] uppercase tracking-wider mr-2">
-                Simulate Pulse:
-              </span>
-              <button
-                onClick={() => injectScenario("normal", 1.0)}
-                className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#5FB3A8]/40 hover:border-[#5FB3A8] text-xs font-mono text-[#5FB3A8] rounded-sm transition-all cursor-pointer"
-              >
-                [NORMAL BASEFLOW]
-              </button>
-              <button
-                onClick={() => injectScenario("monsoon_surge", 1.5)}
-                className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#E0A43A]/40 hover:border-[#E0A43A] text-xs font-mono text-[#E0A43A] rounded-sm transition-all cursor-pointer"
-              >
-                [MONSOON PULSE 1.5X]
-              </button>
-              <button
-                onClick={() => injectScenario("inflow_surge", 2.5)}
-                className="px-3 py-1 bg-[#13264A] hover:bg-[#1c3970] border border-[#E0705A]/40 hover:border-[#E0705A] text-xs font-mono text-[#E0705A] rounded-sm transition-all cursor-pointer font-bold"
-              >
-                [FLASH FLOOD 2.5X]
-              </button>
-
-              <LiveInspectorTab
-                plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
-                lat={activePlant?.latitude || 27.848}
-                lon={activePlant?.longitude || 86.136}
-                headM={activePlant?.head_m || 822}
-                baseFlowM3s={activePlant?.base_flow_m3s || 35.0}
-                rainfallMmH={liveWeather?.precipitation_mm_h || 12.4}
-                catchmentAreaKm2={activePlant?.catchment_area_km2 || 1745}
-                dischargeM3s={telemetry.discharge_m3s}
-                siltPpm={telemetry.silt_ppm}
+                selectedPlantId={selectedPlantId}
+                onTriggerScenario={(sc) => injectScenario(sc)}
+                scenarioStatus={scenarioStatus}
               />
+            ) : (
+              <div className="space-y-8 animate-fadeIn">
+                {/* Clean Top Banner to Return to Global Fleet Command */}
+                <div className="flex flex-wrap items-center justify-between bg-gradient-to-r from-[#0F1E3A]/80 via-[#0A1326]/70 to-[#070C18]/80 border border-white/[0.08] px-5 py-3 rounded-2xl backdrop-blur-md gap-3 shadow-md">
+                  <button
+                    onClick={() => setMode("global")}
+                    className="flex items-center gap-2 text-xs font-mono font-bold text-[#C9A24B] hover:text-[#F0D27A] transition-all cursor-pointer bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] px-4 py-1.5 rounded-full"
+                  >
+                    <span>←</span> BACK TO NATIONAL FLEET OVERVIEW (GLOBAL COMMAND)
+                  </button>
+                  <div className="flex items-center gap-3 text-xs font-mono text-[#A3B0C8]">
+                    <span>STATION OPERATING COCKPIT:</span>
+                    <span className="text-[#F1EAD9] font-bold">{activePlant?.name || "Upper Tamakoshi"}</span>
+                    <span className="text-[#5FB3A8]">({activePlant?.capacity_mw || 456} MW)</span>
+                  </div>
+                </div>
+
+                {/* =======================================================================
+                    4.2 COMMAND CENTER HERO DECK (Open, Cinematic & Borderless)
+                    ======================================================================= */}
+                <div className="relative w-full rounded-3xl bg-gradient-to-b from-[#0F1E3A]/70 via-[#0A1326]/50 to-[#070C18]/60 p-6 sm:p-10 border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-md overflow-hidden">
+              {/* Subtle ambient lighting behind header */}
+              <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#C9A24B]/5 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 max-w-4xl space-y-5">
+                {/* Top Command Line & Station Switcher */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] px-3 py-1 rounded-full text-[11px] font-mono text-[#D4AF37] uppercase tracking-wider backdrop-blur-sm">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                    <span>NEPAL POWER GRID · {activePlant?.river_basin?.toUpperCase() || "KOSHI"} BASIN</span>
+                  </div>
+
+                  {/* Sleek Custom Station Selector */}
+                  <div className="relative inline-block">
+                    <select
+                      value={selectedPlantId}
+                      onChange={(e) => {
+                        const found = plants.find((p) => p.id === e.target.value);
+                        if (found) selectPlant(found);
+                      }}
+                      className="bg-[#0B1424]/90 border border-white/[0.12] hover:border-[#C9A24B] text-[#F1EAD9] text-xs font-mono py-1.5 px-3 pr-8 rounded-full outline-none transition-all shadow-sm cursor-pointer backdrop-blur-md"
+                    >
+                      {plants.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-[#0B1424] text-[#F1EAD9]">
+                          {p.name} ({p.capacity_mw} MW)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Condition Status Badge */}
+                  <span
+                    className="px-3 py-1 text-xs font-mono font-bold tracking-wider uppercase rounded-full border backdrop-blur-sm shadow-sm"
+                    style={{
+                      color: tierColor,
+                      borderColor: `${tierColor}60`,
+                      backgroundColor: `${tierColor}15`,
+                    }}
+                  >
+                    ● {telemetry.alert_tier}
+                  </span>
+
+                  {/* Live WebSocket Beacon */}
+                  <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] px-3 py-1 rounded-full text-xs font-mono backdrop-blur-sm">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: wsConnected ? "#10B981" : "#E0705A",
+                        boxShadow: wsConnected ? "0 0 10px #10B981" : "none",
+                      }}
+                    />
+                    <span className={wsConnected ? "text-[#10B981]" : "text-[#E0705A]"}>
+                      {wsConnected ? "STREAM LIVE" : "DISCONNECTED"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Heroic Station Headline */}
+                <div>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight bg-gradient-to-r from-[#FFFDF7] via-[#F1EAD9] to-[#D4AF37] bg-clip-text text-transparent leading-[1.15] drop-shadow-sm">
+                    {activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+                  </h1>
+                </div>
+
+                {/* Stat Metric Badges (Free of text clutter) */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-[#F1EAD9] backdrop-blur-sm">
+                    <span className="text-[#C9A24B] font-bold">CAP</span>
+                    <span>{activePlant?.capacity_mw || 456} MW Capacity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-[#F1EAD9] backdrop-blur-sm">
+                    <span className="text-[#5FB3A8] font-bold">HEAD</span>
+                    <span>{activePlant?.head_m || 822}m Head</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-[#F1EAD9] backdrop-blur-sm">
+                    <span className="text-[#38BDF8] font-bold">FLOW</span>
+                    <span>{activePlant?.design_flow_m3s || 66} m³/s Turbine Flow</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-[#A3B0C8] backdrop-blur-sm">
+                    <span className="text-[#A3B0C8] font-bold">GPS</span>
+                    <span>{activePlant?.latitude || 27.848}°N, {activePlant?.longitude || 86.136}°E</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-[#A3B0C8] backdrop-blur-sm">
+                    <span className="text-[#A3B0C8] font-bold">BASIN</span>
+                    <span>{activePlant?.catchment_area_km2 || 1745} km² Basin</span>
+                  </div>
+                </div>
+
+                {/* Tactile Pulse Simulation Capsules */}
+                <div className="pt-2 flex flex-wrap items-center gap-2.5">
+                  <span className="text-xs font-mono text-[#A3B0C8] uppercase tracking-wider mr-1">
+                    Simulate Pulse:
+                  </span>
+                  <button
+                    onClick={() => injectScenario("normal", 1.0)}
+                    className="px-3.5 py-1.5 bg-[#10B981]/15 hover:bg-[#10B981]/25 border border-[#10B981]/40 hover:border-[#10B981] text-xs font-mono text-[#10B981] font-semibold rounded-full transition-all cursor-pointer shadow-sm"
+                  >
+                    ● NORMAL BASEFLOW
+                  </button>
+                  <button
+                    onClick={() => injectScenario("monsoon_surge", 1.5)}
+                    className="px-3.5 py-1.5 bg-[#E0A43A]/15 hover:bg-[#E0A43A]/25 border border-[#E0A43A]/40 hover:border-[#E0A43A] text-xs font-mono text-[#E0A43A] font-semibold rounded-full transition-all cursor-pointer shadow-sm"
+                  >
+                    ▲ MONSOON PULSE 1.5X
+                  </button>
+                  <button
+                    onClick={() => injectScenario("inflow_surge", 2.5)}
+                    className="px-3.5 py-1.5 bg-[#E0705A]/15 hover:bg-[#E0705A]/25 border border-[#E0705A]/40 hover:border-[#E0705A] text-xs font-mono text-[#E0705A] font-semibold rounded-full transition-all cursor-pointer shadow-sm"
+                  >
+                    ▲ FLASH FLOOD 2.5X
+                  </button>
+
+                  <LiveInspectorTab
+                    plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+                    lat={activePlant?.latitude || 27.848}
+                    lon={activePlant?.longitude || 86.136}
+                    headM={activePlant?.head_m || 822}
+                    baseFlowM3s={activePlant?.base_flow_m3s || 35.0}
+                    rainfallMmH={liveWeather?.precipitation_mm_h || 12.4}
+                    catchmentAreaKm2={activePlant?.catchment_area_km2 || 1745}
+                    dischargeM3s={telemetry.discharge_m3s}
+                    siltPpm={telemetry.silt_ppm}
+                  />
+                </div>
+
+                {scenarioStatus && (
+                  <div className="text-xs font-mono text-[#F0D27A] animate-pulse bg-[#C9A24B]/10 border border-[#C9A24B]/30 px-3 py-1.5 rounded-lg inline-block">
+                    [SCENARIO ACTIVE] {scenarioStatus}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {scenarioStatus && (
-              <div className="text-xs font-mono text-[#F0D27A] animate-pulse">
-                [SCENARIO ACTIVE] {scenarioStatus}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* =======================================================================
-            4.3 SECTION I · INSTRUMENTS
-            ======================================================================= */}
-        <section className="relative bg-[#0F1A2E] border border-[#C9A24B] pn p-6">
-          {/* Perched Roman Badge */}
-          <div className="np">I · INSTRUMENTS</div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 pt-2 divide-y sm:divide-y-0 sm:divide-x divide-[#C9A24B]/20">
-            {/* Column 1: River Inflow */}
-            <div className="pt-2 sm:pt-0 sm:px-4 first:px-0">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] block">
-                River Inflow Q
-              </span>
-              <div className="text-3xl font-serif font-bold text-[#F1EAD9] mt-1">
-                {telemetry.discharge_m3s.toFixed(1)}{" "}
-                <span className="text-sm font-sans font-normal text-[#A3B0C8]">m³/s</span>
-              </div>
-              <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                Design Flow: {activePlant?.design_flow_m3s || 66} m³/s
-              </div>
-            </div>
-
-            {/* Column 2: Quartz Silt */}
-            <div className="pt-4 sm:pt-0 sm:px-4">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] block">
-                Quartz Silt Sieve
-              </span>
-              <div
-                className="text-3xl font-serif font-bold mt-1"
-                style={{ color: tierColor }}
-              >
-                {telemetry.silt_ppm.toFixed(0)}{" "}
-                <span className="text-sm font-sans font-normal text-[#A3B0C8]">PPM</span>
-              </div>
-              <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                Watch: 1,200 | Shutoff: 3,000
-              </div>
-            </div>
-
-            {/* Column 3: Satellite Rain Rate */}
-            <div className="pt-4 sm:pt-0 sm:px-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] block">
-                  Satellite Rain Rate
-                </span>
-                <span className="text-[9px] font-mono text-[#5FB3A8] border border-[#5FB3A8]/40 px-1 rounded">
-                  NASA GPM
-                </span>
-              </div>
-              <div className="text-3xl font-serif font-bold text-[#F0D27A] mt-1">
-                {weatherLoading ? "..." : (liveWeather?.precipitation_mm_h ?? 12.4)}{" "}
-                <span className="text-sm font-sans font-normal text-[#A3B0C8]">mm/h</span>
-              </div>
-              <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                ECMWF 9km Assimilation
-              </div>
-            </div>
-
-            {/* Column 4: Catchment Temp & Clouds */}
-            <div className="pt-4 sm:pt-0 sm:px-4">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] block">
-                Catchment Temp
-              </span>
-              <div className="text-3xl font-serif font-bold text-[#5FB3A8] mt-1">
-                {liveWeather?.temperature_c ?? 14.2}°C
-              </div>
-              <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                Cloud Cover: {liveWeather?.cloud_cover_pct ?? 74}%
-              </div>
-            </div>
-
-            {/* Column 5: Operator Window */}
-            <div className="pt-4 sm:pt-0 sm:px-4">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-[#A3B0C8] block">
-                Operator Window
-              </span>
-              <div
-                className="text-3xl font-serif font-bold mt-1"
-                style={{
-                  color: countdown < 120 ? "#E0705A" : "#F0D27A",
-                }}
-              >
-                {formatTime(countdown)}
-              </div>
-              <div className="text-[11px] font-mono text-[#A3B0C8] mt-1">
-                {ackIncident ? "[OPERATOR CONFIRMED]" : "Auto-ACK Window Active"}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* =======================================================================
-            4.4 SECTION II · TELEMETRY (DUAL-TRACE CHART & OPERATOR INTERLOCK)
-            ======================================================================= */}
-        <section className="relative bg-[#0F1A2E] border border-[#C9A24B] pn p-6">
-          {/* Perched Roman Badge */}
-          <div className="np">II · TELEMETRY</div>
-
-          <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#C9A24B]/30 mb-4 mt-1 gap-2">
+            {/* =======================================================================
+                4.3 SECTION I · 5 FLOATING ELEVATED INSTRUMENT TILES (No Rigid Outer Box)
+                ======================================================================= */}
             <div>
-              <h3 className="text-lg font-serif font-bold text-[#F1EAD9]">
-                Dual-Trace High-Contrast Telemetry
-              </h3>
-              <p className="text-xs text-[#A3B0C8] font-sans">
-                River Inflow Q (Ivory line, left axis) vs Quartz Silt PPM (Brass line, right axis) over 30 time ticks
-              </p>
-            </div>
-
-            {/* Legend */}
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-1 bg-[#F1EAD9]" />
-                <span className="text-[#F1EAD9]">Inflow Q (m³/s)</span>
+              {/* Header Label Strip */}
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#5FB3A8]" />
+                  <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#C9A24B] font-bold">
+                    SECTION I · LIVE TELEMETRY & PHYSICAL COMPUTATIONS
+                  </span>
+                </div>
+                <span className="text-[11px] font-mono text-[#A3B0C8] hidden sm:inline">
+                  ECMWF 9km European Space Ping · Rational Runoff Coupling · IEC 62364
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-1 bg-[#F0D27A]" />
-                <span className="text-[#F0D27A]">Quartz Silt (PPM)</span>
+
+              {/* 5 Distinct Glassmorphic Telemetry Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Tile 1: River Inflow */}
+                <div className="relative rounded-2xl bg-gradient-to-b from-[#0F1E3A]/85 via-[#0A1224]/90 to-[#060B17]/95 border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:border-[#5FB3A8]/50 hover:shadow-[0_12px_40px_rgba(95,179,168,0.12)] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#A3B0C8] font-bold">
+                        River Inflow
+                      </span>
+                      <span className="text-[9px] font-mono text-[#5FB3A8] border border-[#5FB3A8]/40 px-2 py-0.5 rounded-full bg-[#5FB3A8]/10 font-semibold">
+                        CALCULATED
+                      </span>
+                    </div>
+
+                    {/* Live Physics Runoff Formula Box */}
+                    <div className="bg-[#050A14]/90 border border-[#5FB3A8]/20 rounded-xl p-2.5 mb-3">
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#5FB3A8]">
+                        <span>PHYSICAL RUNOFF</span>
+                        <span>Q_inflow</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-[#F1EAD9] font-medium mt-1">
+                        Q = Q_base + (P × Area × C) / 3.6 × Atten
+                      </div>
+                      <div className="text-[9px] font-mono text-[#5FB3A8] mt-0.5 truncate">
+                        {activePlant?.base_flow_m3s || 45} + ({(liveWeather?.precipitation_mm_h ?? 0).toFixed(1)} × {activePlant?.catchment_area_km2 || 2755} × 0.35 / 3.6 × 0.15)
+                      </div>
+                    </div>
+
+                    <div className="text-3xl font-serif font-bold text-[#F1EAD9]">
+                      {telemetry.discharge_m3s.toFixed(1)}{" "}
+                      <span className="text-sm font-sans font-normal text-[#A3B0C8]">m³/s</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-sans text-[#A3B0C8] mt-3 pt-2.5 border-t border-white/[0.06] leading-relaxed">
+                    <span className="font-semibold text-[#F1EAD9]">Turbine Limit: {activePlant?.design_flow_m3s || 66} m³/s</span>. Extra river water flows safely over the spillway gates.
+                  </div>
+                </div>
+
+                {/* Tile 2: Quartz Silt */}
+                <div className="relative rounded-2xl bg-gradient-to-b from-[#0F1E3A]/85 via-[#0A1224]/90 to-[#060B17]/95 border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:border-[#F0D27A]/50 hover:shadow-[0_12px_40px_rgba(240,210,122,0.12)] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#A3B0C8] font-bold">
+                        Quartz Sand in Water
+                      </span>
+                      <span className="text-[9px] font-mono text-[#F0D27A] border border-[#F0D27A]/40 px-2 py-0.5 rounded-full bg-[#F0D27A]/10 font-semibold">
+                        PREDICTED
+                      </span>
+                    </div>
+
+                    {/* Live Silt Rating Curve Box */}
+                    <div className="bg-[#050A14]/90 border border-[#F0D27A]/20 rounded-xl p-2.5 mb-3">
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#F0D27A]">
+                        <span>AI SEDIMENT MODEL</span>
+                        <span>IEC 62364</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-[#F1EAD9] font-medium mt-1">
+                        Silt PPM = 2.096×10⁻⁴ × (Q)^2.432
+                      </div>
+                      <div className="text-[9px] font-mono text-[#F0D27A] mt-0.5 truncate">
+                        2.096e-4 × ({telemetry.discharge_m3s.toFixed(1)})^2.432
+                      </div>
+                    </div>
+
+                    <div
+                      className="text-3xl font-serif font-bold"
+                      style={{ color: tierColor }}
+                    >
+                      {telemetry.silt_ppm.toFixed(0)}{" "}
+                      <span className="text-sm font-sans font-normal text-[#A3B0C8]">PPM</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-sans text-[#A3B0C8] mt-3 pt-2.5 border-t border-white/[0.06] leading-relaxed">
+                    {telemetry.silt_ppm < 1200 ? (
+                      <span className="text-[#10B981]">Clean water (below 1,200 limit). Turbines are safe.</span>
+                    ) : telemetry.silt_ppm < 3000 ? (
+                      <span className="text-[#F0D27A]">Gritty water (above 1,200). Desander flush gates primed.</span>
+                    ) : (
+                      <span className="text-[#E0705A]">Severe sand grit (above 3,000). Shutoff to save turbines.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tile 3: Satellite Rain */}
+                <div className="relative rounded-2xl bg-gradient-to-b from-[#0F1E3A]/85 via-[#0A1224]/90 to-[#060B17]/95 border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:border-[#38BDF8]/50 hover:shadow-[0_12px_40px_rgba(56,189,248,0.12)] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#A3B0C8] font-bold">
+                        Mountain Rain
+                      </span>
+                      <span className="text-[9px] font-mono text-[#38BDF8] border border-[#38BDF8]/40 px-2 py-0.5 rounded-full bg-[#38BDF8]/10 font-semibold">
+                        LIVE SKY PING
+                      </span>
+                    </div>
+
+                    {/* Satellite Radar Source Box */}
+                    <div className="bg-[#050A14]/90 border border-[#38BDF8]/20 rounded-xl p-2.5 mb-3">
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#38BDF8]">
+                        <span>ORBITAL SATELLITE</span>
+                        <span>ECMWF 9km</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-[#F1EAD9] font-medium mt-1">
+                        NASA GPM + European Radar
+                      </div>
+                      <div className="text-[9px] font-mono text-[#38BDF8] mt-0.5 truncate">
+                        Lat {activePlant?.latitude.toFixed(2) ?? "27.85"}°N · Lon {activePlant?.longitude.toFixed(2) ?? "86.13"}°E
+                      </div>
+                    </div>
+
+                    <div className="text-3xl font-serif font-bold text-[#F0D27A]">
+                      {weatherLoading ? "..." : (liveWeather?.precipitation_mm_h ?? 0).toFixed(1)}{" "}
+                      <span className="text-sm font-sans font-normal text-[#A3B0C8]">mm/h</span>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-sans text-[#A3B0C8] mt-3 pt-2.5 border-t border-white/[0.06] leading-relaxed">
+                    {(liveWeather?.precipitation_mm_h ?? 0) > 0 ? (
+                      <span className="text-[#F0D27A]">Active mountain rainfall feeding the river catchment.</span>
+                    ) : (
+                      <span>Clear mountain slopes. Zero rainfall detected right now.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tile 4: Catchment Temp & Clouds */}
+                <div className="relative rounded-2xl bg-gradient-to-b from-[#0F1E3A]/85 via-[#0A1224]/90 to-[#060B17]/95 border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:border-[#5FB3A8]/50 hover:shadow-[0_12px_40px_rgba(95,179,168,0.12)] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#A3B0C8] font-bold">
+                        Mountain Air & Skies
+                      </span>
+                      <span className="text-[9px] font-mono text-[#5FB3A8] border border-[#5FB3A8]/40 px-2 py-0.5 rounded-full bg-[#5FB3A8]/10 font-semibold">
+                        LIVE WEATHER
+                      </span>
+                    </div>
+
+                    {/* Weather Station Elevation Box */}
+                    <div className="bg-[#050A14]/90 border border-[#5FB3A8]/20 rounded-xl p-2.5 mb-3">
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#5FB3A8]">
+                        <span>VALLEY ELEVATION</span>
+                        <span>SPEC</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-[#F1EAD9] font-medium mt-1">
+                        Head: {activePlant?.head_m || 822}m drop
+                      </div>
+                      <div className="text-[9px] font-mono text-[#5FB3A8] mt-0.5 truncate">
+                        Basin: {activePlant?.river_basin || "Tamakoshi"}
+                      </div>
+                    </div>
+
+                    <div className="text-3xl font-serif font-bold text-[#5FB3A8]">
+                      {liveWeather?.temperature_c ?? 14.2}°C
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-sans text-[#A3B0C8] mt-3 pt-2.5 border-t border-white/[0.06] leading-relaxed">
+                    Cloud Cover: <span className="font-semibold text-[#F1EAD9]">{liveWeather?.cloud_cover_pct ?? 0}%</span>. {(liveWeather?.cloud_cover_pct ?? 0) > 50 ? "Overcast storm skies." : "Clear, sunny skies over the river."}
+                  </div>
+                </div>
+
+                {/* Tile 5: Operator Window */}
+                <div className="relative rounded-2xl bg-gradient-to-b from-[#0F1E3A]/85 via-[#0A1224]/90 to-[#060B17]/95 border border-white/[0.08] p-5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:border-[#C9A24B]/50 hover:shadow-[0_12px_40px_rgba(201,162,75,0.12)] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#A3B0C8] font-bold">
+                        Safety Decision Timer
+                      </span>
+                      <span className="text-[9px] font-mono text-[#C9A24B] border border-[#C9A24B]/40 px-2 py-0.5 rounded-full bg-[#C9A24B]/10 font-semibold">
+                        SAFETY SHIELD
+                      </span>
+                    </div>
+
+                    {/* Safety Interlock Rules Box */}
+                    <div className="bg-[#050A14]/90 border border-[#C9A24B]/20 rounded-xl p-2.5 mb-3">
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#C9A24B]">
+                        <span>SAFETY KERNEL</span>
+                        <span>RULES R1–R11</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-[#F1EAD9] font-medium mt-1">
+                        Human Approval Interlock
+                      </div>
+                      <div className="text-[9px] font-mono text-[#C9A24B] mt-0.5 truncate">
+                        {countdown > 0 ? `${countdown}s until Auto-Safe Action` : "Auto-Protection Triggered"}
+                      </div>
+                    </div>
+
+                    <div
+                      className="text-3xl font-serif font-bold"
+                      style={{
+                        color: countdown < 120 ? "#E0705A" : "#F0D27A",
+                      }}
+                    >
+                      {formatTime(countdown)}
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] font-sans text-[#A3B0C8] mt-3 pt-2.5 border-t border-white/[0.06] leading-relaxed">
+                    {ackIncident ? (
+                      <span className="text-[#10B981] font-semibold">Operator confirmed manually.</span>
+                    ) : (
+                      <span>10-minute window: operator confirms, or system auto-protects at 0:00.</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Dual Trace SVG Chart */}
-          <div className="w-full bg-[#0B1424] border border-[#C9A24B]/30 p-3 rounded-sm mb-4">
-            {renderDualTraceChart()}
-          </div>
+            {/* =======================================================================
+                4.4 SECTION II · TELEMETRY OBSERVATORY (Modern Glass Panel)
+                ======================================================================= */}
+            <section className="relative bg-gradient-to-b from-[#0A1224]/90 to-[#070D18]/95 border border-white/[0.08] shadow-[0_12px_48px_rgba(0,0,0,0.5)] rounded-2xl p-6 backdrop-blur-md">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-4 gap-2 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                    <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#C9A24B] font-bold">
+                      SECTION II · DUAL-TRACE TELEMETRY
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-serif font-bold text-[#F1EAD9]">
+                    Dual-Trace High-Contrast Hydrology Stream
+                  </h3>
+                  <p className="text-xs text-[#A3B0C8] font-sans mt-0.5">
+                    River Inflow Q (Ivory line, left axis) vs Quartz Silt PPM (Brass line, right axis) over 30 live ticks
+                  </p>
+                </div>
 
-          {/* Operator Interlock Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-[#0B1424] border border-[#C9A24B]/40 rounded-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#F1EAD9]">
-                Operator Interlock:
-              </span>
-              <button
-                onClick={() => sendOverride("approve")}
-                className="px-4 py-1.5 bg-[#5FB3A8]/20 hover:bg-[#5FB3A8]/30 border border-[#5FB3A8] text-xs font-mono text-[#5FB3A8] font-semibold rounded-sm transition-colors cursor-pointer"
-              >
-                [APPROVE ADVISORY]
-              </button>
-              <button
-                onClick={() => sendOverride("reject")}
-                className="px-4 py-1.5 bg-[#E0705A]/20 hover:bg-[#E0705A]/30 border border-[#E0705A] text-xs font-mono text-[#E0705A] font-semibold rounded-sm transition-colors cursor-pointer"
-              >
-                [REJECT PROPOSAL]
-              </button>
-            </div>
+                {/* Legend */}
+                <div className="flex items-center gap-4 text-xs font-mono bg-white/[0.03] border border-white/[0.08] px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-1 bg-[#F1EAD9] rounded-full" />
+                    <span className="text-[#F1EAD9]">Inflow Q (m³/s)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-1 bg-[#F0D27A] rounded-full" />
+                    <span className="text-[#F0D27A]">Quartz Silt (PPM)</span>
+                  </div>
+                </div>
+              </div>
 
-            <div className="text-xs font-mono text-[#A3B0C8]">
-              {overrideMsg || "Advisory ready for operator verification. Nonce will be entered into SCADA ledger."}
-            </div>
-          </div>
-        </section>
+              {/* Dual Trace SVG Chart */}
+              <div className="w-full bg-[#050A14] border border-white/[0.06] p-4 rounded-xl mb-4 shadow-inner">
+                {renderDualTraceChart()}
+              </div>
+
+              {/* Operator Interlock Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono uppercase tracking-wider text-[#F1EAD9] font-semibold">
+                    Operator Interlock:
+                  </span>
+                  <button
+                    onClick={() => sendOverride("approve")}
+                    className="px-4 py-1.5 bg-[#10B981]/15 hover:bg-[#10B981]/25 border border-[#10B981] text-xs font-mono text-[#10B981] font-bold rounded-full transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                  >
+                    [APPROVE ADVISORY]
+                  </button>
+                  <button
+                    onClick={() => sendOverride("reject")}
+                    className="px-4 py-1.5 bg-[#E0705A]/15 hover:bg-[#E0705A]/25 border border-[#E0705A] text-xs font-mono text-[#E0705A] font-bold rounded-full transition-all cursor-pointer shadow-sm hover:shadow-[0_0_12px_rgba(224,112,90,0.3)]"
+                  >
+                    [REJECT PROPOSAL]
+                  </button>
+                </div>
+
+                <div className="text-xs font-mono text-[#A3B0C8]">
+                  {overrideMsg || "Advisory ready for operator verification. Nonce entered into SCADA ledger."}
+                </div>
+              </div>
+            </section>
 
         {/* =======================================================================
-            4.5 SECTION III · RELAY OF AUTONOMOUS AGENTS
+            4.5 COMBINED SECTION III & V · AUTONOMOUS AGENT RELAY, OLLAMA ADVISORY & KINETIC PLANT HUD
             ======================================================================= */}
-        <section className="relative bg-[#0F1A2E] border border-[#C9A24B] pn p-6">
-          {/* Perched Roman Badge */}
-          <div className="np">III · RELAY OF AGENTS</div>
-
-          {/* Top Row with Predict Button and Expand VAR Screen */}
-          <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#C9A24B]/30 mb-6 mt-1 gap-4">
-            <div>
-              <h3 className="text-lg font-serif font-bold text-[#F1EAD9]">
-                Collaborative Autonomous Defense Relay
-              </h3>
-              <p className="text-xs text-[#A3B0C8] font-sans">
-                Five open-weight neural agents collaborate to inspect hydrology, verify SHA-256 SOPs, and produce Grade-1 Plain English advisories.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={async () => {
-                  setVarScreenOpen(true);
-                  await triggerAIEvaluation();
-                }}
-                disabled={evaluatingAI}
-                className="px-5 py-2 bg-[#C9A24B] hover:bg-[#F0D27A] text-[#0B1424] font-serif font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-[0_2px_10px_rgba(201,162,75,0.35)] disabled:opacity-50 cursor-pointer"
-              >
-                {evaluatingAI ? "EVALUATING PIPELINE..." : "[RUN PREDICTIVE VAR PIPELINE]"}
-              </button>
-
-              <button
-                onClick={() => setVarScreenOpen((prev) => !prev)}
-                className="px-4 py-2 bg-[#13264A] hover:bg-[#1a3364] border border-[#C9A24B] text-xs font-mono text-[#F1EAD9] rounded-sm transition-colors cursor-pointer"
-              >
-                {varScreenOpen ? "[COLLAPSE VAR HUD]" : "[EXPAND VAR SCREEN HUD]"}
-              </button>
-            </div>
-          </div>
-
-          {/* 4 Agent Cards Connected in Sequence */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Card 1: Triage Agent */}
-            <div className="bg-[#0B1424] border border-[#C9A24B]/30 p-4 rounded-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-2 border-b border-[#C9A24B]/20 mb-2">
-                  <span className="text-xs font-serif font-bold text-[#F1EAD9]">
-                    I · Triage Agent
-                  </span>
-                  <span className="text-[10px] font-mono text-[#5FB3A8]">
-                    Conf: {latestEval?.anomaly?.confidence ? `${(latestEval.anomaly.confidence * 100).toFixed(0)}%` : "98.4%"}
-                  </span>
-                </div>
-                <p className="text-xs text-[#D9D2BF] font-sans leading-relaxed">
-                  {latestEval?.anomaly?.description ||
-                    `Classified river state as ${telemetry.alert_tier}. Silt rating curve indicates quartz hazard above baseline.`}
-                </p>
-              </div>
-              <div className="text-[10px] font-mono text-[#A3B0C8] mt-3 pt-2 border-t border-[#C9A24B]/15">
-                Latency: 12ms · Open-Weight
-              </div>
-            </div>
-
-            {/* Card 2: SOP Memory Agent */}
-            <div className="bg-[#0B1424] border border-[#C9A24B]/30 p-4 rounded-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-2 border-b border-[#C9A24B]/20 mb-2">
-                  <span className="text-xs font-serif font-bold text-[#F1EAD9]">
-                    II · SOP Memory Agent
-                  </span>
-                  <span className="text-[10px] font-mono text-[#5FB3A8]">
-                    [SHA-256 VERIFIED]
-                  </span>
-                </div>
-                <p className="text-xs text-[#D9D2BF] font-sans leading-relaxed">
-                  <strong className="text-[#F0D27A] block mb-1">
-                    {latestEval?.sop?.title || "SOP-04: High Sediment Desander Flushing"}
-                  </strong>
-                  {latestEval?.sop?.procedure ||
-                    "Modulate intake gate to reduce abrasive sediment while keeping baseline desander flush open."}
-                </p>
-              </div>
-              <div className="text-[9px] font-mono text-[#A3B0C8] mt-3 pt-2 border-t border-[#C9A24B]/15 truncate">
-                Hash: sha256:7f83b1657ff1...
-              </div>
-            </div>
-
-            {/* Card 3: Dispatch Agent */}
-            <div className="bg-[#0B1424] border border-[#C9A24B]/30 p-4 rounded-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-2 border-b border-[#C9A24B]/20 mb-2">
-                  <span className="text-xs font-serif font-bold text-[#F1EAD9]">
-                    III · Dispatch Agent
-                  </span>
-                  <span className="text-[10px] font-mono text-[#5FB3A8]">
-                    advisory=True
-                  </span>
-                </div>
-                <p className="text-xs text-[#F1EAD9] font-mono leading-relaxed bg-[#13264A]/50 p-2 rounded-sm border border-[#C9A24B]/20">
-                  {latestEval?.decision?.tool
-                    ? `tool='${latestEval.decision.tool}' gate_id=${latestEval.decision.gate_id ?? 0} flow_target_m3s=${latestEval.decision.flow_target_m3s ?? (activePlant ? (activePlant.design_flow_m3s * 0.45).toFixed(1) : 30.0)}`
-                    : `tool='modulate_penstock_intake' gate_id=0 flow_target_m3s=${(activePlant ? (activePlant.design_flow_m3s * 0.45).toFixed(1) : 30.0)}`}
-                </p>
-              </div>
-              <div className="text-[10px] font-mono text-[#A3B0C8] mt-3 pt-2 border-t border-[#C9A24B]/15">
-                Deterministic Kernel Bound
-              </div>
-            </div>
-
-            {/* Card 4: Explain Agent */}
-            <div className="bg-[#0B1424] border border-[#C9A24B]/30 p-4 rounded-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between pb-2 border-b border-[#C9A24B]/20 mb-2">
-                  <span className="text-xs font-serif font-bold text-[#F1EAD9]">
-                    IV · Explain Agent
-                  </span>
-                  <span className="text-[10px] font-mono text-[#E0A43A]">
-                    Grade-1 Plain English
-                  </span>
-                </div>
-                <p className="text-xs text-[#D9D2BF] font-sans leading-relaxed italic">
-                  {latestEval?.explanation?.plain_english ||
-                    `"The river entering ${activePlant?.name || "Upper Tamakoshi"} is carrying sharp mountain quartz sand. We are throttling intake flow so sand settles quietly in the desander basin before touching the spinning turbine blades."`}
-                </p>
-              </div>
-              <div className="text-[10px] font-mono text-[#5FB3A8] mt-3 pt-2 border-t border-[#C9A24B]/15">
-                Human Engineer Verified
-              </div>
-            </div>
-          </div>
-        </section>
+        <PlantMotionVarHUD
+          plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
+          plantId={selectedPlantId}
+          capacityMw={activePlant?.capacity_mw || 456}
+          headM={activePlant?.head_m || 822}
+          designFlowM3s={activePlant?.design_flow_m3s || 66}
+          currentDischargeM3s={telemetry.discharge_m3s}
+          currentSiltPpm={telemetry.silt_ppm}
+          rainfallMmH={liveWeather?.precipitation_mm_h ?? 12.4}
+          latestEval={latestEval}
+          evaluatingAI={evaluatingAI}
+          onTriggerEvaluation={triggerAIEvaluation}
+          apiBase={API_BASE}
+        />
 
         {/* =======================================================================
             4.6 SECTION IV · ENERGY REVENUE OUTLOOK AGENT (SPRINT 5)
@@ -1168,173 +1261,47 @@ export default function DemoPage() {
           apiBase={API_BASE}
         />
 
-        {/* =======================================================================
-            4.7 SECTION V · THE PLANT IN MOTION & 4-ZONE VAR SCREEN HUD
-            ======================================================================= */}
-        {varScreenOpen && (
-          <PlantMotionVarHUD
-            plantName={activePlant?.name || "Upper Tamakoshi Hydropower Project"}
-            plantId={selectedPlantId}
-            capacityMw={activePlant?.capacity_mw || 456}
-            headM={activePlant?.head_m || 822}
-            designFlowM3s={activePlant?.design_flow_m3s || 66}
-            currentDischargeM3s={telemetry.discharge_m3s}
-            currentSiltPpm={telemetry.silt_ppm}
-            rainfallMmH={liveWeather?.precipitation_mm_h ?? 12.4}
-            onClose={() => setVarScreenOpen(false)}
-          />
-        )}
+                {/* =======================================================================
+                    4.8 SECTION VI · QUICK STATION SELECTOR
+                    ======================================================================= */}
+                <section className="relative bg-gradient-to-b from-[#0A1224]/90 to-[#070D18]/95 border border-white/[0.08] shadow-[0_12px_48px_rgba(0,0,0,0.5)] rounded-2xl p-6 backdrop-blur-md">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#C9A24B] font-bold">
+                          SECTION VI · SWITCH ACTIVE STATION
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-serif font-bold text-[#F1EAD9]">
+                        Select Another Hydropower Station
+                      </h3>
+                      <p className="text-xs text-[#A3B0C8] font-sans mt-0.5">
+                        Switch between 25 active Nepal hydropower plants or return to the Global Fleet 24/7 analytics.
+                      </p>
+                    </div>
 
-        {/* =======================================================================
-            4.8 SECTION VI · GLOBAL FLEET GRID (25 HIMALAYAN STATIONS)
-            ======================================================================= */}
-        {mode === "global" ? (
-          <section className="relative bg-[#0F1A2E] border border-[#C9A24B] pn p-6">
-            <div className="np">VI · GLOBAL FLEET GRID (20+ STATIONS)</div>
+                    <button
+                      onClick={() => setMode("global")}
+                      className="px-4 py-1.5 bg-gradient-to-r from-[#C9A24B] to-[#F0D27A] hover:brightness-110 text-[#0B1424] font-serif font-bold text-xs uppercase tracking-wider rounded-full transition-all shadow-sm cursor-pointer"
+                    >
+                      EXPAND 24/7 FLEET ANALYTICS →
+                    </button>
+                  </div>
 
-            <div className="flex flex-wrap items-center justify-between pb-3 border-b border-[#C9A24B]/30 mb-4 mt-1 gap-4">
-              <div>
-                <h3 className="text-lg font-serif font-bold text-[#F1EAD9]">
-                  Himalayan Hydropower Stations Matrix
-                </h3>
-                <p className="text-xs text-[#A3B0C8] font-sans">
-                  Click any row to immediately switch the control room deep-dive to that station.
-                </p>
+                  <PowerhouseGrid
+                    plants={powerhouseStations}
+                    selectedPlantId={selectedPlantId}
+                    onSelectPlant={(plant) => {
+                      const found = plants.find((p) => p.id === plant.id);
+                      if (found) selectPlant(found);
+                    }}
+                    basinFilter={basinFilter}
+                  />
+                </section>
               </div>
-
-              {/* Basin Filter */}
-              <div className="flex items-center gap-1.5 bg-[#0B1424] border border-[#C9A24B]/30 p-1 rounded-sm text-xs font-mono">
-                {["All", "Koshi", "Gandaki", "Karnali", "Bagmati"].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBasinFilter(b)}
-                    className={`px-2.5 py-0.5 rounded-sm transition-colors cursor-pointer ${
-                      basinFilter === b
-                        ? "bg-[#C9A24B] text-[#0B1424] font-bold"
-                        : "text-[#A3B0C8] hover:text-[#F1EAD9]"
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Matrix Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono border-collapse">
-                <thead>
-                  <tr className="border-b border-[#C9A24B]/30 text-[#A3B0C8] uppercase tracking-wider">
-                    <th className="py-2.5 px-3">Station Name</th>
-                    <th className="py-2.5 px-3">Basin</th>
-                    <th className="py-2.5 px-3">Capacity</th>
-                    <th className="py-2.5 px-3">Inflow Q</th>
-                    <th className="py-2.5 px-3">Quartz Silt</th>
-                    <th className="py-2.5 px-3">Condition Status</th>
-                    <th className="py-2.5 px-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#C9A24B]/15">
-                  {powerhouseStations
-                    .filter((p) => basinFilter === "All" || p.river_basin.toLowerCase() === basinFilter.toLowerCase())
-                    .map((station) => {
-                      const isCurr = station.id === selectedPlantId;
-                      const sTier = station.alert_tier || "NORMAL";
-                      const sColor = getTierColor(sTier);
-
-                      return (
-                        <tr
-                          key={station.id}
-                          onClick={() => {
-                            const found = plants.find((p) => p.id === station.id);
-                            if (found) {
-                              selectPlant(found);
-                              setMode("individual");
-                            }
-                          }}
-                          className={`hover:bg-[#13264A]/60 transition-colors cursor-pointer ${
-                            isCurr ? "bg-[#13264A]/40 font-semibold" : ""
-                          }`}
-                        >
-                          <td className="py-2.5 px-3 text-[#F1EAD9] font-sans font-medium flex items-center gap-2">
-                            {isCurr && <span className="text-[#C9A24B] font-mono text-xs">&gt;</span>}
-                            {station.name}
-                          </td>
-                          <td className="py-2.5 px-3 text-[#A3B0C8]">{station.river_basin}</td>
-                          <td className="py-2.5 px-3 text-[#F1EAD9]">{station.capacity_mw} MW</td>
-                          <td className="py-2.5 px-3 text-[#F1EAD9]">
-                            {station.current_discharge_m3s?.toFixed(1) || "45.0"} m³/s
-                          </td>
-                          <td className="py-2.5 px-3" style={{ color: sColor }}>
-                            {station.current_silt_ppm?.toFixed(0) || "380"} PPM
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span
-                              className="px-2 py-0.5 rounded-sm text-[10px] border"
-                              style={{
-                                color: sColor,
-                                borderColor: sColor,
-                                backgroundColor: `${sColor}18`,
-                              }}
-                            >
-                              ● {sTier}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const found = plants.find((p) => p.id === station.id);
-                                if (found) {
-                                  selectPlant(found);
-                                  setMode("individual");
-                                }
-                              }}
-                              className="px-2.5 py-1 bg-[#13264A] hover:bg-[#C9A24B] hover:text-[#0B1424] border border-[#C9A24B]/40 text-xs font-mono text-[#F1EAD9] rounded-sm transition-colors cursor-pointer"
-                            >
-                              SELECT →
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ) : (
-          <section className="relative bg-[#0F1A2E] border border-[#C9A24B] pn p-6">
-            <div className="np">VI · HIMALAYAN FLEET STATIONS</div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#C9A24B]/30 mb-4 mt-1">
-              <div>
-                <h3 className="text-lg font-serif font-bold text-[#F1EAD9]">
-                  Select Station Deep-Dive
-                </h3>
-                <p className="text-xs text-[#A3B0C8] font-sans">
-                  Switch between 20 active Nepal hydropower plants or view the Global Fleet matrix.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setMode("global")}
-                className="px-3 py-1 bg-[#C9A24B] hover:bg-[#F0D27A] text-[#0B1424] font-serif font-bold text-xs uppercase rounded-sm transition-colors cursor-pointer"
-              >
-                EXPAND MATRIX VIEW →
-              </button>
-            </div>
-
-            <PowerhouseGrid
-              plants={powerhouseStations}
-              selectedPlantId={selectedPlantId}
-              onSelectPlant={(plant) => {
-                const found = plants.find((p) => p.id === plant.id);
-                if (found) selectPlant(found);
-              }}
-              basinFilter={basinFilter}
-            />
-          </section>
-        )}
-        </main>
+            )}
+          </main>
 
         {/* Slideout Inspector Drawer */}
         <InspectorPanel
