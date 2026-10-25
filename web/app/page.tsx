@@ -77,6 +77,19 @@ export default function HomePage() {
               {label}
             </Link>
           ))}
+          <a
+            href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "var(--color-cloud-rim, #D4B94A)",
+              textDecoration: "none",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
+            Video Demo ↗
+          </a>
           <Link
             href="/demo"
             style={{
@@ -171,6 +184,26 @@ export default function HomePage() {
           >
             Launch 20-House Fleet SCADA →
           </Link>
+          <a
+            href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              border: "1px solid var(--color-cloud-rim, #D4B94A)",
+              background: "rgba(212, 185, 74, 0.15)",
+              color: "var(--color-cloud-rim, #D4B94A)",
+              padding: "12px 24px",
+              borderRadius: "4px",
+              textDecoration: "none",
+              fontSize: "14px",
+              fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            Watch Video Demo ↗
+          </a>
           <Link
             href="/safety"
             style={{

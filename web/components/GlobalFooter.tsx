@@ -55,6 +55,16 @@ export default function GlobalFooter() {
                 Himalayan Hydrology Deep Dive
               </Link>
             </li>
+            <li>
+              <a
+                href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#F0D27A] hover:underline transition-colors"
+              >
+                Video Demonstration (Google Drive) ↗
+              </a>
+            </li>
           </ul>
         </div>
 

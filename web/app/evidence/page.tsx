@@ -22,7 +22,7 @@ export default function EvidencePage() {
       </p>
 
       <div style={{ background: "var(--color-yellow-bg)", border: "1px solid var(--color-yellow)", borderRadius: "8px", padding: "var(--space-4) var(--space-6)", maxWidth: "680px", marginBottom: "var(--space-8)", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", color: "var(--color-cloud-rim)" }}>
-        ℹ️ Note: These numbers come from our computer simulation twin. The AI only gives advice; human operators always make the final call!
+        [NOTE]: These numbers come from our computer simulation twin. The AI only gives advice; human operators always make the final call!
       </div>
 
       <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: "var(--text-sm)", maxWidth: "800px" }}>

@@ -186,6 +186,17 @@ export default function GlobalNav({
           [SAFETY R1-R11]
         </Link>
 
+        {/* External Video Demonstration Link */}
+        <a
+          href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:block px-2.5 py-1 text-xs font-mono text-[#F0D27A] hover:text-[#F1EAD9] border border-[#C9A24B]/50 bg-[#10203D] rounded-sm transition-colors cursor-pointer"
+          title="Watch HydroMesh Demonstration Video"
+        >
+          [VIDEO DEMO ↗]
+        </a>
+
         {/* Operator Badge & Auth Trigger */}
         <button
           onClick={onOpenAuth}

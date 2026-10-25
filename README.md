@@ -7,10 +7,14 @@ HydroMesh is a fully autonomous, 24/7 digital twin and multi-agent artificial in
 [![Automated Tests](https://img.shields.io/badge/tests-214%20passed-5FB3A8?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/tests)
 [![Test Coverage](https://img.shields.io/badge/coverage-95.5%25-C9A24B?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/pyproject.toml)
 [![Deterministic Safety Kernel](https://img.shields.io/badge/kernel-Rules%20R1--R11%20Enforced-F0D27A?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/SAFETY.md)
+[![Demo Video](https://img.shields.io/badge/video%20demo-watch%20on%20drive-E0705A?style=flat-square)](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing)
 [![Frontend](https://img.shields.io/badge/frontend-Next.js%2014%20Turbopack-13264A?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/web)
 [![Backend](https://img.shields.io/badge/backend-FastAPI%20%2B%20Uvicorn-0F1A2E?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/hydromesh/api)
 [![Local AI Model](https://img.shields.io/badge/model-Bijuli%20(Our%20AI%20POWERED%20MODEL)-E0A43A?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/hydromesh/llm.py)
 [![License](https://img.shields.io/badge/license-Apache%202.0%20%2F%20MIT-5FB3A8?style=flat-square)](file:///c:/Users/user/Documents/HydroMesh/LICENSE)
+
+> **Demonstration Video**: Watch the complete system walkthrough and autonomous multi-agent defense demonstration on Google Drive: [HydroMesh Video Demo](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing)
+
 
 ---
 
@@ -373,7 +377,7 @@ This project was built for submission to the Google / DeepMind Hackathon. This s
 | **Public GitHub Repository** | Fully Compliant | Public repository at [`https://github.com/anishupr47-git/HydroMesh`](https://github.com/anishupr47-git/HydroMesh) containing full source code, deterministic tests, and reproducible environments. |
 | **Complete Documentation** | Fully Compliant | System architecture (Section 2), multi-agent relay (Section 3), mathematical kernel rules (Section 4), technology stack (Section 7), installation instructions (Section 9), limitations (Section 8.4), and future roadmap (Section 10). |
 | **Functional Working Demo** | Fully Compliant | Live local SCADA demo at [`http://localhost:3000/demo`](http://localhost:3000/demo) covering 25 Himalayan hydropower stations, real-time dual-trace river telemetry waveforms, and live neural defense cycles. |
-| **Demo Video & Presentation** | Video Ready | Direct link: `[Watch HydroMesh Demonstration Video](https://github.com/anishupr47-git/HydroMesh#demo-video)` (Full demonstration showing problem, architecture, live scenario injections, and operator overrides). |
+| **Demo Video & Presentation** | Fully Compliant | Direct link: [Watch HydroMesh Demonstration Video](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing) (Full demonstration showing problem, architecture, live scenario injections, and operator overrides). |
 | **Qualifies as "Build with AI"** | Fully Compliant | AI directly transforms, filters, and reasons over multi-modal time-series data to control physical actuators; it does not simply render chat text. See Section 8.2. |
 | **AI Usage Disclosure** | Fully Compliant | Programmatic consumption statement specifying the exact files and functions consuming AI outputs. See Section 8.3. |
 
@@ -424,7 +428,7 @@ To maintain engineering integrity, HydroMesh clearly specifies its operational b
 
 ### 8.5 Demonstration Video & Presentation
 
-- **Demo Video URL**: `[Demo Video Link - Paste Your YouTube / Loom URL Here]`
+- **Demo Video URL**: [Watch HydroMesh Demonstration Video on Google Drive](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing)
 - **Presentation Outline**:
   1. **The Problem**: Glacial silt carrying Mohs 7 quartz scouring Himalayan hydropower turbines in under 48 hours.
   2. **The Solution**: HydroMesh autonomous multi-agent defense kernel with deterministic water hammer safety gates.

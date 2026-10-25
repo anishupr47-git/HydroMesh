@@ -58,6 +58,27 @@ export default function AboutPage() {
         and warns operators 12–24 hours ahead of big muddy floods. This gives plant crews time to clean out sand basins and 
         protect clean energy equipment that lights up homes across Nepal!
       </p>
+
+      <div style={{ marginTop: "var(--space-6)" }}>
+        <a
+          href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            background: "var(--color-accent)",
+            color: "#0B1424",
+            padding: "10px 20px",
+            borderRadius: "4px",
+            textDecoration: "none",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 700,
+            fontSize: "var(--text-sm)",
+          }}
+        >
+          Watch Video Demonstration ↗
+        </a>
+      </div>
     </main>
   );
 }

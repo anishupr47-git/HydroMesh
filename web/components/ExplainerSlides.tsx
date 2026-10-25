@@ -46,6 +46,14 @@ export default function ExplainerSlides({
           </div>
 
           <div className="flex items-center gap-3">
+            <a
+              href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-mono text-[#5FB3A8] hover:text-[#F0D27A] border border-[#5FB3A8]/50 hover:border-[#F0D27A] px-2.5 py-1.5 rounded transition-colors cursor-pointer bg-[#050A14] uppercase tracking-wider font-semibold"
+            >
+              [WATCH VIDEO DEMO ↗]
+            </a>
             {currentSlide === 0 && onBack && (
               <button
                 onClick={onBack}
@@ -276,7 +284,7 @@ export default function ExplainerSlides({
 
         {/* Bottom Footer Actions */}
         <div className="relative z-10 flex items-center justify-between pt-4 border-t border-[#C9A24B]/30 w-full gap-4 flex-wrap mt-4">
-          <div>
+          <div className="flex items-center gap-3">
             {currentSlide === 0 ? (
               onBack && (
                 <button
@@ -294,6 +302,14 @@ export default function ExplainerSlides({
                 [← PREVIOUS: THE CHALLENGE]
               </button>
             )}
+            <a
+              href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-mono text-[#F0D27A] hover:underline uppercase tracking-wider ml-1"
+            >
+              [WATCH 3-MIN VIDEO DEMO ↗]
+            </a>
           </div>
 
           <div className="flex items-center gap-4">

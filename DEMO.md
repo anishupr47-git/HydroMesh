@@ -1,6 +1,9 @@
 # HydroMesh 3-Minute Walkthrough & Demonstration Guide
 
 > **Notice**: HydroMesh operates against a digital twin hydrological simulator. All figures and operational alerts are simulated demonstrations.
+>
+> **Demonstration Video**: Watch the complete 3-minute walkthrough video on Google Drive: [HydroMesh Demonstration Video](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing)
+
 
 ---
 
