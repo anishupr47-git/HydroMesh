@@ -7,6 +7,7 @@ import ExplainerSlides from "@/components/ExplainerSlides";
 import AuthModal from "@/components/AuthModal";
 import PlantMotionVarHUD from "@/components/PlantMotionVarHUD";
 import RevenueOutlookCard from "@/components/RevenueOutlookCard";
+import SoloCustomRadarCard from "@/components/SoloCustomRadarCard";
 import PowerhouseGrid, { PowerhouseStation } from "@/components/PowerhouseGrid";
 import { GlobalFleetAnalytics } from "@/components/GlobalFleetAnalytics";
 import GlobalNav from "@/components/GlobalNav";
@@ -120,8 +121,8 @@ export default function DemoPage() {
   const [entryPhase, setEntryPhase] = useState<EntryPhase>("intro");
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // View Mode: individual (My Plant) vs global (Global Fleet Matrix)
-  const [mode, setMode] = useState<"global" | "individual">("global");
+  // View Mode: individual (My Plant) vs global (Global Fleet Matrix) vs custom_radar (GPS Radar)
+  const [mode, setMode] = useState<"global" | "individual" | "custom_radar">("individual");
   const [plants, setPlants] = useState<NepalPlant[]>([]);
   const [selectedPlantId, setSelectedPlantId] = useState("upper_tamakoshi");
   const [basinFilter, setBasinFilter] = useState("All");
@@ -1145,6 +1146,26 @@ export default function DemoPage() {
                 onTriggerScenario={(sc) => injectScenario(sc)}
                 scenarioStatus={scenarioStatus}
               />
+            ) : mode === "custom_radar" ? (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex flex-wrap items-center justify-between bg-gradient-to-r from-[#0F1E3A]/80 via-[#0A1326]/70 to-[#070C18]/80 border border-white/[0.08] px-5 py-3 rounded-2xl backdrop-blur-md gap-3 shadow-md">
+                  <button
+                    onClick={() => {
+                      setMode("individual");
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="flex items-center gap-2 text-xs font-mono font-bold text-[#C9A24B] hover:text-[#F0D27A] transition-all cursor-pointer bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] px-4 py-1.5 rounded-full"
+                  >
+                    <span>←</span> RETURN TO STATION COCKPIT (UPPER TAMAKOSHI)
+                  </button>
+                  <div className="text-xs font-mono text-[#A3B0C8]">
+                    SOLO OPERATOR GPS RADAR · LIVE NOAA & ECMWF SATELLITE ASSIMILATION
+                  </div>
+                </div>
+                <SoloCustomRadarCard apiBase={API_BASE} />
+              </div>
             ) : user && user.email && userSitesLoaded && userSites.length === 0 ? (
               <div className="space-y-8 animate-fadeIn">
                 {/* Top Banner Navigation */}
@@ -1772,6 +1793,11 @@ export default function DemoPage() {
           capacityMw={activePlant?.capacity_mw || 456}
           apiBase={API_BASE}
         />
+
+        {/* =======================================================================
+            4.7 SECTION V · SOLO OPERATOR GPS RADAR & CUSTOM SATELLITE ASSIMILATION
+            ======================================================================= */}
+        <SoloCustomRadarCard apiBase={API_BASE} />
 
                 {/* =======================================================================
                     4.8 SECTION VI · QUICK STATION SELECTOR

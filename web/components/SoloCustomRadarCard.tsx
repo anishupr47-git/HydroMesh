@@ -191,6 +191,21 @@ export default function SoloCustomRadarCard({ apiBase }: SoloCustomRadarCardProp
         {/* Quick coordinate presets */}
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           <button
+            onClick={() => applyPreset("Upper Tamakoshi Hydropower Project", 27.85, 86.22, 822.0, 456.0, 66.0, 1745.0)}
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              padding: "4px 8px",
+              background: "rgba(201, 162, 75, 0.15)",
+              border: "1px solid rgba(201, 162, 75, 0.4)",
+              color: "#F0D27A",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            [UPPER TAMAKOSHI: 27.85°N, 86.22°E (456 MW)]
+          </button>
+          <button
             onClick={() => applyPreset("Upper Marsyangdi Cascade", 28.32, 84.41, 140.0, 50.0, 42.0, 280.0)}
             style={{
               fontFamily: "var(--font-mono)",

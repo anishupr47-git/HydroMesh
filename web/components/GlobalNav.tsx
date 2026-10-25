@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface GlobalNavProps {
-  mode: "global" | "individual";
-  onModeChange: (m: "global" | "individual") => void;
+  mode: "global" | "individual" | "custom_radar";
+  onModeChange: (m: "global" | "individual" | "custom_radar") => void;
   activeCriticalCount?: number;
   activeWarningCount?: number;
   totalSites?: number;
@@ -104,7 +104,7 @@ export default function GlobalNav({
           </div>
         </Link>
 
-        {/* View Tabs: [MY PLANT] vs [GLOBAL FLEET] */}
+        {/* View Tabs: [MY PLANT] vs [GLOBAL FLEET] vs [GPS RADAR] */}
         <div className="flex items-center bg-[#0B1424] border border-[#C9A24B]/40 rounded-sm p-0.5 ml-2">
           <button
             onClick={() => onModeChange("individual")}
@@ -125,6 +125,16 @@ export default function GlobalNav({
             }`}
           >
             [GLOBAL FLEET]
+          </button>
+          <button
+            onClick={() => onModeChange("custom_radar")}
+            className={`px-3 py-1 rounded-sm text-xs font-mono tracking-wider uppercase transition-colors cursor-pointer ${
+              mode === "custom_radar"
+                ? "bg-[#C9A24B] text-[#0B1424] font-bold shadow-[0_1px_4px_rgba(201,162,75,0.4)]"
+                : "text-[#A3B0C8] hover:text-[#F1EAD9]"
+            }`}
+          >
+            [GPS RADAR]
           </button>
         </div>
       </div>
