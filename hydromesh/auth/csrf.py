@@ -19,8 +19,8 @@ from fastapi import HTTPException, Request
 EXEMPT_PATHS = frozenset({
     "/api/auth/login",
     "/api/auth/register",
+    "/api/auth/guest",
     "/api/auth/ws-ticket",
-    "/api/v1/orchestrate/run",
 })
 
 
@@ -34,9 +34,14 @@ def verify_csrf(request: Request, session_csrf_token: str | None) -> None:
     if request.method in ("GET", "HEAD", "OPTIONS"):
         return
 
-    path = request.url.path
+    path = request.url.path.rstrip("/")
     if path in EXEMPT_PATHS:
         return
+
+    # 1. Sec-Fetch-Site defense
+    sec_fetch_site = request.headers.get("sec-fetch-site")
+    if sec_fetch_site and sec_fetch_site.lower() == "cross-site":
+        raise HTTPException(status_code=403, detail="CSRF check failed: Cross-site request rejected.")
 
     # 1. Origin header check
     origin = request.headers.get("origin")

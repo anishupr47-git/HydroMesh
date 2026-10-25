@@ -61,7 +61,7 @@ class SessionRecord:
 
     def is_expired(self, now_s: float | None = None) -> bool:
         """Check if session exceeded idle timeout (30m) or absolute timeout (12h)."""
-        now = now_s if now_s is not None else time.monotonic()
+        now = now_s if now_s is not None else time.time()
         if now - self.last_active_at_s > IDLE_TIMEOUT_S:
             return True
         return now - self.created_at_s > ABSOLUTE_TIMEOUT_S

@@ -11,6 +11,7 @@ Think of this file as the Dam's Permanent Filing Cabinet and Registry.
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 import time
 from datetime import UTC, datetime
@@ -102,9 +103,11 @@ class Database:
         self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
+        if self.db_path != ":memory:":
+            conn.execute("PRAGMA journal_mode = WAL;")
         return conn
 
     def _init_db(self) -> None:
@@ -154,7 +157,7 @@ class Database:
         csrf_token: str,
     ) -> SessionRecord:
         session_id = f"ses_{uuid4().hex[:12]}"
-        now = time.monotonic()
+        now = time.time()
         with self._get_connection() as conn:
             conn.execute(
                 """INSERT INTO sessions 
@@ -191,7 +194,7 @@ class Database:
 
     def touch_session(self, session_id: str) -> None:
         with self._get_connection() as conn:
-            conn.execute("UPDATE sessions SET last_active_at = ? WHERE session_id = ?", (time.monotonic(), session_id))
+            conn.execute("UPDATE sessions SET last_active_at = ? WHERE session_id = ?", (time.time(), session_id))
 
     def delete_session(self, token_hash: str) -> None:
         with self._get_connection() as conn:
@@ -200,6 +203,27 @@ class Database:
     def delete_all_user_sessions(self, user_id: str) -> None:
         with self._get_connection() as conn:
             conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+
+    # --- Asynchronous Helpers (Non-blocking event loop offloading) ---------------------
+    async def a_create_user(self, email: str, password_hash: str, role: UserRole = "member") -> dict[str, Any]:
+        return await asyncio.to_thread(self.create_user, email, password_hash, role)
+
+    async def a_get_user_by_email(self, email: str) -> dict[str, Any] | None:
+        return await asyncio.to_thread(self.get_user_by_email, email)
+
+    async def a_create_session(
+        self, user_id: str, token_hash: str, role: UserRole, ua_hash: str, csrf_token: str
+    ) -> SessionRecord:
+        return await asyncio.to_thread(self.create_session, user_id, token_hash, role, ua_hash, csrf_token)
+
+    async def a_get_session(self, token_hash: str) -> tuple[SessionRecord, str] | None:
+        return await asyncio.to_thread(self.get_session, token_hash)
+
+    async def a_touch_session(self, session_id: str) -> None:
+        await asyncio.to_thread(self.touch_session, session_id)
+
+    async def a_delete_session(self, token_hash: str) -> None:
+        await asyncio.to_thread(self.delete_session, token_hash)
 
     def create_site(
         self,
