@@ -247,7 +247,10 @@ To maintain engineering integrity, HydroMesh clearly specifies its operational b
   1. **The Problem**: Glacial silt carrying Mohs 7 quartz scouring Himalayan hydropower turbines in under 48 hours.
   2. **The Solution**: HydroMesh autonomous multi-agent defense kernel with deterministic water hammer safety gates.
   3. **Live Demonstration**: Real-time SCADA telemetry, automated intake throttling, and Ollama edge intelligence.
-  4. **Value & Impact**: Prevention of millions in turbine runner replacements and protection of national clean grid power.
+  4. **Value & Impact**:
+     - **Downstream Human Life Safety & Outburst / Flood Alert**: Early warning alerts for Glacial Lake Outburst Floods (GLOFs) and monsoon flash surges to evacuate river settlements hours before flood waves crest.
+     - **Physical Asset Longevity**: Eliminates turbine runner destruction and prevents high-pressure penstock ruptures from water hammer shockwaves.
+     - **Financial & Stock Market Advisory (NEPSE Equities)**: Real-time revenue optimization, PPA penalty mitigation, and capital preservation advisory for hydropower equities, boards, and public shareholders.
 
 ---
 

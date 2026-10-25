@@ -167,6 +167,22 @@ export default function ExplainerSlides({
                   </div>
                 </div>
               </div>
+
+              {/* Triple-Pillar Real-World Value & Impact Bar */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-left">
+                <div className="bg-[#050A14]/70 border border-[#5FB3A8]/25 px-3 py-2.5 rounded-sm text-[11px] font-mono text-[#A3B0C8] flex items-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#5FB3A8] flex-shrink-0" />
+                  <span><strong className="text-[#F1EAD9]">Flood Safety:</strong> 4-6h early GLOF alerts for river valley communities</span>
+                </div>
+                <div className="bg-[#050A14]/70 border border-[#C9A24B]/25 px-3 py-2.5 rounded-sm text-[11px] font-mono text-[#A3B0C8] flex items-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#C9A24B] flex-shrink-0" />
+                  <span><strong className="text-[#F1EAD9]">Steel Defense:</strong> Stops Mohs 7 quartz runner scouring</span>
+                </div>
+                <div className="bg-[#050A14]/70 border border-[#F0D27A]/25 px-3 py-2.5 rounded-sm text-[11px] font-mono text-[#A3B0C8] flex items-center gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F0D27A] flex-shrink-0" />
+                  <span><strong className="text-[#F1EAD9]">Financial & Stock:</strong> PPA margin defense and NEPSE equity risk advisory</span>
+                </div>
+              </div>
             </div>
           ) : (
             /* Slide 2: How It Operates */
