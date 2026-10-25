@@ -117,6 +117,18 @@ class Database:
     def _init_db(self) -> None:
         with self._get_connection() as conn:
             conn.executescript(SCHEMA_SQL)
+            self._seed_demo_user(conn)
+
+    def _seed_demo_user(self, conn: sqlite3.Connection) -> None:
+        """Seed default demo operator account if not already present."""
+        demo_email = "neauser1@gmail.com"
+        row = conn.execute("SELECT id FROM users WHERE email = ?", (demo_email,)).fetchone()
+        if not row:
+            demo_hash = "$argon2id$v=19$m=65536,t=3,p=4$7ZueIS3XynJl1i/x2ELriw$SyjbGjbKGsRTI2dhM6njSZmbf/Urm6oYGEegW8ffr68"
+            conn.execute(
+                "INSERT INTO users (id, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)",
+                ("usr_nea_demo1", demo_email, demo_hash, "member", time.time()),
+            )
 
     # --- Users -------------------------------------------------------------------------
     def create_user(self, email: str, password_hash: str, role: UserRole = "member") -> dict[str, Any]:

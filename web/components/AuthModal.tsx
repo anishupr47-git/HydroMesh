@@ -186,6 +186,32 @@ export default function AuthModal({
             </div>
           )}
 
+          {/* Quick Demo Showcase Credential Auto-Fill Card */}
+          <div className="mb-4 p-3 bg-[#0B1424] border border-[#C9A24B]/40 rounded-sm flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#F0D27A] font-bold">
+                  Demo Showcase Account (Clean 0-Data)
+                </span>
+              </div>
+              <div className="text-[11px] font-mono text-[#D9D2BF]">
+                neauser1@gmail.com <span className="text-[#A3B0C8]/60">·</span> asd12345@@##$$
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegistering(false);
+                setEmail("neauser1@gmail.com");
+                setPassword("asd12345@@##$$");
+              }}
+              className="px-2.5 py-1.5 bg-[#C9A24B]/20 hover:bg-[#C9A24B]/35 border border-[#C9A24B]/60 text-[#F0D27A] font-mono text-[10px] uppercase font-bold rounded cursor-pointer transition-colors"
+            >
+              [Auto-Fill Demo Login]
+            </button>
+          </div>
+
           {/* Login / Register Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

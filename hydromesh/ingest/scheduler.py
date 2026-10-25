@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import math
+import random
 from typing import Any
 
 from hydromesh.api.stream import StreamManager
@@ -78,6 +79,7 @@ class PlantScheduler:
         self.plants = list(plants) if plants else ([pipeline.plant] if pipeline.plant else [])
 
         self.twin = twin or PlantTwin(scenarios.normal, spec=PlantSpec(), seed=42)
+        self._rng = random.Random(42)
         self._running = False
         self._task: asyncio.Task[None] | None = None
 
@@ -180,10 +182,15 @@ class PlantScheduler:
         if incident.decision and incident.decision.actions:
             decision_str = str(incident.decision.actions[0])
 
+        # Natural sensor turbulence jitter (scaled so both micro-streams and major rivers exhibit visible physical flow variance)
+        noise_sd = max(0.015, 0.11 / max(1.0, telemetry.discharge_m3s))
+        q_jitter = 1.0 + self._rng.gauss(0.0, noise_sd)
+        live_discharge = max(0.5, round(telemetry.discharge_m3s * q_jitter, 1))
+
         packet = {
             "ts": incident.opened_at.isoformat(),
             "plant_id": plant_id,
-            "discharge_m3s": round(telemetry.discharge_m3s, 1),
+            "discharge_m3s": live_discharge,
             "silt_ppm": round(telemetry.silt_ppm),
             "alert_tier": incident.anomaly.severity.value.upper() if incident.anomaly else "NORMAL",
             "runner_wear_pct": round(snapshot.runner_wear * 100.0, 3),

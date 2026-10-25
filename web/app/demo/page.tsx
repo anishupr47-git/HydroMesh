@@ -157,8 +157,11 @@ export default function DemoPage() {
   const [countdown, setCountdown] = useState(600);
   const [ackIncident, setAckIncident] = useState(false);
 
-  // User Identity & Fleet
+  // User Identity & Registered Sites
   const [user, setUser] = useState<UserIdentity | null>(null);
+  const [userSites, setUserSites] = useState<any[]>([]);
+  const [userSitesLoaded, setUserSitesLoaded] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
   const [fleet, setFleet] = useState<FleetSnapshot | null>(null);
 
   // AI Pipeline Evaluation State & Section V VAR HUD
@@ -602,7 +605,10 @@ export default function DemoPage() {
   // Powerhouse stations mapping
   const powerhouseStations: PowerhouseStation[] = plants.map((p) => {
     const site = fleet?.sites.find((s) => s.id === p.id);
-    const live = liveFleetTelemetry[p.id];
+    const live =
+      liveFleetTelemetry[p.id] ||
+      (p.id === "bhotekoshi" ? liveFleetTelemetry["upper_bhote_koshi"] : undefined) ||
+      (p.id === "upper_bhote_koshi" ? liveFleetTelemetry["bhotekoshi"] : undefined);
     return {
       id: p.id,
       name: p.name,
