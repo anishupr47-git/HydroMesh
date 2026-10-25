@@ -540,9 +540,9 @@ You can immediately interact with the full 25-station Himalayan fleet matrix, ru
 HydroMesh maintains a strict automated test suite requiring at least 90% code coverage. To run the full test suite:
 
 ```bash
-python -m pytest tests/unit/ tests/scenario/ tests/contract/ tests/security/test_auth.py tests/security/test_csrf.py tests/security/test_f1_confidence.py tests/security/test_f5_ssrf.py tests/security/test_f6_redaction.py tests/security/test_quotas.py tests/security/test_revenue_airgap.py tests/security/test_site_access.py tests/security/test_sprint1_perimeter.py tests/security/test_sprint2_state_integrity.py --cov=hydromesh
+python -m pytest tests/unit/ tests/scenario/ tests/contract/ tests/security/ --cov=hydromesh
 ```
-*Current test status: 191/191 tests passed (100% pass rate) with 91.19% code coverage.*
+*Current test status: **214/214 tests passed (100% pass rate)** with **95.39% code coverage**.*
 
 ---
 
