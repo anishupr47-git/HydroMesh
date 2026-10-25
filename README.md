@@ -84,6 +84,67 @@ The HydroMesh platform operates across five interconnected layers:
   Real-time fleet monitoring (25 Stations), dual-trace telemetry charts, and operator audit logging
 ```
 
+```mermaid
+flowchart TD
+    subgraph L1["Layer 1: Sensor & Satellite Ingestion Layer"]
+        S1["Ultrasonic River Discharge Sensors (m³/s)"]
+        S2["Optical Quartz Turbidity Sensors (PPM)"]
+        S3["NASA GPM & Open-Meteo Satellite Precipitation Radar"]
+        S4["Shaft Vibration & Water Temperature Telemetry"]
+    end
+
+    subgraph L2["Layer 2: Digital Twin & Physics Simulator"]
+        DT_HP["Headpond Dynamics & Storage Volume"]
+        DT_DS["Desander Settling Basins (Sediment Settling Velocity)"]
+        DT_PS["Penstock Hydrodynamics (Allievi Acoustic Wave Dynamics)"]
+        DT_TR["Francis Turbine Runner Wear (IEC 62364 Erosion Engine)"]
+    end
+
+    subgraph L3["Layer 3: Collaborative Autonomous Defense Relay"]
+        AG_TR["I. Triage Agent (12ms River Hazard Classifier)"]
+        AG_PR["II. Predictive Agent (Catchment Lag & Peak Window)"]
+        AG_SOP["III. SOP Memory Agent (SHA-256 Authenticated RAG)"]
+        AG_DP["IV. Dispatch Agent (Optimal Gate Flow Computation)"]
+        AG_EX["V. Explain Agent (Plain-Language Synthesis)"]
+        AG_EC["Operational Economics Agent (Energy Revenue Outlook)"]
+    end
+
+    subgraph L4["Layer 4: Deterministic Safety Kernel (Rules R1–R11)"]
+        K_AL["Rule R1: Allievi Water Hammer Surge Clamping (ΔH ≤ 35m)"]
+        K_EV["Rule R2: Statutory Environmental River Baseflow"]
+        K_TP["Rule R3: Emergency Turbine Trip (> 3000 PPM Silt)"]
+        K_ST["Rule R9: Sensor Freeze & Telemetry Stall Detection"]
+        K_VK["Fail-Closed Verdict Engine (Approved / Rejected / Needs Human)"]
+    end
+
+    subgraph L5["Layer 5: SCADA Mission Control & Actuation"]
+        WS["24/7 Asynchronous WebSocket Broadcaster (/ws/stream)"]
+        UI_FL["National Fleet Overview (25 Himalayan Hydropower Stations)"]
+        UI_SC["Station SCADA Cockpit (Dual-Trace Real-Time Waveforms)"]
+        LEDGER["Cryptographic Audit Ledger (SHA-256 Replay Defense)"]
+        ACT["Automated Intake Gate Modulation & Desander Silt Scour"]
+    end
+
+    S1 & S2 & S4 --> L2
+    S3 --> AG_PR
+    L2 --> AG_TR
+    S1 & S2 --> AG_TR
+    AG_TR -->|State: WATCH / WARNING| AG_PR
+    AG_TR & AG_PR --> AG_SOP
+    AG_SOP -->|Verified Operating Procedure| AG_DP
+    AG_DP -->|Proposed Control Action| L4
+    K_AL & K_EV & K_TP & K_ST --> K_VK
+    K_VK -->|VERDICT: APPROVED| ACT
+    K_VK -->|VERDICT: APPROVED| DT_DS & DT_PS
+    K_VK -->|Audit Record| AG_EX
+    AG_EX --> UI_SC
+    AG_EC --> UI_SC
+    L2 --> WS
+    WS --> UI_FL & UI_SC
+    ACT --> LEDGER
+    UI_SC --> LEDGER
+```
+
 ### Detailed Layer Descriptions
 
 1. **Layer 1: Sensor & Weather Ingestion Layer**:
