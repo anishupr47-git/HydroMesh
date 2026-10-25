@@ -34,6 +34,7 @@ interface UserIdentity {
   guest_id: string | null;
   tier: string;
   max_plants_allowed: number;
+  csrf_token?: string | null;
 }
 
 interface NepalPlant {
@@ -262,6 +263,96 @@ export default function DemoPage() {
     }
   };
 
+  // Fetch Member Registered Plants
+  const fetchUserSites = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/sites`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setUserSites(Array.isArray(data) ? data : []);
+      } else {
+        setUserSites([]);
+      }
+    } catch {
+      setUserSites([]);
+    } finally {
+      setUserSitesLoaded(true);
+    }
+  };
+
+  // Auto-Setup Upper Tamakoshi for Demo Showcase
+  const handleAutoSetupUpperTamakoshi = async () => {
+    setSetupLoading(true);
+    try {
+      const payload = {
+        name: "Upper Tamakoshi Hydropower Project",
+        coordinates: { lat: 27.848, lon: 86.136 },
+        capacity_mw: 456.0,
+        head_m: 822.0,
+        design_flow_m3s: 66.0,
+        catchment_area_km2: 1745.0,
+        preset: "monsoon",
+        is_public: true,
+      };
+      const res = await fetch(`${API_BASE}/api/sites`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.csrf_token ? { "X-CSRF-Token": user.csrf_token } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        setUserSites([created]);
+        const tamakoshi = plants.find((p) => p.id === "upper_tamakoshi") || {
+          id: "upper_tamakoshi",
+          name: "Upper Tamakoshi Hydropower Project",
+          river_basin: "Koshi",
+          capacity_mw: 456.0,
+          head_m: 822.0,
+          design_flow_m3s: 66.0,
+          base_flow_m3s: 35.0,
+          latitude: 27.848,
+          longitude: 86.136,
+          catchment_area_km2: 1745.0,
+          preset: "monsoon",
+        };
+        selectPlant(tamakoshi as any);
+      } else if (res.status === 403) {
+        await fetchUserSites();
+      }
+    } catch (e) {
+      console.error("Auto setup error:", e);
+      setUserSites([{ id: "upper_tamakoshi_registered", name: "Upper Tamakoshi Hydropower Project" }]);
+      const tamakoshi = plants.find((p) => p.id === "upper_tamakoshi");
+      if (tamakoshi) selectPlant(tamakoshi);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
+  // Reset Demo Station Back to 0 Data
+  const handleResetDemoStation = async () => {
+    const siteToDelete = userSites[0];
+    if (siteToDelete?.id) {
+      try {
+        await fetch(`${API_BASE}/api/sites/${siteToDelete.id}`, {
+          method: "DELETE",
+          headers: {
+            ...(user?.csrf_token ? { "X-CSRF-Token": user.csrf_token } : {}),
+          },
+          credentials: "include",
+        });
+      } catch (e) {
+        console.error("Reset error:", e);
+      }
+    }
+    setUserSites([]);
+  };
+
   // Fetch Global Fleet Snapshot
   const fetchFleet = async () => {
     try {
@@ -366,6 +457,7 @@ export default function DemoPage() {
   useEffect(() => {
     fetchPlants();
     fetchUser();
+    fetchUserSites();
     fetchFleet();
 
     let retryTimer: NodeJS.Timeout;
@@ -980,17 +1072,20 @@ export default function DemoPage() {
           showBack={entryPhase === "auth" && !authModalOpen}
           onBack={() => setEntryPhase("explainer")}
           onClose={authModalOpen ? () => setAuthModalOpen(false) : undefined}
-          onSuccess={(userData) => {
+          onSuccess={(userData: any) => {
             if (userData?.email) {
-              setUser((prev) => ({
-                role: userData.role,
+              setUser({
+                role: userData.role || "member",
                 email: userData.email,
-                user_id: "usr_" + Math.random().toString(36).substring(2, 6),
+                user_id: userData.user_id || "usr_nea_demo1",
                 guest_id: null,
-                tier: "PRO_STATION",
+                tier: "free_member",
                 max_plants_allowed: 1,
-              }));
+                csrf_token: userData.csrf_token || null,
+              });
             }
+            fetchUserSites();
+            fetchUser();
             setEntryPhase("dashboard");
             setAuthModalOpen(false);
           }}
@@ -1023,6 +1118,7 @@ export default function DemoPage() {
             onOpenAuth={() => setAuthModalOpen(true)}
             onLogout={() => {
               setUser(null);
+              setUserSites([]);
               try {
                 localStorage.removeItem("hydromesh_session");
               } catch {}
@@ -1049,6 +1145,126 @@ export default function DemoPage() {
                 onTriggerScenario={(sc) => injectScenario(sc)}
                 scenarioStatus={scenarioStatus}
               />
+            ) : user && user.email && userSitesLoaded && userSites.length === 0 ? (
+              <div className="space-y-8 animate-fadeIn">
+                {/* Top Banner Navigation */}
+                <div className="flex flex-wrap items-center justify-between bg-gradient-to-r from-[#0F1E3A]/80 via-[#0A1326]/70 to-[#070C18]/80 border border-white/[0.08] px-5 py-3 rounded-2xl backdrop-blur-md gap-3 shadow-md">
+                  <button
+                    onClick={() => {
+                      setMode("global");
+                      if (typeof window !== "undefined") {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="flex items-center gap-2 text-xs font-mono font-bold text-[#C9A24B] hover:text-[#F0D27A] transition-all cursor-pointer bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] px-4 py-1.5 rounded-full"
+                  >
+                    <span>←</span> BACK TO NATIONAL FLEET OVERVIEW (GLOBAL COMMAND)
+                  </button>
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#A3B0C8]">
+                    <span className="w-2 h-2 rounded-full bg-[#E0A43A]" />
+                    <span>OPERATOR:</span>
+                    <span className="text-[#F1EAD9] font-bold">{user.email}</span>
+                    <span className="text-[#E0A43A]">(0 / 1 FACILITIES REGISTERED)</span>
+                  </div>
+                </div>
+
+                {/* 0-Data Empty State Showcase Card */}
+                <div className="relative w-full rounded-3xl bg-gradient-to-b from-[#0F1E3A]/80 via-[#0A1326]/70 to-[#070C18]/85 p-8 sm:p-12 border border-white/[0.1] shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-md text-center max-w-4xl mx-auto space-y-8">
+                  {/* Glowing Turbine Emblem */}
+                  <div className="mx-auto w-20 h-20 rounded-full border-2 border-[#C9A24B]/50 flex items-center justify-center bg-[#0B1424] shadow-[0_0_30px_rgba(201,162,75,0.3)]">
+                    <svg
+                      role="img"
+                      aria-label="Hydropower Turbine"
+                      viewBox="0 0 100 100"
+                      className="w-12 h-12"
+                    >
+                      <g transform="translate(50, 50)">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <path
+                            key={i}
+                            d="M 0 -12 C 10 -22, 20 -35, 12 -45 C 5 -45, 2 -25, 0 -12 Z"
+                            fill="#F0D27A"
+                            opacity={0.8}
+                            transform={`rotate(${i * 45})`}
+                          />
+                        ))}
+                        <circle cx="0" cy="0" r="10" fill="#C9A24B" />
+                      </g>
+                    </svg>
+                  </div>
+
+                  <div className="space-y-3 max-w-2xl mx-auto">
+                    <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#C9A24B] font-bold">
+                      CLEAN DEMO ONBOARDING STATE
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#F1EAD9] tracking-tight">
+                      No Registered Hydro Facilities Linked
+                    </h2>
+                    <p className="text-sm text-[#A3B0C8] font-mono leading-relaxed">
+                      You are authenticated as <strong className="text-[#F1EAD9]">{user.email}</strong>.
+                      This account is provisioned with 1 member facility slot, but contains 0 registered stations so you can experience full end-to-end setup.
+                    </p>
+                  </div>
+
+                  {/* Account Metadata Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                      <span className="text-[10px] font-mono uppercase text-[#A3B0C8] block mb-1">Station Allocation</span>
+                      <span className="text-sm font-mono font-bold text-[#F1EAD9]">0 of 1 Active</span>
+                      <span className="text-[11px] font-mono text-[#5FB3A8] block mt-1">Free Tier Quota</span>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                      <span className="text-[10px] font-mono uppercase text-[#A3B0C8] block mb-1">Live Telemetry Link</span>
+                      <span className="text-sm font-mono font-bold text-[#E0A43A]">Awaiting Setup</span>
+                      <span className="text-[11px] font-mono text-[#A3B0C8] block mt-1">Satellite + Sensor</span>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+                      <span className="text-[10px] font-mono uppercase text-[#A3B0C8] block mb-1">Security Status</span>
+                      <span className="text-sm font-mono font-bold text-[#5FB3A8]">Argon2id Active</span>
+                      <span className="text-[11px] font-mono text-[#A3B0C8] block mt-1">Protected Session</span>
+                    </div>
+                  </div>
+
+                  {/* Primary Showcase Action */}
+                  <div className="pt-2 max-w-xl mx-auto space-y-4">
+                    <p className="text-xs font-mono text-[#D4AF37]">
+                      Click below to instantly provision Upper Tamakoshi (456 MW) into your account and launch the live operational cockpit:
+                    </p>
+
+                    <button
+                      onClick={handleAutoSetupUpperTamakoshi}
+                      disabled={setupLoading}
+                      className="w-full py-4 px-6 bg-gradient-to-r from-[#C9A24B] to-[#F0D27A] hover:brightness-110 text-[#070D18] font-bold text-xs sm:text-sm font-mono uppercase tracking-widest rounded-xl transition-all shadow-[0_0_25px_rgba(201,162,75,0.4)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3"
+                    >
+                      {setupLoading ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-[#070D18] border-t-transparent rounded-full animate-spin" />
+                          <span>PROVISIONING UPPER TAMAKOSHI (456 MW)...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>⚡</span>
+                          <span>TRY FOR YOURSELF · AUTO-SETUP UPPER TAMAKOSHI</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="pt-2">
+                      <button
+                        onClick={() => {
+                          setMode("global");
+                          if (typeof window !== "undefined") {
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }
+                        }}
+                        className="text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] underline cursor-pointer"
+                      >
+                        Or switch back to Global Fleet Matrix (20 National Stations) →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="space-y-8 animate-fadeIn">
                 {/* Clean Top Banner to Return to Global Fleet Command */}
@@ -1064,10 +1280,21 @@ export default function DemoPage() {
                   >
                     <span>←</span> BACK TO NATIONAL FLEET OVERVIEW (GLOBAL COMMAND)
                   </button>
-                  <div className="flex items-center gap-3 text-xs font-mono text-[#A3B0C8]">
+                  <div className="flex items-center gap-3 text-xs font-mono text-[#A3B0C8] flex-wrap">
                     <span>STATION OPERATING COCKPIT:</span>
                     <span className="text-[#F1EAD9] font-bold">{activePlant?.name || "Upper Tamakoshi"}</span>
                     <span className="text-[#5FB3A8]">({activePlant?.capacity_mw || 456} MW)</span>
+
+                    {user && user.email && userSites.length > 0 && (
+                      <button
+                        onClick={handleResetDemoStation}
+                        title="Reset demo station back to 0 registered facilities"
+                        className="flex items-center gap-1.5 text-[11px] font-mono text-[#E0705A] hover:text-[#FF8B73] bg-[#E0705A]/10 hover:bg-[#E0705A]/20 border border-[#E0705A]/30 px-3 py-1 rounded-full transition-all cursor-pointer ml-2"
+                      >
+                        <span>🔄</span>
+                        <span>RESET TO 0 DATA (DEMO REPLAY)</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
