@@ -6,12 +6,14 @@ interface ExplainerSlidesProps {
   onComplete: () => void;
   onBack?: () => void;
   onSkipToAuth?: () => void;
+  onSkipToCockpit?: () => void;
 }
 
 export default function ExplainerSlides({
   onComplete,
   onBack,
   onSkipToAuth,
+  onSkipToCockpit,
 }: ExplainerSlidesProps) {
   const [currentSlide, setCurrentSlide] = useState<0 | 1>(0);
 
@@ -58,6 +60,14 @@ export default function ExplainerSlides({
                 className="text-xs font-mono text-[#A3B0C8] hover:text-[#F1EAD9] uppercase tracking-wider cursor-pointer transition-colors"
               >
                 [← PREVIOUS: THE CHALLENGE]
+              </button>
+            )}
+            {onSkipToCockpit && (
+              <button
+                onClick={onSkipToCockpit}
+                className="text-xs font-mono text-[#D4AF37] hover:text-[#F0D27A] border border-[#C9A24B]/60 hover:border-[#F0D27A] px-3 py-1.5 rounded transition-colors cursor-pointer bg-[#10203D]/90 uppercase tracking-widest font-bold"
+              >
+                [ENTER COCKPIT DIRECTLY →]
               </button>
             )}
             <button

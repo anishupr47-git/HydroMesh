@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 interface CinematicIntroProps {
   onComplete: () => void;
   onSkipToAuth?: () => void;
+  onSkipToCockpit?: () => void;
 }
 
 // Letter definitions for sequential rain drop
@@ -15,6 +16,7 @@ const WORD_HYDROMESH = ["H", "Y", "D", "R", "O", "M", "E", "S", "H"];
 export default function CinematicIntro({
   onComplete,
   onSkipToAuth,
+  onSkipToCockpit,
 }: CinematicIntroProps) {
   // Current letter index that has started falling
   const [droppedCount, setDroppedCount] = useState<number>(0);
@@ -98,6 +100,14 @@ export default function CinematicIntro({
           </div>
 
           <div className="flex items-center gap-3">
+            {onSkipToCockpit && (
+              <button
+                onClick={onSkipToCockpit}
+                className="text-xs font-mono text-[#D4AF37] hover:text-[#F0D27A] border border-[#C9A24B]/60 hover:border-[#F0D27A] px-3 py-1.5 rounded transition-colors cursor-pointer bg-[#10203D]/90 uppercase tracking-widest font-bold"
+              >
+                [ENTER COCKPIT DIRECTLY →]
+              </button>
+            )}
             {onSkipToAuth && (
               <button
                 onClick={onSkipToAuth}
