@@ -1,16 +1,18 @@
-"""The Energy Revenue Outlook Agent (Operational Economics Intelligence).
+"""Operational Economics and Energy Revenue Outlook Agent.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Plant Chief Financial Officer & Senior Economist.
-1. Bridges Sand & Money: Answers the million-rupee question:
-   "If we throttle intake gates to let a muddy silt pulse pass, do we save more money
-   in runner repairs than we lose in briefly curtailed electricity sales?"
-2. Pure Math First (Invariant G1): All Megawatt-hours, Rupees, and wear savings
-   are calculated by exact deterministic formulas before any AI words are written.
-3. Air-Gapped Financial Advisor (Invariant G2 & G3): This agent is read-only.
-   It cannot move any physical gates and cannot execute financial trades.
-4. Mandatory Disclaimer (Invariant G4): Prominently stamps an educational disclaimer
-   on every financial outlook.
+Overview:
+    Evaluates the economic trade-off between power generation revenue and turbine sand erosion:
+    "If intake gates are modulated during a sediment pulse, does the avoided turbine repair cost
+    exceed the short-term generation revenue forfeited?"
+
+Core Principles:
+    1. Deterministic Financial Mathematics (Invariant G1): All MWh generation, tariff revenue (NPR),
+       and IEC 62364 runner wear savings are calculated using exact deterministic formulas before
+       any natural language analysis is produced.
+    2. Read-Only Air Gap (Invariants G2 & G3): The economics agent is strictly informational and read-only.
+       It possesses zero control over physical intake gates and zero authority to execute financial trades.
+    3. Mandatory Educational Disclaimer (Invariant G4): All reports prominently feature an operational
+       planning disclaimer confirming projections are simulated estimates.
 """
 
 from __future__ import annotations

@@ -1,13 +1,16 @@
-"""Live WebSocket Streaming Hub for Plant Telemetry and AI Decisions.
+"""Real-Time WebSocket Streaming Hub and Connection Manager.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as a Live Radio Station broadcasting from the dam.
-1. Continuous Stream: Every couple seconds, it broadcasts the latest water speed,
-   floating sand count, and robot helper advice to every connected web browser.
-2. Many Listeners (Connection Manager): Multiple operators and engineers can tune
-   in simultaneously from phones, tablets, or control room screens.
-3. Clean Disconnects: If someone closes their laptop, it politely frees up their
-   slot with zero memory leaks or crashes.
+Overview:
+    Manages high-throughput, low-latency WebSocket connections broadcasting live river telemetry,
+    turbine operational status, and automated AI safety decisions to connected client dashboards.
+
+Key Architectural Guarantees:
+    1. Real-Time Telemetry Broadcasting: Distributes real-time packets (discharge, sediment PPM,
+       alert tier, turbine wear) to all active subscribers with sub-millisecond serialization.
+    2. Connection Cap Enforcement (SEC-04): Enforces strict total (500) and per-IP (10) connection ceilings,
+       rejecting excess connections with WebSocket code 1013 (Try Again Later).
+    3. Resilient Lifecycle Management: Safely handles abrupt network dropouts and broken client sockets,
+       automatically pruning stale references without resource leaks or event-loop interruption.
 """
 
 from __future__ import annotations

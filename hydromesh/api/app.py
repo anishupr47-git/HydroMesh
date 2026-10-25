@@ -1,13 +1,17 @@
-"""FastAPI Application Factory & Security Middleware Stack.
+"""FastAPI Application Factory and Security Perimeter Middleware.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Secure Front Door and Guardhouse of our web service.
-1. Security Armor: Adds security headers to keep hackers and spoofers out.
-2. Speed Bump (Rate Limiter): Prevents anyone from spamming thousands of requests
-   at once by limiting calls to a safe rate.
-3. Friendly Neighbors (CORS): Allows our web dashboard to connect securely.
-4. 24/7 Lifespan: Wakes up the background clockwork heartbeat when the server starts,
-   and puts it to sleep peacefully when shutting down.
+Overview:
+    Initializes the HydroMesh API server, configures edge security middleware,
+    manages ingress rate limiting, and orchestrates the application background lifecycle.
+
+Key Ingress Protections:
+    1. Edge Rate Limiting: Enforces sliding-window rate limiters across global and sensitive authentication
+       endpoints, returning RFC 6585-compliant 429 responses with accurate Retry-After backoff headers.
+    2. Origin Control (CORS): Enforces explicit origin whitelisting with restricted HTTP methods and headers,
+       defending against cross-origin credential misuse.
+    3. Defense-in-Depth Headers: Attaches HSTS, nosniff, frame-busting, and referrer policy security headers
+       to every outbound response.
+    4. Lifecycle Management: Gracefully initiates and shuts down background simulation schedulers and database pools.
 """
 
 from __future__ import annotations

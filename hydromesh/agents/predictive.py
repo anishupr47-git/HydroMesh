@@ -1,13 +1,15 @@
-"""The Weather Forecaster Agent (Predictive).
+"""Hydrological Sediment Forecasting Agent (Predictive Intelligence).
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Control Room Meteorologist.
-1. Looking 24 Hours Ahead: It takes the satellite rain forecast for the mountain peaks
-   and figures out when the big rain wave will roll down the river.
-2. Peak Silt Wave Timing: It calculates the highest amount of sand that will hit
-   the intake gates over the next 24 hours.
-3. Early Warning: If a massive mud wave is coming at 3:00 AM, it alerts the team
-   hours in advance so the sand traps can be emptied before the flood hits!
+Overview:
+    Models 24-hour river inflow dynamics and sediment surges by combining
+    upstream catchment satellite precipitation with river basin hydrology.
+
+Key Responsibilities:
+    1. 24-Hour Horizon Modeling: Projects river flow and sediment trends up to 24 hours ahead,
+       accounting for mountain basin runoff lag times.
+    2. Peak Surge Prediction: Calculates when peak sediment concentration (PPM) will arrive at intake gates.
+    3. Proactive Early Warning: Gives plant engineers several hours of advance warning so settling basins
+       can be prepared and flushed before peak turbidity arrives.
 """
 
 from __future__ import annotations

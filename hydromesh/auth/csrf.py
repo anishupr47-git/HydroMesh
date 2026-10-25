@@ -1,12 +1,16 @@
-"""Cross-Site Request Forgery (CSRF) Defense & Origin Verification.
+"""Cross-Site Request Forgery (CSRF) Defense and Origin Verification.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Anti-Counterfeit Stamp on all control room orders.
-1. Origin Verification: When an action request arrives, it checks that the message
-   actually came directly from our website and not a sneaky third-party link.
-2. Anti-Counterfeit Stamp: It verifies a double-check token for all changes
-   (like registering a plant or toggling a switch) so other tabs in your browser
-   can never spoof orders.
+Overview:
+    Implements defense-in-depth CSRF protections across all state-mutating HTTP requests,
+    combining Double-Submit Cookie tokens with origin and fetch-metadata inspection.
+
+Protective Layers:
+    1. Cryptographic Token Verification: Validates matching pairs of session tokens in client request
+       headers (`X-CSRF-Token`) and secure cookies.
+    2. Origin & Referer Verification: Confirms that mutation requests originate from authorized hosts.
+    3. Sec-Fetch-Site Validation: Enforces browser-level fetch metadata checks, automatically rejecting
+       cross-site mutation requests.
+    4. Minimal Exemption Perimeter: Restricts exemptions exclusively to initial unauthenticated identity endpoints.
 """
 
 from __future__ import annotations

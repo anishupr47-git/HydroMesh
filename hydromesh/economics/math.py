@@ -1,15 +1,19 @@
-"""Deterministic Mathematical Formulation for Hydropower Energy Economics & Runner Wear.
+"""Deterministic Formulations for Hydropower Energy Economics and Runner Erosion.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Pure Math Engine for the Dam's Financial Report.
-1. Megawatt-Hours (MWh): Converts falling mountain water (flow Q and drop height H)
-   into real electricity generation.
-2. Nepal PPA Revenue: Multiplies electricity produced by the official Nepal Electricity Authority
-   tariff (e.g. NPR 4.80 per kWh = NPR 4,800 per MWh).
-3. Abrasive Sand Wear (IEC 62364): Calculates how many millimeters of stainless steel
-   sand erosion are avoided when our operators throttle gates during muddy floods.
-4. Total Economic Benefit: Avoided repair costs minus any briefly curtailed electricity sales.
-5. Invariant G1 & G2: Pure Python math. Zero LLM hallucinations. Zero actuator access.
+Overview:
+    Implements deterministic mathematical formulas linking physical hydrology, power generation,
+    and IEC 62364 turbine runner erosion to financial revenue and asset maintenance costs.
+
+Core Financial & Physical Formulations:
+    1. Electrical Energy Generation (MWh): Converts water discharge and net hydraulic head into
+       electrical energy based on water density, gravity, and overall electromechanical efficiency.
+    2. Power Purchase Agreement (PPA) Revenue: Computes total generation earnings using contracted
+       feed-in tariffs (e.g., Nepal Electricity Authority seasonal PPA rates in NPR/kWh).
+    3. IEC 62364 Turbine Erosion Mitigation: Quantifies millimeter-scale abrasive erosion depth on
+       runner steel caused by quartz sediment, calculating avoided overhaul and maintenance savings.
+    4. Net Economic Benefit: Evaluates the net financial balance: avoided equipment repair savings
+       minus the short-term generation revenue forfeited during gate throttling.
+    5. Invariants G1 & G2: Pure deterministic formulas without statistical drift or LLM hallucination risk.
 """
 
 from __future__ import annotations

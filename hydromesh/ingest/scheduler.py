@@ -1,13 +1,16 @@
-"""24/7 Plant Background Scheduler and Continuous Heartbeat.
+"""Continuous Plant Background Scheduler and Heartbeat Engine.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Steady Clockwork Heart of the power plant network.
-1. Unblinking Watch: Day and night, every few seconds, it triggers a new tick.
-2. Multi-Plant Real Time: It runs individual digital twins for every active plant in Nepal
-   (Upper Tamakoshi, Kali Gandaki A, Chilime, Middle Marsyangdi, Rasuwagadhi, etc.) simultaneously,
-   with realistic river flow and quartz sand tailored to each river basin.
-3. Broadcasting Live: It broadcasts fresh water speed, sand count, and robot helper
-   advisories for every plant so operators' live screens update continuously in real time.
+Overview:
+    Executes high-frequency periodic simulation steps, multi-agent evaluation cycles,
+    and real-time WebSocket state broadcasting across all active hydropower stations.
+
+Operational Responsibilities:
+    1. Continuous Heartbeat: Advances simulation physics and assimilates satellite precipitation
+       on a consistent asynchronous schedule (default: 2.0s tick interval).
+    2. Multi-Station Concurrency: Simultaneously updates digital twin state and safety kernels
+       for all registered plants (Upper Tamakoshi, Kali Gandaki, Chilime, Middle Marsyangdi, etc.).
+    3. Low-Latency Broadcasting: Transmits updated discharge, sediment concentration, turbine wear,
+       and active advisory decisions to connected operator cockpits in real time.
 """
 
 from __future__ import annotations

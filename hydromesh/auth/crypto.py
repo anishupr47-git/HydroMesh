@@ -1,14 +1,16 @@
-"""Cryptographic Passwords & Timing-Equalized Verification.
+"""Argon2id Password Hashing and Timing-Equalized Verification.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Master Safe Lock and Secret Cipher for user passwords.
-1. Super-Strong Lock (Argon2id): We use the world's most trusted mathematical lock.
-   Even with millions of fast computers, no hacker can guess the passwords.
-2. Poker Face (Timing Defense): When someone tries to log in with an email that
-   doesn't exist, our computer takes the exact same number of milliseconds to check
-   as a real email. That way, eavesdroppers can never tell which emails are registered!
-3. Strong Password Rule: Passwords must be at least 12 characters long and cannot
-   be common guesses like 'password123456'.
+Overview:
+    Provides cryptographic password hashing, constant-time verification, and password complexity
+    enforcement designed to prevent brute-force and side-channel timing attacks.
+
+Core Security Protections:
+    1. Argon2id Key Derivation: Utilizes memory-hard Argon2id hashing configured to resist GPU/ASIC
+       cracking attacks and rainbow table generation.
+    2. Side-Channel Timing Defense: Equalizes execution duration for non-existent users by performing
+       a synthetic verification cycle, preventing user enumeration via timing discrepancies.
+    3. Password Policy Enforcement: Requires minimum entropy (>=12 characters) and blocks common
+       breached passwords.
 """
 
 from __future__ import annotations

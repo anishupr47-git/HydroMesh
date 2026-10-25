@@ -136,8 +136,8 @@ def test_nonce_cache_ttl_expiration() -> None:
     cache.put("expiring_nonce", {"status": "ok"})
     assert "expiring_nonce" in cache
 
-    # Wait for TTL to expire
-    time.sleep(0.06)
+    # Wait for TTL to expire (accounting for Windows ~15.6ms clock quantum)
+    time.sleep(0.08)
     assert "expiring_nonce" not in cache
     assert cache.get("expiring_nonce") is None
     assert len(cache) == 0

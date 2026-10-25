@@ -1,13 +1,16 @@
-"""Authentication & Authorization Dependencies (current_principal, require_member).
+"""Authentication and Role-Based Authorization Dependencies.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Gatekeeper and Security Scanner at the door.
-1. Auto-Badge: If you have a logged-in cookie, it recognizes your member badge.
-   If not, it politely gives you a temporary Guest ID (`guest_...`).
-2. Private Dam Protection (Anti-BOLA): You can only see and control your own registered
-   dam. If someone tries to guess other people's plant IDs, our computer says "Site Not Found"
-   (uniform 404) so attackers can't even tell if the other plant exists!
-3. Free Plan Watchdog: Guarantees free accounts can only ever have 1 plant.
+Overview:
+    Provides FastAPI request dependencies to resolve caller identity (Principal), enforce role
+    privileges, and prevent Broken Object-Level Authorization (BOLA/IDOR).
+
+Core Access Control Mechanisms:
+    1. Principal Resolution (current_principal): Identifies authenticated members via secure session
+       cookies, or automatically provisions an ephemeral guest identifier for sandbox exploration.
+    2. Role Verification (require_member / require_admin): Restricts mutation operations to authenticated
+       members and system administrators.
+    3. Object-Level Access Isolation (require_site_access): Prevents unauthorized resource discovery and BOLA
+       by returning a uniform 404 (Not Found) whenever a caller attempts to access a plant outside their tenancy.
 """
 
 from __future__ import annotations

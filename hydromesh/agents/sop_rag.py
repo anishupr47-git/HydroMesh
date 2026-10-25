@@ -1,13 +1,16 @@
-"""The Book Reader Agent (SOP RAG).
+"""Standard Operating Procedure Retrieval Agent (Vector-Indexed SOP RAG).
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Control Room Librarian holding the official Plant Rulebook.
-1. Instant Rule Finder: When muddy water starts climbing, it flips directly
-   to the exact chapter of the high-sediment operating manual.
-2. Verified Rules Only: It only reads official procedures that passed the security
-   fingerprint check.
-3. Historical Lessons: It pulls up past river incidents so the dispatcher knows
-   what worked best in previous floods.
+Overview:
+    Retrieves authoritative plant standard operating procedures (SOPs) and historical incident
+    records matching real-time river conditions to guide operational decisions.
+
+Key Capabilities:
+    1. Contextual Procedure Retrieval: Instantly identifies applicable operating manual chapters
+       (e.g., desander flushing, emergency shutoffs) based on live sediment concentration and flow rate.
+    2. Cryptographically Verified Documents: Only queries SOP documentation whose SHA-256 integrity
+       hashes match authorized engineering standards.
+    3. Historical Incident Precedents: Cross-references current telemetry against past high-flow events
+       to recall proven operational responses and historical outcomes.
 """
 
 from __future__ import annotations

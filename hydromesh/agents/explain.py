@@ -1,13 +1,16 @@
-"""The Reporter Agent (Explain).
+"""Operational Incident Explanation Agent (Plain-Language Synthesis).
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Control Room News Anchor and Scribe.
-1. Everyday Words: It takes complicated technical graphs and explains exactly
-   what happened in simple words that any operator can understand immediately.
-2. What & Why: It tells what triggered the alert, what the weather forecaster predicted,
-   and what actions were approved by the Safety Guard.
-3. Sandboxed Security (F8): It uses a secure sandboxed template so nobody can inject
-   tricky computer code into the report text!
+Overview:
+    Translates complex real-time telemetry, hazard classifications, and safety verdicts
+    into clear, structured operational summaries for control room operators and station directors.
+
+Key Responsibilities:
+    1. Plain-Language Summaries: Converts hydraulic data and safety scores into clear, human-readable
+       briefings that can be understood at a glance in high-pressure situations.
+    2. Comprehensive Context: Documents the root hazard cause, incoming weather trend, and verified
+       safety actions in a standardized timeline format.
+    3. Sandboxed Template Rendering: Generates reports via strict deterministic formatting templates
+       to eliminate prompt injection risks and guarantee uniform auditability.
 """
 
 from __future__ import annotations

@@ -1,11 +1,17 @@
-"""Authentication, Registration, and Session Management API Routes.
+"""Authentication, Registration, and Identity Lifecycle Routes.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Member Registration & Login Desk.
-1. Instant Sign-Up: Register in seconds with just your email and password.
-2. Safe Badges: Issues security session tokens and anti-forgery (CSRF) tokens.
-3. Safe Logout: Completely wipes your active sessions whenever you log out.
-4. Preference Memory: Remembers your favorite map view whether you are a guest or member.
+Overview:
+    Handles operator account registration, credential authentication, session lifecycles,
+    and user interface preference persistence.
+
+Core Security Capabilities:
+    1. Account Registration & Login: Verifies user credentials against Argon2id password hashes
+       with constant-time timing-attack mitigation.
+    2. Session & Anti-Forgery Governance: Issues HTTP-only session cookies and per-session CSRF tokens.
+    3. Comprehensive Session Revocation: Enables single-session logout or immediate global session
+       termination (/api/auth/logout-all) across all devices.
+    4. UI Preference Persistence: Persists dashboard preferences (selected plant, units, coordinates)
+       for authenticated members and guest sandbox sessions.
 """
 
 from __future__ import annotations

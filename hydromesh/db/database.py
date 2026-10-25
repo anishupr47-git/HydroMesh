@@ -1,12 +1,16 @@
-"""SQLite WAL Database & Multi-Tenant Site Repository.
+"""SQLite WAL Database Engine and Multi-Tenant Storage Repository.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Dam's Permanent Filing Cabinet and Registry.
-1. Fast & Unbreakable (WAL Mode): Uses Write-Ahead Logging so multiple readers
-   can read instantly without locking each other out.
-2. Strict Free Plan Quota: Enforces the rule that free member accounts can register
-   strictly 1 hydropower plant.
-3. Clean Storage: Keeps users, sessions, sites, and hourly history safely organized.
+Overview:
+    Manages persistent state for user accounts, authenticated sessions, plant configurations,
+    user preferences, and historical telemetry records.
+
+Core Storage Guarantees:
+    1. Write-Ahead Logging (WAL Mode): Configures SQLite with WAL journal mode and busy timeout
+       protection to support high-concurrency read operations without database lock contention.
+    2. Non-Blocking Asynchronous Operations: Wraps database I/O in asynchronous thread pools
+       (asyncio.to_thread) to prevent blocking the FastAPI event loop during request processing.
+    3. Multi-Tenant Tenancy & Quotas: Enforces strict data isolation between registered accounts
+       and guarantees single-plant quota limits for standard accounts.
 """
 
 from __future__ import annotations

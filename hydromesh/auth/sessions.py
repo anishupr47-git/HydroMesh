@@ -1,14 +1,16 @@
-"""Session Lifecycle, Opaque Tokens, & Guest Identity Minting.
+"""Session Lifecycle Governance, Opaque Bearer Tokens, and Guest Identity.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Visitor Badge Machine and Wristband Dispenser.
-1. Instant Guest Wristband: When you visit the site without an account, you get
-   a unique, anonymous Guest Badge (e.g. `guest_3f9b2a...`). You can look at the whole
-   world map of dams right away without filling out any forms!
-2. Member Badge (256-Bit Key): When you log in, you receive an unguessable 256-bit
-   security token. Only the hashed fingerprint is saved in the database.
-3. Auto-Lock: If you step away from your desk for 30 minutes (idle timeout) or
-   after 12 hours (absolute timeout), the badge expires to keep your plant safe.
+Overview:
+    Governs user session lifecycles, issues cryptographically secure 256-bit bearer tokens,
+    and provisions guest sandbox identities.
+
+Session Governance Guarantees:
+    1. Ephemeral Guest Identity: Automatically issues anonymous guest identifiers (e.g., guest_...)
+       enabling instant interactive exploration without credential requirements.
+    2. Secure Token Storage: Stores only SHA-256 hashes of session tokens in the database, ensuring
+       stolen database backups cannot be leveraged to impersonate active sessions.
+    3. Expiration Envelopes: Enforces both idle session timeouts (30 minutes) and absolute session
+       lifespans (12 hours) calculated against UTC wall-clock epoch timestamps (SEC-08).
 """
 
 from __future__ import annotations

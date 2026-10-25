@@ -1,30 +1,30 @@
-"""Plant Safety Guard (Rules R1-R11).
+"""Hydropower Safety Verification Engine (Rules R1–R11).
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the strict Plant Guard at the dam.
-The AI helper can brainstorm ideas (like "let's close gate 1" or "let's clean the sand trap").
-However, the AI is NEVER allowed to touch physical plant buttons!
-Every single idea must pass these 11 strict safety rules.
-If an idea is dangerous, too fast, or confusing, the Guard says NO (rejected).
-If the AI is guessing, the Guard rings the bell and asks a human (needs_human).
-Only safe, human-approved actions are ever allowed to execute!
+Overview:
+    HydroMesh enforces a hard deterministic safety envelope over all AI decisions.
+    Machine learning models generate recommendations, but cannot act directly on physical
+    plant hardware. Every proposed action is mathematically validated against physical dam
+    limits, hydraulic pressure thresholds, and environmental standards before execution.
 
-THE 11 RULES IN PLAIN WORDS:
-R1  Is the AI sure? If confidence is below 80%, ask a human operator.
-R2  Real gates only: Reject orders for gates or basins that don't exist.
-R3  No sudden water slams: Never cut river flow by more than 50% at once.
-R4  Keep the river alive: Never let water drop below 20% so river life survives.
-R5  Don't burst pipes: Never push more water through than gates can safely hold.
-R6  Proper cleaning time: Sand trap flushing must take between 5 and 90 minutes.
-R7  Let the sand trap rest: Wait at least 1 hour between flush cleanings.
-R8  Don't rush the buttons: Max 3 actions in 10 minutes to save the motors.
-R9  No pretend electricity: Never promise more megawatts than the river spins.
-R10 Hospitals & clean water first: Always keep essential power lines on top!
-R11 No blank homework: If the AI suggests zero actions, ask a human to check.
+Core Safety Principles:
+    1. Human-in-the-Loop Oversight: If model confidence falls below 80% or if no actions are
+       proposed during high risk, control immediately defaults to human operators (R1, R11).
+    2. Physical Boundary Verification: Gate identifiers and desanding basins must exist in the
+       physical plant specification (R2). Flow cannot exceed designed intake limits (R5).
+    3. Water Hammer & Environmental Protection: Intake flow cannot drop more than 50% in a
+       single step to prevent pipe water hammer (R3), and minimum ecological river flow (20%)
+       is permanently preserved for downstream habitats (R4).
+    4. Actuator Longevity: Desanding flush cycles are bounded between 5 and 90 minutes (R6)
+       with mandatory 60-minute rest intervals (R7) and a maximum of 3 commands per 10 minutes
+       to prevent mechanical motor fatigue (R8).
+    5. Grid & Critical Feeder Priority: Power output cannot exceed instantaneous hydraulic
+       generation limits (R9), and critical civic feeders (hospitals, water pumps) receive
+       unconditional grid priority during load shedding (R10).
 
-Technical details: Pure deterministic function. No network, no clock, no LLM.
-F1: Effective confidence = min(LLM confidence, deterministic confidence).
-F4: Server-built context ensures timestamps cannot be spoofed.
+Invariants & Execution Guarantees:
+    - Pure Determinism: Zero network I/O, zero clock dependencies, zero probabilistic drift.
+    - Defense-in-Depth: Effective confidence is bounded by min(model_confidence, deterministic_confidence).
+    - Tamper Resistance: All physical evaluation contexts are constructed on the secure server.
 """
 
 from __future__ import annotations

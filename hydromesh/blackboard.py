@@ -1,13 +1,16 @@
-"""Thread-Safe Plant State Store (Blackboard).
+"""Central State Blackboard and Shared Memory Store.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Big Whiteboard in the center of the dam's control room.
-1. One Central Board: When the weather scout or river sensors see new numbers,
-   they write them up on this whiteboard so every robot helper sees the exact same thing.
-2. No Scribble Overlaps (Thread Safety): Only one helper can hold the marker at a time,
-   so numbers never get mixed up or scrambled.
-3. Memory Notebook: It keeps a history of the last 100 water readings and all safety checks
-   so we can look back and see what happened.
+Overview:
+    Provides a synchronized, thread-safe central repository for live plant telemetry,
+    agent evaluations, and historical operational incident state.
+
+Key Architecture Principles:
+    1. Single Source of Truth: Maintains a shared, coherent state across all concurrently executing
+       analytical models and user sessions.
+    2. Concurrency Safety: Employs asynchronous locking primitives to guarantee atomic state transitions
+       and prevent race conditions during high-frequency telemetry updates.
+    3. Ring-Buffered History: Retains a bounded sliding-window of historical readings and incident records
+       for temporal analysis and real-time dashboard visualization.
 """
 
 from __future__ import annotations

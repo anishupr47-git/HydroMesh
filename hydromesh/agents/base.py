@@ -1,9 +1,9 @@
-"""Abstract Base Agent for all HydroMesh Multi-Agent Brains.
+"""Abstract Base Agent Framework for HydroMesh Autonomous Intelligence.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Job Description for all our robot helpers in the control room.
-Every robot helper has a name, a specialized job, and a clear set of instructions
-to follow when analyzing river conditions.
+Overview:
+    Defines the standard architectural contract for all specialized AI agents.
+    Each agent acts as a dedicated operational domain expert—such as sediment forecasting,
+    hydraulic gate modulation, or financial analysis—operating with explicit roles and boundaries.
 """
 
 from __future__ import annotations

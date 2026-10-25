@@ -1,19 +1,20 @@
-"""HydroMesh Multi-Agent Orchestration Pipeline.
+"""Multi-Agent Orchestration Pipeline.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Conductor of the Control Room Orchestra.
-1. Bringing the Team Together: It takes all 5 robot helpers and makes sure
-   they work in harmony.
-2. Step-by-Step Flow:
-   - Step 1 (Lookout): Checks the river speed and sediment.
-   - Step 2 (Supervisor): Decides the game plan.
-   - Step 3 (Forecaster): Projects incoming rain waves.
-   - Step 4 (Librarian): Finds the right dam operating procedure.
-   - Step 5 (Strategist): Proposes water gate movements.
-   - Step 6 (Plant Guard): Strict deterministic safety verification (Rules R1-R11).
-   - Step 7 (Reporter): Writes a plain-English briefing for human operators.
-3. Official Permanent Record: It stamps the entire event into the blackboard
-   so everyone has a complete, auditable log.
+Overview:
+    Coordinates the end-to-end execution of specialized intelligence agents and enforces
+    deterministic safety verification on all proposed plant actions.
+
+Operational Workflow:
+    1. Telemetry Ingestion & Triage: Ingests river flow, silt PPM, and weather observations,
+       classifying initial hazard level.
+    2. Dynamic Supervisory Planning: Determines necessary evaluation depth based on environmental severity.
+    3. Predictive Hydrology & Forecasting: Models 24-hour upstream precipitation runoff and sediment wave arrival.
+    4. SOP & Historical Retrieval: Queries cryptographically verified standard operating manuals for matching protocols.
+    5. Action Synthesis: Proposes advisory intake gate modulation and sediment flushing schedules.
+    6. Deterministic Safety Verification: Validates all proposed actions against Rules R1–R11 (hydraulic,
+       mechanical, and ecological limits).
+    7. Incident Briefing: Generates clear, plain-language operational summaries for human control room engineers.
+    8. Immutable State Ledger: Records all observations, agent decisions, and safety verdicts to the blackboard audit trail.
 """
 
 from __future__ import annotations

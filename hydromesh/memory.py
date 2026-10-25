@@ -1,12 +1,16 @@
-"""SOP Knowledge Base & Incident Memory Store.
+"""Cryptographically Verified SOP Knowledge Base and Incident Memory.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Plant's Official Rulebook Reader and Memory Bank.
-1. Tamper-Proof Seal: Every time it opens the SOP rulebook, it checks a security
-   fingerprint (SHA-256 hash) to make sure nobody sneakily changed the instructions.
-2. Smart Search: When muddy water arrives, it flips to the exact chapter for
-   High Sediment Flushes.
-3. Past Memories: It remembers how operators solved similar floods in previous years.
+Overview:
+    Manages vector indexing and retrieval for standard operating procedures (SOPs)
+    and historical flood response records.
+
+Core Architecture Guarantees:
+    1. Cryptographic Integrity: Validates every operating manual file against a pre-registered
+       SHA-256 cryptographic hash before loading, preventing unauthorized procedural tampering.
+    2. High-Performance Retrieval: Uses cosine-similarity vector search to surface the most relevant
+       operating chapters matching live sensor conditions.
+    3. Precedent Matching: Recalls similar historical incident vectors to provide operators with
+       proven mitigation strategies during high-turbidity events.
 """
 
 from __future__ import annotations

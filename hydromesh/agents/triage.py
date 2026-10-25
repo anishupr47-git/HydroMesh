@@ -1,15 +1,17 @@
-"""The Lookout Agent (Triage).
+"""Hydraulic Triage and Telemetry Verification Agent.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Lookout perched on the tower watching the mountain river.
-1. River Speed & Mud Check: It watches how fast the water is moving and checks
-   if the water is clean and clear or brown and gritty.
-2. Traffic Light Alert:
-   - Green (Normal): Clean mountain water (under 1,200 sand grains per million).
-   - Yellow (Warning): Muddy water (1,200 to 3,000 sand grains per million). Turbines need protection!
-   - Red (Critical): Heavy mud flood (over 3,000 sand grains per million). Extreme emergency!
-3. Glitch Detector: If a sensor suddenly jumps from 0 to 10,000 in one second,
-   it knows the sensor is broken and alerts the humans!
+Overview:
+    Performs initial validation on raw river telemetry, assesses sensor plausibility,
+    and classifies environmental hazard severity.
+
+Key Capabilities:
+    1. Water Flow & Sediment Inspection: Continuously measures river discharge and sediment concentration (PPM).
+    2. Operational Hazard Tiers:
+       - Normal (Green): Silt below 1,200 PPM. Nominal operational range; standard power generation.
+       - Warning (Yellow): Silt between 1,200 and 3,000 PPM. Elevated abrasive wear; proactive protection recommended.
+       - Critical (Red): Silt exceeds 3,000 PPM. Severe erosion risk requiring intake curtailment and sediment flushing.
+    3. Sensor Anomaly Detection: Detects impossible telemetric spikes, sensor freezes, or missing values
+       and flags them immediately for operator review before calculations proceed.
 """
 
 from __future__ import annotations

@@ -160,7 +160,7 @@ export default function RevenueOutlookCard({
                 fontFamily: 'var(--font-mono, monospace)',
               }}
             >
-              SPRINT 5 INTELLIGENCE
+              FINANCIAL ADVISORY
             </span>
           </div>
           <p

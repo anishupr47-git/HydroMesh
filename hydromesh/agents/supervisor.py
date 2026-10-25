@@ -1,13 +1,17 @@
-"""The Control Room Supervisor Agent.
+"""Multi-Agent Pipeline Supervisor and Execution Coordinator.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Control Room Shift Supervisor.
-1. Orchestrating the Team: It decides which robot helpers need to jump into action.
-2. Fast vs Deep Path:
-   - On calm, clean-water days, it takes the express lane (quick triage and normal dispatch).
-   - When a storm or mud wave approaches, it calls all 5 helpers together: the lookout,
-     the weather forecaster, the rulebook reader, the gate strategist, and the reporter!
-3. Routing Plan: It creates a clear checklist of steps so the whole pipeline runs in order.
+Overview:
+    Coordinates the execution sequence of specialized operational agents based on real-time
+    environmental hazard severity and plant telemetry.
+
+Key Capabilities:
+    1. Dynamic Route Orchestration: Determines which analytical models to execute depending on current risk.
+    2. Tiered Execution Paths:
+       - Nominal Conditions (Normal): Runs a streamlined, low-latency evaluation cycle.
+       - Elevated Risk (Watch / Warning / Critical): Triggers comprehensive multi-agent evaluation
+         spanning sediment trend forecasting, vector SOP retrieval, financial modeling, and safety validation.
+    3. Deterministic Routing Plans: Generates transparent, verifiable execution schedules ensuring
+       every decision step is traceable and predictable.
 """
 
 from __future__ import annotations

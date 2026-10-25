@@ -1,17 +1,17 @@
-"""Plant Data Contracts & Official Forms (Pydantic Schemas).
+"""Hydropower Data Contracts and Validated Data Schemas.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Official Form Book for the entire hydropower station!
-Every sensor reading, water gate order, emergency alert, and report has an exact, clean form.
-1. No Broken Numbers: Rejects broken sensor glitches (like NaN or infinity) before they reach safety rules.
-2. Frozen Paperwork: Once a form is filled out, it is locked (frozen). Nobody can tamper with it.
-3. Clean Letters (Security F2): Every word has a length cap and blocks hidden computer control codes.
+Overview:
+    Defines the immutable data structures used across HydroMesh.
+    Guarantees that every sensor reading, water gate order, emergency alert,
+    and financial calculation is strictly validated before entering the system.
 
-Hardening (Security Finding F2):
-- Strict bounds (max_length) on every string and collection to prevent memory bloat and injection carriers.
-- Rigid regex pattern on identifiers (Incident.id, etc.) preventing path traversal and injection.
-- Size-capped typed mapping of JSON scalars for AgentEvent.payload, rejecting nested unbounded blobs.
-- Control character rejection on all string fields (CWE-116/CWE-20).
+Core Guarantees:
+    1. Reliable Numbers: Rejects invalid mathematical values (NaN, infinity, or negative flows)
+       at the gateway before any engineering calculation runs.
+    2. Immutable Records: Once created, state snapshots and telemetry objects are frozen to prevent
+       accidental modification or in-memory tampering.
+    3. Input Sanitization (CWE-116/CWE-20): Enforces strict length limits and filters out hidden
+       control characters across all string inputs to defend against injection attacks.
 """
 
 from __future__ import annotations
@@ -260,7 +260,7 @@ class WeatherObservation(Frozen):
     is_live: bool = True
 
 
-# --- Sprint 4: Fleet, Sites, & Multi-Tenancy -------------------------------------------
+# --- Fleet Management, Stations, & Multi-Tenancy ---------------------------------------
 HydrologyPreset = Literal["monsoon", "glacial_melt", "rain_fed"]
 Mode = Literal["individual", "global"]
 
@@ -335,7 +335,7 @@ class FleetSnapshot(Frozen):
     sites: tuple[SiteSummary, ...]
 
 
-# --- Sprint 5: Energy Revenue Outlook & Operational Economics -------------------------
+# --- Energy Revenue Outlook & Operational Economics -----------------------------------
 MANDATORY_FINANCIAL_DISCLAIMER: str = (
     "SIMULATED SCENARIO FOR OPERATIONAL & EDUCATIONAL PLANNING ONLY. "
     "DOES NOT CONSTITUTE FINANCIAL, INVESTMENT, COMMODITY, OR LEGAL ADVICE. "

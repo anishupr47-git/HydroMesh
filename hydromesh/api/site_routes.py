@@ -1,14 +1,17 @@
-"""Sites Management, Two-Mode Switching (Global/Individual), and Scenario Injection Routes.
+"""Plant Registration, Two-Mode Fleet Operations, and Scenario Simulation Routes.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Dam Registry and Scenario Simulator.
-1. Global Fleet Mode: Watch all 8 Global Demonstration dams around the world
-   running autonomously in real time.
-2. Individual Mode (Your Dam): Register your single plant (free tier) and view
-   your own custom control room dials.
-3. Anti-Abuse Shield: Free members can test high-water storms up to 3 times per hour,
-   keeping server and AI costs at zero.
-4. Strict Quota: Free members can only ever create 1 dam.
+Overview:
+    Manages dual-mode monitoring (Global Demonstration Fleet vs. Individual Member Station),
+    governs plant registration quotas, and enables safe hydrological scenario simulations.
+
+Key Operational Capabilities:
+    1. Global Fleet Mode (/api/global/fleet): Provides read-only situational awareness across national
+       and international demonstration stations operating autonomously in real time.
+    2. Member Station Cockpit (/api/sites): Allows registered operators to register their individual plant
+       and observe dedicated telemetry, local weather, and safety recommendations.
+    3. Safe Simulation Sandbox (/api/sites/{id}/scenario): Enables operators to inject monsoon surges
+       and flood wave scenarios to observe twin physics and gate responses under rate-controlled limits.
+    4. Free Tier Quota Enforcement: Programmatically limits free-tier accounts to 1 registered plant.
 """
 
 from __future__ import annotations

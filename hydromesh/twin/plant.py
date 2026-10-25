@@ -1,17 +1,20 @@
-"""River Plant Computer Twin (Digital Twin Simulator).
+"""Hydraulic Digital Twin Simulation Engine.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as a Video Game Twin of the real mountain power plant!
-1. River Water & Metal Gates: River water rushes into the dam through big metal intake doors.
-2. Giant Sand Buckets (Desander Basins): Mountain rivers carry sharp quartz sand. Water pauses
-   in big concrete pools so the heavy sand sinks to the bottom.
-3. Spinning Water Wheels (Turbines): The water shoots through pipes to spin metal wheels and make electricity.
-4. Scratch Damage (Turbine Wear): Sand acts like sandpaper. This simulator calculates how scratched
-   the metal wheel gets, so operators know when to flush the sand buckets clean!
+Overview:
+    Simulates real-world hydropower physics—including river inflow, intake sluice gates,
+    desanding settling basins, penstock pressure, and turbine abrasion erosion.
 
-Hardening (Security Finding F3):
-- F3 (Atomic Re-validation): Before moving any gate, PlantTwin.apply() takes a fresh picture of the plant
-  and re-checks safety rules so no stale or dangerous action ever gets through.
+Physical Mechanics:
+    1. River Inflow & Intake Gates: Models river water entering headworks intake sluices,
+       enforcing mechanical travel speed and maximum design discharge limits.
+    2. Sediment Settling Basins: Simulates gravity-based settling of heavy quartz sediment particles
+       in desanding chambers, calculating bed accumulation and scour flushing dynamics.
+    3. Power Generation Physics: Calculates instantaneous electrical generation (MW) from net hydraulic
+       head, water flow rate, and generator efficiency.
+    4. Turbine Runner Erosion (IEC 62364): Simulates abrasive surface wear caused by suspended quartz
+       silt particles striking turbine runner blades at high velocity.
+    5. Atomic Safety Verification: Re-validates current plant state against safety rules immediately
+       before applying gate modulation commands to prevent time-of-check to time-of-use (TOCTOU) race conditions.
 """
 
 from __future__ import annotations

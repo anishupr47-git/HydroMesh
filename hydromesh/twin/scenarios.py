@@ -1,13 +1,16 @@
-"""River Weather Scenarios & River Mud Curves.
+"""Hydrological Simulation Scenarios and Sediment Rating Curves.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-This file creates realistic river stories to test the power plant computer twin!
-1. Normal Day: A peaceful, steady sunny day with clean mountain water.
-2. Monsoon Surge: Heavy summer monsoon rain pours on the peaks. A big flood wave filled with
-   thick river sand rushes down. Tests if our sand traps and warning alerts save the turbines!
-3. Flash Inflow Surge: A sudden 10-minute water jump to test plant reaction speed.
-4. River Mud Curve (Rating Curve): When water rushes faster, it picks up more sand from the river bed.
-   This math curve calculates how much sand is floating based on river speed!
+Overview:
+    Provides standardized hydrological scenarios and sediment rating curves used to benchmark
+    plant behavior and test multi-agent response resilience under diverse operational conditions.
+
+Scenario Catalog:
+    1. Nominal (Baseline): Clear dry-season mountain flow with stable water levels and low background silt.
+    2. Monsoon Surge: Intense seasonal rainfall driving elevated river discharge and high sediment concentration,
+       evaluating automated intake throttling and proactive desander flushing.
+    3. Flash Inflow Surge: High-amplitude runoff surge testing rapid gate reaction speed and water hammer damping.
+    4. Sediment Rating Dynamics: Calibrated non-linear rating curves modeling sediment carrying capacity
+       as a function of river velocity and discharge volume.
 """
 
 from __future__ import annotations

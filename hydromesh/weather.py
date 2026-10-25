@@ -1,14 +1,15 @@
-"""Himalayan Satellite Weather Client.
+"""Satellite Weather Telemetry and Catchment Precipitation Client.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as our mountain weather satellite scout.
-1. Looking at the Sky: It asks weather satellites how hard it is raining on top
-   of Nepal's highest mountain peaks.
-2. Cloud Radar: It checks temperature and cloud cover right above each dam.
-3. 48-Hour Peeking: It downloads the hourly rain forecast for the next 2 days.
-4. Safety Net (Circuit Breaker): If the internet ever drops in a storm, it never
-   crashes! It safely switches to a known mountain weather estimate so the plant
-   is always protected.
+Overview:
+    Retrieves real-time satellite precipitation, ambient temperature, and forecast data
+    for mountain catchment basins above hydropower stations.
+
+Key Capabilities:
+    1. Satellite Precipitation Ingestion: Fetches localized rainfall rate (mm/h), cloud cover,
+       and temperature from meteorological satellite APIs (Open-Meteo, NASA GPM).
+    2. 48-Hour Runoff Horizon: Provides forward-looking weather projections to model incoming catchment inflows.
+    3. Resilient Circuit Breaker: If external network connectivity is interrupted during severe storms,
+       the client gracefully falls back to deterministic mountain climatological profiles without disruption.
 """
 
 from __future__ import annotations

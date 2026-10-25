@@ -1,14 +1,15 @@
-"""HydroMesh Operational Economics & Revenue Outlook Module.
+"""Operational Economics and Energy Revenue Outlook Module.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this module as the Dam's Financial Calculator & Cash Register.
-1. Clean Power Earnings: Calculates how many Megawatt-hours (MWh) of electricity
-   the river water can produce over the next 24 hours to 7 days, and multiplies by
-   the official PPA electricity tariff (NPR per kWh).
-2. Sand Wear vs. Money Trade-off: When mountain rivers carry sharp sand, running water
-   scratches the turbine blades (IEC 62364 standard). This module calculates whether
-   it is smarter to briefly throttle intake water to save millions of Rupees in turbine repairs!
-3. Strict Air-Gap Guard: This module is read-only. It cannot move any water gates or valves.
+Overview:
+    Connects physical river hydrology and IEC 62364 turbine runner erosion models
+    to commercial balance sheet metrics and feed-in tariff revenues.
+
+Core Capabilities:
+    1. Generation Revenue Modeling: Forecasts clean energy generation (MWh) and contract revenue (NPR)
+       across customizable forward horizons (24 hours to 7 days).
+    2. Erosion vs. Curtailment Optimization: Analyzes the economic trade-off between turbine erosion repair
+       costs and the revenue forfeited by throttling intake gates during high-silt events.
+    3. Read-Only Air-Gap Isolation: Pure mathematical evaluation without physical actuator access.
 """
 
 from __future__ import annotations

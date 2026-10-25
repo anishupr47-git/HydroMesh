@@ -41,13 +41,13 @@ flowchart TD
         AU["Append-Only Immutable SCADA Audit Ledger (SHA-256 Nonces)"]
     end
 
-    subgraph Neural["3. Multi-Agent AI Pipeline (Sprint 2 & 5)"]
+    subgraph Neural["3. Multi-Agent AI Pipeline & Operational Economics"]
         AG1["Triage Agent (River State & Hazard Confidence)"]
         AG2["Predictive Agent (Temporal Silt Trend & Peak Window)"]
         AG3["SOP Memory Agent (Cryptographic RAG: SOP-04, SOP-09)"]
         AG4["Dispatch Agent (Advisory Target Flow Q)"]
-        AG5["Explain Agent (Grade-1 Plain English)"]
-        AG6["Energy Revenue Outlook Agent (Sprint 5 Financial Ledger)"]
+        AG5["Explain Agent (Plain-Language Synthesis)"]
+        AG6["Energy Revenue Outlook Agent (Operational Economics Engine)"]
     end
 
     subgraph Kernel["4. Deterministic Safety Kernel (Rules R1–R11)"]
@@ -78,9 +78,9 @@ flowchart TD
 
 ---
 
-## ⚡ Core Engineering Sprints
+## ⚡ Core Engineering Subsystems & Architecture
 
-### Sprint 1: Digital Twin & Deterministic Safety Kernel (R1–R11)
+### 1. Digital Twin & Deterministic Safety Kernel (Rules R1–R11)
 - **Mathematical Hydraulic Twin** ([`plant.py`](file:///C:/Users/user/Documents/HydroMesh/hydromesh/twin/plant.py)): Real-time simulation of headpond dynamics, intake sluice gates, desander settling basins, and high-head penstocks.
 - **Rules R1–R11** ([`safety.py`](file:///C:/Users/user/Documents/HydroMesh/hydromesh/safety.py)):
   - **R1: Allievi Surge Clamping**: Gate velocity clamped to $\le 0.10\ \text{m}^3/\text{s}^2$ to prevent water hammer rupture:
@@ -99,20 +99,20 @@ flowchart TD
 
 ---
 
-### Sprint 2: Multi-Agent AI Pipeline & Memory RAG
-- **5 Collaborative Neural Agents** ([`hydromesh/agents/`](file:///C:/Users/user/Documents/HydroMesh/hydromesh/agents)):
+### 2. Multi-Agent AI Pipeline & Vector-Indexed Memory (RAG)
+- **Specialized Operational Agents** ([`hydromesh/agents/`](file:///C:/Users/user/Documents/HydroMesh/hydromesh/agents)):
   1. **Triage Agent**: Instantaneous river hazard classification with confidence calibration.
   2. **Predictive Hydrology Agent**: Fuses live catchment rain telemetry with downstream flow lag.
   3. **SOP Memory Agent**: High-speed vector RAG referencing SHA-256 verified SOP documents:
      - `SOP-04: High Sediment Desander Flushing` (`sha256:7f83b165...`)
      - `SOP-09: Emergency Turbine Protection Shutoff` (`sha256:4a92e103...`)
   4. **Dispatch Agent**: Produces advisory gate modulation (`advisory: Literal[True] = True`).
-  5. **Explain Agent**: Translates complex hydraulic equations into Grade-1 Plain English.
+  5. **Explain Agent**: Translates complex hydraulic equations into clear, plain-language summaries.
 - **Local Ollama Integration**: Runs against open-weight models (`qwen2.5:0.5b`) with a fail-closed circuit breaker.
 
 ---
 
-### Sprint 3: Enterprise Auth, RBAC & Security Hardening
+### 3. Enterprise Auth, RBAC & Security Hardening
 - **Argon2id & JWT Auth**: Modern high-memory password hashing with secure HTTP-only cookies ([`auth/`](file:///C:/Users/user/Documents/HydroMesh/hydromesh/auth)).
 - **Role-Based Access Control**:
   - `Control Room Engineer`: Full station actuation and override capabilities.
@@ -124,8 +124,8 @@ flowchart TD
 
 ---
 
-### Sprint 4: Live Data Ingress & Real Nepal Hydropower Fleet
-- **Zero Mock Data Policy**: Replaced all synthetic demo data with real technical specifications for **20 Himalayan Stations**:
+### 4. Live Data Ingress & Real Nepal Hydropower Fleet
+- **Zero Mock Data Policy**: Technical specifications for **20 Himalayan Stations**:
   - **Upper Tamakoshi Hydropower Project**: 456 MW · 822m Head · Koshi Basin
   - **Kali Gandaki 'A' Hydropower Station**: 144 MW · 115m Head · Gandaki Basin
   - **Middle Marsyangdi Hydropower Project**: 70 MW · 110m Head · Gandaki Basin
@@ -137,7 +137,7 @@ flowchart TD
 
 ---
 
-### Sprint 5: Energy Revenue Outlook Agent (Operational Economics)
+### 5. Energy Revenue Outlook & Operational Economics
 - **Bridging Physics to the Balance Sheet** ([`RevenueOutlookCard.tsx`](file:///C:/Users/user/Documents/HydroMesh/web/components/RevenueOutlookCard.tsx)):
   Answers: *"Given the hydrology forecast and silt risk, what happens to this plant's revenue and maintenance cost over the next 24 hours to 7 days?"*
 - **Deterministic Mathematical Math First**:
@@ -174,7 +174,7 @@ HydroMesh implements the **Himalayan Classical Brass & Midnight Blue SCADA Contr
 Rotating 24-Vane Chakra   -->   2-Slide Sticky Briefing   -->   120 RPM Francis Wheel     -->   Sections I · Instruments
 Sequential Letter Rain          Slide 2.1: Quartz Crisis        Lantern Lit (Amber Glow)        Sections II · Telemetry
 Water Ripple Particle           Slide 2.2: 5-Agent Relay        Password Focused:               Sections III · Agent Relay
-Golden Sweep Cross-Fade         [ENTER CONTROL ROOM →]          LANTERN DIMS OFF (SECRET!)      Sections IV · Revenue Outlook
+Golden Sweep Cross-Fade         [ENTER CONTROL ROOM →]          LANTERN DIMS (PRIVACY SHIELD)   Sections IV · Revenue Outlook
 [Skip Intro →]                                                  [Login / Guest Access →]        Sections V · Plant in Motion
                                                                                                 Sections VI · Fleet Matrix
 ```
@@ -288,8 +288,8 @@ HydroMesh/
 │   │   ├── predictive.py           # Temporal hydrology forecasting
 │   │   ├── sop_rag.py              # SHA-256 verified SOP lookup
 │   │   ├── dispatch.py             # Advisory gate modulation
-│   │   ├── explain.py              # Grade-1 Plain English generation
-│   │   └── revenue.py              # Energy Revenue Outlook Agent (Sprint 5)
+│   │   ├── explain.py              # Plain-language operational briefing generator
+│   │   └── revenue.py              # Operational economics & revenue outlook agent
 │   ├── api/                        # FastAPI Web & WebSocket Endpoints
 │   │   ├── app.py                  # App factory & middleware configuration
 │   │   ├── routes.py               # REST API (/api/plants, /api/evaluate, etc.)
@@ -316,12 +316,12 @@ HydroMesh/
 │       ├── ExplainerSlides.tsx     # Phase 2: 2-page sticky storyboard briefing
 │       ├── AuthModal.tsx           # Phase 3: 120 RPM wheel & password lantern dimming
 │       ├── PlantMotionVarHUD.tsx   # Section V: Kinetic cross-section & 4-zone VAR HUD
-│       ├── RevenueOutlookCard.tsx  # Section IV: Energy Revenue Outlook (Sprint 5)
+│       ├── RevenueOutlookCard.tsx  # Section IV: Energy Revenue & Operational Economics Card
 │       ├── PowerhouseGrid.tsx      # 20-station grid cards with alert badges
 │       ├── GlobalNav.tsx           # Master SCADA header with live NST clock
 │       └── plantsData.ts           # 20 Nepal Hydropower Stations specifications
 │
-├── tests/                          # 154 Comprehensive Unit, Security & Contract Tests
+├── tests/                          # 214 Comprehensive Unit, Security & Concurrency Tests
 ├── live_extraction.py              # Live Satellite Precipitation & Inflow CLI tool
 ├── SAFETY.md                       # Comprehensive Safety Kernel Rules Specification
 └── README.md                       # Master Documentation

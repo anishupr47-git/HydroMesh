@@ -1,15 +1,16 @@
-"""Hydrological Runoff Coupling and Live Telemetry Generator.
+"""Catchment Runoff Modeling and Live Telemetry Generation.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as our River Math Calculator.
-1. Mountain Rain to River Water: When rain falls on steep Himalayan mountains,
-   the water rushes down rocky ravines into the main river. This file calculates
-   how big that river swell will be.
-2. Sand Churning (Quartz Silt Curve): Faster water picks up more sharp rocks and sand
-   from the river bed. This file calculates the exact amount of abrasive sand
-   (measured in parts per million) rushing toward the turbine gates.
-3. Official Plant Reading: It packs everything into a frozen Telemetry card that
-   nobody can tamper with, ready for our safety rules and AI helpers.
+Overview:
+    Calculates instantaneous river discharge and suspended sediment concentration (PPM)
+    from mountain precipitation observations and river basin geomorphology.
+
+Physical Hydrology Principles:
+    1. Catchment Rainfall-Runoff Transformation: Converts precipitation rate (mm/h) across the
+       catchment area into surface runoff discharge (m³/s) using calibrated runoff coefficients.
+    2. Non-Linear Sediment Rating Curve: Models suspended quartz silt concentration as a power-law
+       function of river discharge (C = a · Q^b), calibrated against Himalayan river field measurements.
+    3. Immutable Telemetry Generation: Assembles real-time readings into strictly validated, immutable
+       telemetry records for safety verification and agent evaluation.
 """
 
 from __future__ import annotations

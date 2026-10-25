@@ -1,13 +1,16 @@
-"""Global Fleet Hourly Simulation & Scripted Storyline Engine.
+"""National and Global Hydropower Fleet Simulation Engine.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Master Simulator for all 8 Global Demonstration Dams.
-1. Planetary Diversity: Runs Himalayan monsoon dams, Alpine glacier melt stations,
-   and tropical river cascades simultaneously.
-2. Autonomous Background: Every hour, it advances river physics, calculates sand levels,
-   and lets the multi-agent AI protect each plant.
-3. Read-Only Global Showcase: Visitors can observe live traffic light warnings and
-   safety checks from anywhere in the world without being able to disrupt the physical plants!
+Overview:
+    Simulates hourly hydrology, power output, and sediment conditions across diverse
+    hydropower stations (including Himalayan monsoon rivers, alpine glacial basins, and rain-fed valleys).
+
+Core System Capabilities:
+    1. Multi-Basin Hydrology: Accurately reflects different river flow regimes—from sharp afternoon
+       monsoon flash floods to solar-driven glacial melt and steady rain-fed cascades.
+    2. Autonomous Operations: Simulates continuous hourly progression, evaluating environmental risks
+       and computing proactive sediment protection recommendations for each station.
+    3. Global Fleet Visibility: Provides unified monitoring across all demonstration plants with
+       read-only isolation, allowing public and administrative observation without operational interference.
 """
 
 from __future__ import annotations

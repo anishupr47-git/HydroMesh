@@ -1,15 +1,20 @@
-"""HydroMesh Production REST API & WebSocket Streaming Endpoints.
+"""HydroMesh REST API and Real-Time WebSocket Streaming Endpoints.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Dam Control Room's Front Desk and Switchboard.
-1. Plant Directory (/api/plants): Lists all 25 landmark Nepal hydropower stations.
-2. Live Satellite Weather (/api/plants/{id}/weather): Asks weather satellites
-   for rain conditions right now at any specific mountain dam.
-3. On-Demand AI Evaluation (/api/plants/{id}/evaluate): Runs all 5 robot helpers
-   to analyze river water, check safety rules, and advise the operator.
-4. Human Override (/api/override): Gives human operators the final say to approve
-   or cancel actions with a one-time safety stamp (nonce) so commands are never repeated twice!
-5. Live Radio Stream (/ws/stream): Streams live numbers straight into operators' screens.
+Overview:
+    Provides RESTful operational interfaces and WebSocket streams for real-time telemetry,
+    satellite weather assimilation, on-demand AI pipeline evaluation, and human operator overrides.
+
+Primary Endpoints & Interfaces:
+    1. Station Directory (/api/plants): Provides technical specifications, capacity, and river basins
+       for Nepal's landmark hydropower installations.
+    2. Satellite Meteorology (/api/plants/{id}/weather): Serves real-time satellite precipitation,
+       temperature, and 48-hour mountain forecast telemetry.
+    3. Multi-Agent Pipeline Evaluation (/api/plants/{id}/evaluate): Triggers on-demand multi-agent analysis,
+       returning verified safety verdicts and plain-language briefings.
+    4. Operator Override (/api/override): Enables authenticated control room engineers to issue approved
+       gate commands, protected by bounded LRU replay nonces (SEC-09).
+    5. Real-Time Telemetry Stream (/ws/stream): High-frequency WebSocket channel broadcasting live discharge,
+       sediment PPM, and system alerts to operator workstations.
 """
 
 from __future__ import annotations

@@ -1,14 +1,16 @@
-"""AI Helper Adapter (Ollama Local Client & Safety Fuse).
+"""Local LLM Client Adapter and Resilient Inference Circuit Breaker.
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this file as the Phone Line connecting the plant to our local AI Brain!
-1. Talking to the AI Brain: Sends river sensors to the local AI model (Qwen) and asks for advice.
-2. Rigid Form Answers (JSON Schema): The AI is forced to fill out a strict multiple-choice form.
-   It cannot babble, make up weird commands, or step outside its allowed box.
-3. Safety Fuse (Circuit Breaker): If the AI gets sleepy, freezes, or crashes, a safety fuse trips!
-   The plant immediately switches to simple, reliable backup math rules so the dam is never left waiting.
-4. Keep It Local (Security F5): The phone line is strictly locked to this single local computer (loopback),
-   preventing any sneaky connections to the outside internet.
+Overview:
+    Interfaces with locally hosted, open-weight language models (Ollama/Qwen) to produce
+    schema-constrained structured JSON decisions and plain-English incident briefings.
+
+Key Reliability & Security Guarantees:
+    1. Schema Enforcement: Enforces strict Pydantic JSON schema output constraints; models cannot emit
+       unstructured text or unvalidated action fields.
+    2. Resilient Circuit Breaker: Automatically detects inference timeouts, high latency, or server failures,
+       tripping a jittered circuit breaker and switching instantly to deterministic rule-based fallbacks.
+    3. Loopback Network Isolation (SSRF Defense): Confines all API calls strictly to local loopback
+       addresses (127.0.0.1/localhost), blocking outbound metadata requests or external network egress.
 """
 
 from __future__ import annotations

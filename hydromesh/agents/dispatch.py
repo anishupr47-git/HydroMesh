@@ -1,15 +1,18 @@
-"""The Gate Strategist Agent (Dispatch).
+"""Dispatch Strategist Agent (Advisory Hydraulic Control & Actuation).
 
-SIMPLE EXPLANATION (FOR ANYONE / NON-TECH):
-Think of this agent as the Chief Strategist sitting in front of the gate controls.
-1. Action Proposals: It proposes exactly how much to move the giant water intake doors
-   and when to trigger the sand basin flush valve.
-2. Turbine Shielding: In a mud surge, it reduces water flow and flushes heavy quartz
-   sand before the razor-sharp rocks scratch the turbine blades.
-3. Advisory Power: It suggests how electricity should be shared with essential
-   feeders (hospitals and water pumps always get power first!).
-4. Safe Fallback: If the AI network is busy or asleep, it instantly uses proven,
-   time-tested engineering rules so the dam is never left unattended.
+Overview:
+    Synthesizes river conditions into actionable, advisory control recommendations
+    for water intake gates, desanding flush valves, and turbine load allocation.
+
+Core Functions:
+    1. Gate Modulation: Calculates optimal intake gate openings to balance power generation
+       against flood and silt risk.
+    2. Turbine Blade Protection: During sediment surges, reduces intake flow and triggers
+       settling basin flush valves before abrasive quartz sand reaches the turbines.
+    3. Essential Power Priority: Prioritizes power delivery to critical public infrastructure
+       (such as hospitals and water treatment pumps) during generation curtailment.
+    4. Deterministic Engineering Fallback: If AI inference is unavailable or delayed,
+       immediately falls back to proven rule-based engineering logic so the station is never unattended.
 """
 
 from __future__ import annotations
