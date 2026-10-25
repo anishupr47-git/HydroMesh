@@ -188,7 +188,7 @@ export default function GlobalNav({
 
         {/* External Video Demonstration Link */}
         <a
-          href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+          href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
           target="_blank"
           rel="noopener noreferrer"
           className="hidden sm:block px-2.5 py-1 text-xs font-mono text-[#F0D27A] hover:text-[#F1EAD9] border border-[#C9A24B]/50 bg-[#10203D] rounded-sm transition-colors cursor-pointer"

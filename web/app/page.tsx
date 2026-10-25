@@ -78,7 +78,7 @@ export default function HomePage() {
             </Link>
           ))}
           <a
-            href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+            href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -185,7 +185,7 @@ export default function HomePage() {
             Launch 20-House Fleet SCADA →
           </Link>
           <a
-            href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+            href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
             target="_blank"
             rel="noopener noreferrer"
             style={{

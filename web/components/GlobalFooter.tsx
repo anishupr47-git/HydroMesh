@@ -57,7 +57,7 @@ export default function GlobalFooter() {
             </li>
             <li>
               <a
-                href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+                href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#F0D27A] hover:underline transition-colors"

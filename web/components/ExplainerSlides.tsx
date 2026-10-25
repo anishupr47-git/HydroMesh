@@ -47,7 +47,7 @@ export default function ExplainerSlides({
 
           <div className="flex items-center gap-3">
             <a
-              href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+              href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-mono text-[#5FB3A8] hover:text-[#F0D27A] border border-[#5FB3A8]/50 hover:border-[#F0D27A] px-2.5 py-1.5 rounded transition-colors cursor-pointer bg-[#050A14] uppercase tracking-wider font-semibold"
@@ -303,7 +303,7 @@ export default function ExplainerSlides({
               </button>
             )}
             <a
-              href="https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing"
+              href="https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs font-mono text-[#F0D27A] hover:underline uppercase tracking-wider ml-1"

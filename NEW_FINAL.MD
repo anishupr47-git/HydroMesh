@@ -242,7 +242,7 @@ To maintain engineering integrity, HydroMesh clearly specifies its operational b
 
 ### 6.5 Demonstration Video & Presentation
 
-- **Demo Video URL**: [Watch HydroMesh Demonstration Video on Google Drive](https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing)
+- **Demo Video URL**: [Watch HydroMesh Demonstration Video on Google Drive](https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link)
 - **Presentation Outline**:
   1. **The Problem**: Glacial silt carrying Mohs 7 quartz scouring Himalayan hydropower turbines in under 48 hours.
   2. **The Solution**: HydroMesh autonomous multi-agent defense kernel with deterministic water hammer safety gates.
@@ -306,7 +306,7 @@ Follow these steps to run HydroMesh locally:
 
 ### Step 4: Verification Links
 - **System Demonstration Video**:
-  `https://drive.google.com/file/d/1Osoh1evxvKg218bq1rX2Ek3AweE2OcKj/view?usp=sharing`
+  `https://drive.google.com/file/d/1ianVC1C0tzzN8EGa4G-siXM_L9pzpi8s/view?usp=drive_link`
 - **Interactive SCADA Cockpit with Onboarding Replay**:
   `http://localhost:3000/demo?intro=replay`
 - **Direct SCADA Control Room**:
