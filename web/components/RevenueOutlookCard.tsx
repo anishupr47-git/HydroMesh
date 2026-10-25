@@ -536,7 +536,7 @@ export default function RevenueOutlookCard({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent, #F59E0B)' }}>
-                      Executive Economic Narrative (Ollama Qwen 2.5)
+                      Executive Economic Narrative (Bijuli - Our AI POWERED MODEL)
                     </span>
                   </div>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-dim, #6B7280)', fontFamily: 'var(--font-mono, monospace)', cursor: 'default' }}>

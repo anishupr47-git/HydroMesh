@@ -1,7 +1,7 @@
 """Local LLM Client Adapter and Resilient Inference Circuit Breaker.
 
 Overview:
-    Interfaces with locally hosted, open-weight language models (Ollama/Qwen) to produce
+    Interfaces with locally hosted neural models (Bijuli - Our AI POWERED MODEL via Ollama) to produce
     schema-constrained structured JSON decisions and plain-English incident briefings.
 
 Key Reliability & Security Guarantees:

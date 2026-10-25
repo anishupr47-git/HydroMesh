@@ -296,7 +296,7 @@ async def get_ollama_advisory(
     plant_id: str,
     body: OllamaAdvisoryRequest | None = None,
 ) -> OllamaAdvisoryResponse:
-    """Ollama Qwen-2.5 continuous operator co-pilot advisory with DOs, DONTs, and safe horizon."""
+    """Bijuli (Our AI POWERED MODEL) continuous operator co-pilot advisory with DOs, DONTs, and safe horizon."""
     plant = get_plant_by_id(plant_id, _plants)
     if not plant:
         raise HTTPException(status_code=404, detail=f"Hydropower plant '{plant_id}' not found")
@@ -375,7 +375,7 @@ async def get_ollama_advisory(
                 json={
                     "model": "qwen2.5:0.5b",
                     "prompt": (
-                        f"You are the HydroMesh AI Dispatch Agent for {plant.name}. "
+                        f"You are Bijuli (Our AI POWERED MODEL) for {plant.name}. "
                         f"River discharge is {discharge:.1f} m3/s, quartz silt is {silt:.0f} PPM, state is {status_tag}. "
                         f"Provide a 2-sentence crisp operational advisory on desander flushing and safe gate flow."
                     ),
@@ -386,7 +386,7 @@ async def get_ollama_advisory(
                 data = resp.json()
                 ai_text = data.get("response", "").strip()
                 if ai_text:
-                    narrative = f"STATUS: {status_tag}. Safe horizon: {safe_horizon}. [Ollama Qwen 2.5 Agent]: {ai_text}"
+                    narrative = f"STATUS: {status_tag}. Safe horizon: {safe_horizon}. [Bijuli (Our AI POWERED MODEL)]: {ai_text}"
                     is_llm_active = True
     except Exception:
         pass
@@ -394,7 +394,7 @@ async def get_ollama_advisory(
     return OllamaAdvisoryResponse(
         plant_id=plant.id,
         plant_name=plant.name,
-        model="qwen2.5:0.5b (Ollama / Local Neural Agent)",
+        model="Bijuli (Our AI POWERED MODEL)",
         is_llm_active=is_llm_active,
         safe_horizon=safe_horizon,
         safe_duration_hours=safe_hours,

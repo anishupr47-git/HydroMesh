@@ -605,7 +605,7 @@ export default function SoloCustomRadarCard({ apiBase }: SoloCustomRadarCardProp
                       borderRadius: "3px",
                     }}
                   >
-                    LOCAL OLLAMA: QWEN 2.5 (0.5B)
+                    BIJULI (OUR AI POWERED MODEL)
                   </span>
                   <span
                     style={{
@@ -805,7 +805,7 @@ export default function SoloCustomRadarCard({ apiBase }: SoloCustomRadarCardProp
                   }}
                 >
                   <span style={{ color: "#38BDF8", fontWeight: 700 }}>
-                    LOCAL OLLAMA NEURAL REASONING [QWEN 2.5]
+                    BIJULI (OUR AI POWERED MODEL) NEURAL REASONING
                   </span>
                   <span style={{ color: "#94A3B8" }}>
                     CONFIDENCE: {((result.incident.decision.confidence ?? 0.9) * 100).toFixed(0)}%

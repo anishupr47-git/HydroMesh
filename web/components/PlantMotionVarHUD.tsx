@@ -135,7 +135,7 @@ export default function PlantMotionVarHUD({
       setAdvisory({
         plant_id: plantId,
         plant_name: plantName,
-        model: "qwen2.5:0.5b (Ollama / Local Neural Agent)",
+        model: "Bijuli (Our AI POWERED MODEL)",
         is_llm_active: false,
         safe_horizon: isCritical
           ? "10 MINUTES (IMMEDIATE ACTION REQUIRED)"
@@ -481,12 +481,12 @@ export default function PlantMotionVarHUD({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#F0D27A] animate-ping" />
             <span className="text-xs font-mono uppercase tracking-wider text-[#F0D27A] font-bold">
-              OLLAMA QWEN-2.5 CO-PILOT · CONTINUOUS HUMAN OPERATOR ADVISORY
+              BIJULI (OUR AI POWERED MODEL) CO-PILOT · CONTINUOUS HUMAN OPERATOR ADVISORY
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono text-[#A3B0C8]">
-              Model: {advisory?.model || "qwen2.5:0.5b (Ollama Local)"}
+              Model: {advisory?.model || "Bijuli (Our AI POWERED MODEL)"}
             </span>
             <button
               onClick={fetchOllamaAdvisory}
