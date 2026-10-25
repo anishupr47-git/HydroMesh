@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from hydromesh.auth.crypto import hash_password, validate_password_strength, verify_dummy_timing, verify_password
 from hydromesh.auth.csrf import generate_csrf_token
 from hydromesh.auth.deps import Principal, current_principal, require_member
-from hydromesh.auth.sessions import generate_opaque_token, hash_token, hash_user_agent
+from hydromesh.auth.sessions import generate_opaque_token, hash_token, hash_user_agent, mint_guest_id
 from hydromesh.db.database import db
 from hydromesh.logging import get_logger
 
@@ -119,6 +119,25 @@ def login(req: LoginRequest, response: Response, request: Request) -> dict[str, 
         "csrf_token": csrf,
     }
 
+
+@auth_router.post("/guest")
+def guest_login(response: Response, request: Request) -> dict[str, Any]:
+    """Issue a fresh guest session identifier and CSRF token."""
+    guest_id = mint_guest_id()
+    csrf = generate_csrf_token()
+    response.set_cookie(
+        key="guest_id",
+        value=guest_id,
+        httponly=True,
+        samesite="lax",
+        max_age=86400 * 7,
+        path="/",
+    )
+    return {
+        "status": "success",
+        "guest_id": guest_id,
+        "csrf_token": csrf,
+    }
 
 @auth_router.post("/logout")
 def logout(request: Request, response: Response, principal: Principal = Depends(current_principal)) -> dict[str, str]:

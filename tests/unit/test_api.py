@@ -225,3 +225,84 @@ def test_registered_site_weather_and_evaluate(client: TestClient) -> None:
 
     resp_pe = client.post(f"/api/plants/{site.id}/evaluate")
     assert resp_pe.status_code == 200
+
+
+def test_ollama_advisory_endpoint(client: TestClient) -> None:
+    """Assert /api/plants/{id}/ollama-advisory generates DOs, DONTs, and safe horizon."""
+    # 1. GET Nominal
+    resp_get = client.get("/api/plants/upper_tamakoshi/ollama-advisory?discharge_m3s=330.6&silt_ppm=271")
+    assert resp_get.status_code == 200
+    data = resp_get.json()
+    assert "14:30 NST" in data["safe_horizon"]
+    assert len(data["recommended_dos"]) >= 2
+    assert len(data["prohibited_donts"]) >= 2
+    assert "safe" in data["ollama_advisory_text"].lower()
+
+    # 2. POST Critical
+    resp_post = client.post("/api/plants/upper_tamakoshi/ollama-advisory", json={"discharge_m3s": 350.0, "silt_ppm": 3200.0})
+    assert resp_post.status_code == 200
+    data_crit = resp_post.json()
+    assert "10 MINUTES" in data_crit["safe_horizon"]
+    assert "CRITICAL" in data_crit["safe_status_summary"]
+
+    # 3. 404 for unknown plant
+    resp_404 = client.get("/api/plants/unknown_dam/ollama-advisory")
+    assert resp_404.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_multi_plant_scheduler_and_scenarios() -> None:
+    """Assert PlantScheduler ticks all registered plants and switches scenarios."""
+    from hydromesh.weather import load_nepal_plants
+
+    plants = list(load_nepal_plants()[:3])
+    pipeline = OrchestrationPipeline(plant=plants[0])
+    stream = StreamManager()
+    scheduler = PlantScheduler(pipeline, stream, interval_s=1.0, plants=plants)
+
+    # Test tick_all
+    packets = await scheduler.tick_all()
+    assert len(packets) == 3
+    plant_ids = {p["plant_id"] for p in packets}
+    assert plants[0].id in plant_ids
+    assert plants[1].id in plant_ids
+
+    # Test set_scenario
+    scheduler.set_scenario("monsoon_surge", plant_id=plants[1].id)
+    scheduler.set_scenario("normal")
+
+    # Test start and stop
+    scheduler.start()
+    assert scheduler.is_running
+    scheduler.start()  # branch coverage: already running
+    await scheduler.stop()
+    assert not scheduler.is_running
+    await scheduler.stop()  # branch coverage: already stopped
+
+
+def test_scenario_endpoints(client: TestClient) -> None:
+    """Assert /api/twin/scenario and /api/plants/{plant_id}/scenario work."""
+    # Global twin scenario
+    resp_twin = client.post("/api/twin/scenario", json={"scenario": "monsoon_surge"})
+    assert resp_twin.status_code == 200
+    assert resp_twin.json()["scenario"] == "monsoon_surge"
+
+    resp_flash = client.post("/api/twin/scenario", json={"scenario": "flash_flood"})
+    assert resp_flash.status_code == 200
+    assert resp_flash.json()["scenario"] == "inflow_surge"
+
+    # Specific plant scenario
+    resp_plant = client.post("/api/plants/kali_gandaki_a/scenario", json={"scenario": "monsoon_surge"})
+    assert resp_plant.status_code == 200
+    assert resp_plant.json()["scenario"] == "monsoon_surge"
+    assert "target_q_m3s" in resp_plant.json()
+
+    # Normal scenario
+    resp_norm = client.post("/api/plants/kali_gandaki_a/scenario", json={"scenario": "normal"})
+    assert resp_norm.status_code == 200
+    assert resp_norm.json()["scenario"] == "normal"
+
+    # Unknown plant 404
+    resp_404 = client.post("/api/plants/unknown_dam_xyz/scenario", json={"scenario": "monsoon"})
+    assert resp_404.status_code == 404
+
