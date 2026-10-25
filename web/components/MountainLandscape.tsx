@@ -28,6 +28,8 @@ export default function MountainLandscape({ focusMode = false, className = "" }:
       }}
     >
       <svg
+        role="img"
+        aria-label="Himalayan Mountain Landscape and Catchment River Illustration"
         viewBox="0 0 1600 700"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"

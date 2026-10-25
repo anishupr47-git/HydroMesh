@@ -201,7 +201,7 @@ export default function RevenueOutlookCard({
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            {loading ? 'Recomputing...' : '↻ Refresh'}
+            {loading ? 'Recomputing...' : 'REFRESH'}
           </button>
         </div>
       </div>

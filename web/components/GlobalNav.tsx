@@ -14,7 +14,6 @@ interface GlobalNavProps {
   onOpenAuth?: () => void;
   onLogout?: () => void;
   onOpenInspector?: () => void;
-  onReplayIntro?: () => void;
 }
 
 export default function GlobalNav({
@@ -28,7 +27,6 @@ export default function GlobalNav({
   onOpenAuth,
   onLogout,
   onOpenInspector,
-  onReplayIntro,
 }: GlobalNavProps) {
   const [nstTime, setNstTime] = useState("");
 
@@ -71,6 +69,8 @@ export default function GlobalNav({
           {/* Rotating Francis Runner Glyph */}
           <div className="w-7 h-7 rounded-full border border-[#C9A24B] flex items-center justify-center bg-[#0B1424] shadow-[0_0_8px_rgba(201,162,75,0.4)]">
             <svg
+              role="img"
+              aria-label="HydroMesh Turbine Emblem"
               viewBox="0 0 100 100"
               className="w-5 h-5 animate-chakra"
               style={{ transformOrigin: "center" }}
@@ -159,17 +159,6 @@ export default function GlobalNav({
           {nstTime || "12:00:00 NST"}
         </div>
 
-        {/* Replay Cinematic Intro Button */}
-        {onReplayIntro && (
-          <button
-            onClick={onReplayIntro}
-            className="px-2.5 py-1 text-xs font-mono text-[#C9A24B] hover:text-[#F0D27A] border border-[#C9A24B]/40 hover:border-[#C9A24B] bg-[#0B1424] rounded-sm transition-colors cursor-pointer"
-            title="Replay 4-Phase Cinematic Entry Flow"
-          >
-            [REPLAY INTRO]
-          </button>
-        )}
-
         {/* Audit Inspector Button */}
         {onOpenInspector && (
           <button
@@ -193,9 +182,9 @@ export default function GlobalNav({
           className="flex items-center gap-2 px-3 py-1 bg-[#13264A] hover:bg-[#1a3364] border border-[#C9A24B] text-xs font-mono text-[#F1EAD9] rounded-sm transition-all cursor-pointer shadow-[0_0_8px_rgba(201,162,75,0.2)]"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#5FB3A8]" />
-          <span>{userEmail ? userEmail.split("@")[0] : "GUEST OPERATOR"}</span>
+          <span>{userEmail ? userEmail.split("@")[0] : "LOCAL OPERATOR"}</span>
           <span className="text-[10px] text-[#C9A24B]">
-            [{userRole === "guest" ? "GUEST" : "OPERATOR"}]
+            [{userRole === "guest" ? "DEVICE ONLY" : "AUTHORIZED"}]
           </span>
         </button>
 

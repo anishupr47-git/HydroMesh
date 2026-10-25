@@ -54,152 +54,73 @@ export function PowerhouseCard({
   return (
     <div
       onClick={onSelect}
-      className="interactive-telemetry-card"
-      style={{
-        position: "relative",
-        background: isSelected ? "var(--color-surface-raised, #252B4A)" : "var(--color-surface, #1E2240)",
-        border: `1px solid ${isSelected ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-border-default, #3A436D)"}`,
-        borderRadius: "6px",
-        padding: "0",
-        cursor: "pointer",
-        overflow: "hidden",
-        boxShadow: isSelected
-          ? "0 0 16px -2px rgba(212, 185, 74, 0.35), 0 8px 24px rgba(10, 13, 18, 0.7)"
-          : "var(--shadow-card)",
-        transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
+      className={`relative rounded-xl transition-all duration-200 cursor-pointer overflow-hidden backdrop-blur-md ${
+        isSelected
+          ? "bg-gradient-to-b from-[#13274D] to-[#0D1A33] border-2 border-[#C9A24B] shadow-[0_0_24px_rgba(201,162,75,0.3)]"
+          : "bg-gradient-to-b from-[#0F1D38]/60 to-[#0A1326]/80 border border-white/[0.08] hover:border-white/[0.2] hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]"
+      }`}
     >
-      {/* 1. Architectural Gable Roof & Substation Bushings (SVG Header) */}
-      <div
-        style={{
-          background: "var(--color-surface-sunken, #15172C)",
-          borderBottom: "1px solid var(--color-border-subtle, #2E3557)",
-          padding: "6px 12px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        {/* Gable Roof Polygon & Hearth Window */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* Powerhouse Architectural Silhouette */}
-          <svg width="28" height="22" viewBox="0 0 28 22" fill="none">
-            {/* Gable Roof */}
-            <polygon points="14,1 27,9 27,21 1,21 1,9" fill="#353D50" stroke="#7A5C48" strokeWidth="1" />
-            {/* Ridge Vent */}
-            <line x1="10" y1="5" x2="18" y2="5" stroke="#D4B94A" strokeWidth="1.5" />
-            {/* Control Room Arched Hearth Window */}
-            <path
-              d="M 11 14 Q 14 10 17 14 L 17 21 L 11 21 Z"
-              fill={isCritical ? "#E64C4C" : "#F0C860"}
-              filter={isCritical ? "drop-shadow(0 0 4px #E64C4C)" : "drop-shadow(0 0 4px #F0C860)"}
-            />
-          </svg>
-
-          <span
-            style={{
-              fontSize: "11px",
-              fontFamily: "var(--font-mono, monospace)",
-              color: isSelected ? "var(--color-cloud-rim, #D4B94A)" : "var(--color-text-secondary, #A6B0CF)",
-              fontWeight: 700,
-            }}
-          >
+      {/* 1. Header with Basin & Condition Tier */}
+      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#C9A24B]" />
+          <span className="text-[10px] font-mono font-bold tracking-wider text-[#A3B0C8] uppercase">
             {basinDisplay} BASIN
           </span>
         </div>
 
-        {/* Operational Status Badge */}
         <span
+          className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
           style={{
-            fontSize: "9px",
-            fontFamily: "var(--font-mono, monospace)",
-            fontWeight: 800,
-            padding: "2px 6px",
-            borderRadius: "3px",
             background: tierStyle.bg,
             color: tierStyle.color,
             border: `1px solid ${tierStyle.border}`,
-            letterSpacing: "0.5px",
           }}
         >
-          {alertTier}
+          ● {alertTier}
         </span>
       </div>
 
       {/* 2. Plant Identification Header */}
-      <div style={{ padding: "10px 12px 6px 12px" }}>
-        <h4
-          style={{
-            margin: "0 0 4px 0",
-            fontSize: "13px",
-            fontWeight: 700,
-            color: isSelected ? "#FFFFFF" : "var(--color-text-primary, #F4F6FC)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-          title={plant.name}
-        >
+      <div className="px-3.5 pt-3 pb-1">
+        <h4 className="text-sm font-sans font-bold text-[#F1EAD9] truncate" title={plant.name}>
           {plant.name}
         </h4>
-        <div style={{ fontSize: "10px", fontFamily: "var(--font-mono, monospace)", color: "var(--color-text-dim, #6C7699)" }}>
+        <div className="text-[10px] font-mono text-[#A3B0C8] mt-0.5 truncate">
           GPS: {plant.latitude?.toFixed(2) ?? "27.85"}°N, {plant.longitude?.toFixed(2) ?? "86.14"}°E · {plant.head_m ?? 120}m Head
         </div>
       </div>
 
-      {/* 3. Monospace Telemetry Metrics Strip */}
-      <div
-        style={{
-          margin: "4px 12px 10px 12px",
-          background: "var(--color-surface-sunken, #15172C)",
-          border: "1px solid var(--color-border-subtle, #2E3557)",
-          borderRadius: "4px",
-          padding: "6px 8px",
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "4px",
-          textAlign: "center",
-          fontFamily: "var(--font-mono, monospace)",
-        }}
-      >
+      {/* 3. Metrics Strip */}
+      <div className="mx-3.5 my-2.5 p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] grid grid-cols-3 gap-2 text-center font-mono">
         <div>
-          <div style={{ fontSize: "9px", color: "var(--color-text-dim, #6C7699)" }}>CAPACITY</div>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-text-primary, #F4F6FC)" }}>
-            {plant.capacity_mw} <span style={{ fontSize: "8px", fontWeight: 400 }}>MW</span>
+          <div className="text-[9px] text-[#A3B0C8] uppercase">Capacity</div>
+          <div className="text-xs font-bold text-[#F1EAD9]">
+            {plant.capacity_mw} <span className="text-[9px] font-normal text-[#A3B0C8]">MW</span>
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: "9px", color: "var(--color-text-dim, #6C7699)" }}>FLOW Q</div>
-          <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-waterfall, #FFFFFF)" }}>
-            {discharge.toFixed(1)} <span style={{ fontSize: "8px", fontWeight: 400 }}>m³/s</span>
+          <div className="text-[9px] text-[#A3B0C8] uppercase">Flow Q</div>
+          <div className="text-xs font-bold text-[#5FB3A8]">
+            {discharge.toFixed(1)} <span className="text-[9px] font-normal text-[#A3B0C8]">m³/s</span>
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: "9px", color: "var(--color-text-dim, #6C7699)" }}>SILT PPM</div>
+          <div className="text-[9px] text-[#A3B0C8] uppercase">Silt PPM</div>
           <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 700,
-              color: isCritical ? "#E64C4C" : isWarning ? "#E5B83B" : "#4CAF82",
-            }}
+            className="text-xs font-bold"
+            style={{ color: isCritical ? "#E64C4C" : isWarning ? "#E5B83B" : "#4CAF82" }}
           >
             {silt.toFixed(0)}
           </div>
         </div>
       </div>
 
-      {/* Selection Bottom Glow Strip */}
+      {/* Active Bottom Glow Line */}
       {isSelected && (
-        <div
-          style={{
-            height: "2px",
-            width: "100%",
-            background: "var(--color-cloud-rim, #D4B94A)",
-            boxShadow: "0 0 8px #D4B94A",
-          }}
-        />
+        <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#C9A24B] to-transparent shadow-[0_0_10px_#C9A24B]" />
       )}
     </div>
   );

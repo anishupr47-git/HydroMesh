@@ -245,7 +245,8 @@ async def websocket_global_stream(
     ticket: str | None = Query(default=None),
 ) -> None:
     """Public read-only global fleet stream with optional ticket authentication."""
-    await stream_manager.connect(websocket)
+    if not await stream_manager.connect(websocket):
+        return
     try:
         while True:
             msg = await websocket.receive_text()
@@ -266,7 +267,8 @@ async def websocket_site_stream(
         await websocket.close(code=4001, reason="Invalid or expired ticket")
         return
 
-    await stream_manager.connect(websocket)
+    if not await stream_manager.connect(websocket):
+        return
     try:
         while True:
             msg = await websocket.receive_text()

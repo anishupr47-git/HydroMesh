@@ -97,7 +97,14 @@ export default function AuthModal({ onSuccess, onGuestAccess }: AuthModalProps) 
               }}
               title={isLanternOff ? "Lantern OFF (Password Secrecy Active)" : "Lantern LIT (Powerhouse Active)"}
             >
-              <svg width="36" height="50" viewBox="0 0 40 56" fill="none">
+              <svg
+                role="img"
+                aria-label="Station Operator Security Lantern"
+                width="36"
+                height="50"
+                viewBox="0 0 40 56"
+                fill="none"
+              >
                 {/* Hanger Ring */}
                 <circle cx="20" cy="8" r="6" stroke="#C9A24B" strokeWidth="2" />
                 {/* Lantern Roof */}

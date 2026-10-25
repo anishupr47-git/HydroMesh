@@ -31,6 +31,7 @@ export default function ChakraBackground({
 
   return (
     <div
+      aria-hidden="true"
       className={`pointer-events-none select-none relative overflow-hidden ${className}`}
       style={{
         width: size,
@@ -46,8 +47,7 @@ export default function ChakraBackground({
         viewBox="-470 -470 940 940"
         fill="none"
       >
-        <circle r="462" fill="#13264a" />
-        <circle r="462" stroke="#c9a24b" strokeOpacity=".5" />
+        <circle r="462" fill="none" stroke="#c9a24b" strokeOpacity=".3" />
         <circle r="428" stroke="#c9a24b" strokeWidth="1.5" />
         <circle
           r="416"
