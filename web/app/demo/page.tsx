@@ -115,18 +115,9 @@ interface AgentEvaluation {
 type EntryPhase = "intro" | "explainer" | "auth" | "dashboard";
 
 export default function DemoPage() {
-  // 4-Phase Cinematic Entry Flow State (Initializes safely without dashboard flash)
-  const [entryPhase, setEntryPhase] = useState<EntryPhase>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get("intro") === "replay") return "intro";
-        const dismissed = localStorage.getItem("hydromesh_onboarding_dismissed");
-        if (dismissed === "true") return "dashboard";
-      } catch {}
-    }
-    return "intro";
-  });
+  // 4-Phase Cinematic Entry Flow State (Consistent baseline to eliminate SSR hydration mismatch)
+  const [mounted, setMounted] = useState(false);
+  const [entryPhase, setEntryPhase] = useState<EntryPhase>("intro");
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // View Mode: individual (My Plant) vs global (Global Fleet Matrix)
@@ -179,14 +170,21 @@ export default function DemoPage() {
 
   // Check Onboarding status on mount
   useEffect(() => {
+    setMounted(true);
     try {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get("intro") === "replay") {
         setEntryPhase("intro");
         return;
       }
+      if (urlParams.get("view") === "dashboard" || urlParams.get("skip_intro") === "true") {
+        setEntryPhase("dashboard");
+        return;
+      }
       const dismissed = localStorage.getItem("hydromesh_onboarding_dismissed");
-      if (dismissed !== "true") {
+      if (dismissed === "true") {
+        setEntryPhase("dashboard");
+      } else {
         setEntryPhase("intro");
       }
     } catch {
@@ -1050,6 +1048,7 @@ export default function DemoPage() {
         <CinematicIntro
           onComplete={() => setEntryPhase("explainer")}
           onSkipToAuth={() => setEntryPhase("auth")}
+          onSkipToCockpit={() => setEntryPhase("dashboard")}
         />
       )}
 
@@ -1061,6 +1060,7 @@ export default function DemoPage() {
           onComplete={() => setEntryPhase("auth")}
           onBack={() => setEntryPhase("intro")}
           onSkipToAuth={() => setEntryPhase("auth")}
+          onSkipToCockpit={() => setEntryPhase("dashboard")}
         />
       )}
 

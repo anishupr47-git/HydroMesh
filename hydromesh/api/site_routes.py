@@ -81,9 +81,11 @@ def register_plant(
 
 
 @site_router.get("/api/sites", response_model=list[Site])
-def list_user_plants(principal: Principal = Depends(require_member)) -> list[Site]:
-    """List the current member's registered plant (strictly 0 or 1 on Free plan)."""
-    return db.list_user_sites(principal.user_id or "")
+def list_user_plants(principal: Principal = Depends(current_principal)) -> list[Site]:
+    """List the current member's registered plant (strictly 0 or 1 on Free plan, or empty list for guests)."""
+    if not principal.is_member or not principal.user_id:
+        return []
+    return db.list_user_sites(principal.user_id)
 
 
 @site_router.get("/api/sites/{site_id}", response_model=Site)

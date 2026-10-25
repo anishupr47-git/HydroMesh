@@ -28,6 +28,54 @@ export default function AuthModal({
   // Lantern is LIT when idle or typing email; LANTERN IS COMPLETELY OFF when entering password!
   const isLanternOff = passwordFocused || password.length > 0;
 
+  const handleQuickLogin = async () => {
+    setIsRegistering(false);
+    setEmail("neauser1@gmail.com");
+    setPassword("asd12345@@##$$");
+    setErrorMsg("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: "neauser1@gmail.com", password: "asd12345@@##$$" }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const finalEmail = data.user?.email || "neauser1@gmail.com";
+        const finalRole = data.user?.role || "member";
+        const finalId = data.user?.id || "usr_nea_demo1";
+        const csrfToken = data.csrf_token;
+        try {
+          localStorage.setItem(
+            "hydromesh_session",
+            JSON.stringify({
+              email: finalEmail,
+              role: finalRole,
+              user_id: finalId,
+              csrf_token: csrfToken,
+              authenticated_at: new Date().toISOString(),
+            })
+          );
+          localStorage.setItem("hydromesh_onboarding_dismissed", "true");
+        } catch {}
+        setLoading(false);
+        onSuccess({ role: finalRole, email: finalEmail, user_id: finalId, csrf_token: csrfToken });
+        return;
+      }
+    } catch {}
+
+    setLoading(false);
+    if (onGuestAccess) {
+      onGuestAccess();
+    } else {
+      onSuccess({ role: "member", email: "neauser1@gmail.com", user_id: "usr_nea_demo1" });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -239,17 +287,15 @@ export default function AuthModal({
                 neauser1@gmail.com <span className="text-[#A3B0C8]/60">·</span> asd12345@@##$$
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegistering(false);
-                setEmail("neauser1@gmail.com");
-                setPassword("asd12345@@##$$");
-              }}
-              className="px-2.5 py-1.5 bg-[#C9A24B]/20 hover:bg-[#C9A24B]/35 border border-[#C9A24B]/60 text-[#F0D27A] font-mono text-[10px] uppercase font-bold rounded cursor-pointer transition-colors"
-            >
-              [Auto-Fill Demo Login]
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleQuickLogin}
+                className="px-3 py-1.5 bg-gradient-to-r from-[#C9A24B] to-[#F0D27A] hover:brightness-110 text-[#0B1424] font-mono text-[10px] uppercase font-bold rounded cursor-pointer transition-all shadow-sm"
+              >
+                [1-Click Demo Login →]
+              </button>
+            </div>
           </div>
 
           {/* Login / Register Form */}
