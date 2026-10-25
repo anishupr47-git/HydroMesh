@@ -31,7 +31,7 @@ export default function AuthModal({
   const handleQuickLogin = async () => {
     setIsRegistering(false);
     setEmail("neauser1@gmail.com");
-    setPassword("asd12345@@##$$");
+    setPassword("DemoOperator2026!");
     setErrorMsg("");
     setLoading(true);
 
@@ -40,7 +40,7 @@ export default function AuthModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: "neauser1@gmail.com", password: "asd12345@@##$$" }),
+        body: JSON.stringify({ email: "neauser1@gmail.com", password: "DemoOperator2026!" }),
       });
 
       if (res.ok) {
@@ -284,7 +284,7 @@ export default function AuthModal({
                 </span>
               </div>
               <div className="text-[11px] font-mono text-[#D9D2BF]">
-                neauser1@gmail.com <span className="text-[#A3B0C8]/60">·</span> asd12345@@##$$
+                neauser1@gmail.com <span className="text-[#A3B0C8]/60">·</span> DemoOperator2026!
               </div>
             </div>
             <div className="flex items-center gap-2">

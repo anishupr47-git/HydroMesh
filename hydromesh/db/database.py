@@ -124,7 +124,7 @@ class Database:
         demo_email = "neauser1@gmail.com"
         row = conn.execute("SELECT id FROM users WHERE email = ?", (demo_email,)).fetchone()
         if not row:
-            demo_hash = "$argon2id$v=19$m=65536,t=3,p=4$7ZueIS3XynJl1i/x2ELriw$SyjbGjbKGsRTI2dhM6njSZmbf/Urm6oYGEegW8ffr68"
+            demo_hash = "$argon2id$v=19$m=65536,t=3,p=4$Ys3l/7wur99hJBz8lac/dQ$w5nm3Ejh8I9xV0xQyA0Nb7i106iaIorldBSYd6z4nWY"
             conn.execute(
                 "INSERT INTO users (id, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)",
                 ("usr_nea_demo1", demo_email, demo_hash, "member", time.time()),
