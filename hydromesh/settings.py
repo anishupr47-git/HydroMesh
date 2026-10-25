@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     mock_mode: bool = False
 
     ollama_host: str = "http://localhost:11434"
-    llm_model: str = "qwen2.5:7b-instruct"
+    llm_model: str = "qwen2.5:0.5b"
     llm_temperature: float = 0.0
     llm_timeout_s: int = 30
     llm_max_retries: int = 2

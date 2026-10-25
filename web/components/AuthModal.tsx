@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 interface AuthModalProps {
-  onSuccess: (userData?: { role: string; email: string }) => void;
+  onSuccess: (userData?: { role: string; email: string; user_id?: string; csrf_token?: string }) => void;
   onGuestAccess: () => void;
   onBack?: () => void;
   showBack?: boolean;
@@ -28,7 +28,7 @@ export default function AuthModal({
   // Lantern is LIT when idle or typing email; LANTERN IS COMPLETELY OFF when entering password!
   const isLanternOff = passwordFocused || password.length > 0;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setErrorMsg("Please enter operator email and station cryptographic key.");
@@ -37,7 +37,47 @@ export default function AuthModal({
     setErrorMsg("");
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const endpoint = isRegistering
+        ? "http://127.0.0.1:8000/api/auth/register"
+        : "http://127.0.0.1:8000/api/auth/login";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const finalEmail = data.user?.email || email;
+        const finalRole = data.user?.role || role;
+        const finalId = data.user?.id;
+        const csrfToken = data.csrf_token;
+        try {
+          localStorage.setItem(
+            "hydromesh_session",
+            JSON.stringify({
+              email: finalEmail,
+              role: finalRole,
+              user_id: finalId,
+              csrf_token: csrfToken,
+              authenticated_at: new Date().toISOString(),
+            })
+          );
+          localStorage.setItem("hydromesh_onboarding_dismissed", "true");
+        } catch {}
+        setLoading(false);
+        onSuccess({ role: finalRole, email: finalEmail, user_id: finalId, csrf_token: csrfToken });
+        return;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.detail || "Authentication failed. Please verify credentials.");
+        setLoading(false);
+        return;
+      }
+    } catch {
+      // Offline fallback for preview without backend running
       try {
         localStorage.setItem(
           "hydromesh_session",
@@ -51,7 +91,7 @@ export default function AuthModal({
       } catch {}
       setLoading(false);
       onSuccess({ role, email });
-    }, 450);
+    }
   };
 
   const handleGuest = () => {

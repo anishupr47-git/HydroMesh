@@ -66,7 +66,7 @@ class LLMClient(Protocol):
 @dataclass(frozen=True, slots=True)
 class OllamaConfig:
     host: str = "http://localhost:11434"
-    model: str = "qwen2.5:7b-instruct"
+    model: str = "qwen2.5:0.5b"
     timeout_s: float = 20.0
     max_retries: int = 1  # only for schema-invalid output; connection errors never retry
     max_tokens: int = 512

@@ -510,6 +510,36 @@ export default function DemoPage() {
       if (res.ok) {
         const result: AgentEvaluation = await res.json();
         setLatestEval(result);
+
+        // Concurrently query local Ollama neural agent advisory to enrich explanation
+        try {
+          const advRes = await fetch(`${API_BASE}/api/plants/${selectedPlantId}/ollama-advisory`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              discharge_m3s: telemetry.discharge_m3s,
+              silt_ppm: telemetry.silt_ppm,
+            }),
+          });
+          if (advRes.ok) {
+            const advData = await advRes.json();
+            if (advData.ollama_advisory_text) {
+              setLatestEval((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      explanation: {
+                        plain_english: advData.ollama_advisory_text,
+                        key_points: advData.recommended_dos || prev.explanation?.key_points || [],
+                      },
+                    }
+                  : prev
+              );
+            }
+          }
+        } catch {
+          // If Ollama is busy, keep base evaluation explanation
+        }
       } else {
         throw new Error("Evaluation returned " + res.status);
       }

@@ -23,6 +23,8 @@ import time
 from collections import OrderedDict
 from typing import Any, Literal
 
+import httpx
+
 from fastapi import APIRouter, HTTPException, Query, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
@@ -120,7 +122,8 @@ _processed_nonces = NonceCache()
 
 def _get_pipeline_for_plant(plant: HydroPlantSpec) -> OrchestrationPipeline:
     if plant.id not in _pipelines:
-        _pipelines[plant.id] = OrchestrationPipeline(plant=plant, blackboard=_blackboard)
+        llm = OllamaClient()
+        _pipelines[plant.id] = OrchestrationPipeline(plant=plant, blackboard=_blackboard, llm_client=llm)
     return _pipelines[plant.id]
 
 
@@ -363,12 +366,36 @@ async def get_ollama_advisory(
         f"All 6 safety kernel gates are verified. Continue standard 50.0 Hz dispatch. "
         f"The AI watcher is actively scanning sensors and will trigger audible alarms if inflow > 400 m³/s or silt > 1,200 PPM."
     )
+    is_llm_active = False
+
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as http_client:
+            resp = await http_client.post(
+                "http://127.0.0.1:11434/api/generate",
+                json={
+                    "model": "qwen2.5:0.5b",
+                    "prompt": (
+                        f"You are the HydroMesh AI Dispatch Agent for {plant.name}. "
+                        f"River discharge is {discharge:.1f} m3/s, quartz silt is {silt:.0f} PPM, state is {status_tag}. "
+                        f"Provide a 2-sentence crisp operational advisory on desander flushing and safe gate flow."
+                    ),
+                    "stream": False,
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                ai_text = data.get("response", "").strip()
+                if ai_text:
+                    narrative = f"STATUS: {status_tag}. Safe horizon: {safe_horizon}. [Ollama Qwen 2.5 Agent]: {ai_text}"
+                    is_llm_active = True
+    except Exception:
+        pass
 
     return OllamaAdvisoryResponse(
         plant_id=plant.id,
         plant_name=plant.name,
         model="qwen2.5:0.5b (Ollama / Local Neural Agent)",
-        is_llm_active=False,
+        is_llm_active=is_llm_active,
         safe_horizon=safe_horizon,
         safe_duration_hours=safe_hours,
         safe_status_summary=summary,

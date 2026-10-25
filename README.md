@@ -344,14 +344,36 @@ HydroMesh comes pre-configured with physical engineering data for 25 operational
 Follow these step-by-step instructions to run HydroMesh locally on your machine.
 
 ### Prerequisites
-- Python 3.12 or higher installed.
-- Node.js 18 or higher (Node 20+ recommended) and npm installed.
-- Git installed.
-- Optional: [Ollama](https://ollama.ai/) with `qwen2.5:0.5b` installed for local AI inference (HydroMesh automatically includes deterministic fallbacks if Ollama is not installed).
+- **Ollama (Mandatory AI Engine)**: Download and install from [ollama.ai](https://ollama.ai/). Powers the local 5-agent neural relay using open-weight models (`qwen2.5:0.5b`).
+- **Python 3.12 or higher** installed.
+- **Node.js 18 or higher** (Node 20+ recommended) and **npm** installed.
+- **Git** installed.
 
 ---
 
-### Step 1: Clone the Repository
+### Step 1: Power the Local AI Agent Engine (Ollama)
+
+HydroMesh is an agentic neural defense platform. The 5 collaborative agents (Triage, Predictive, SOP RAG, Dispatch, and Explain) require a running local Ollama instance with `qwen2.5:0.5b`:
+
+1. Start the Ollama background service (if not already running as a system service):
+   ```bash
+   ollama serve
+   ```
+
+2. Pull the certified open-weight agent model:
+   ```bash
+   ollama pull qwen2.5:0.5b
+   ```
+
+3. Verify that the agent model is downloaded and ready:
+   ```bash
+   ollama list
+   ```
+   *You will see `qwen2.5:0.5b` listed in your local models.*
+
+---
+
+### Step 2: Clone the Repository
 Open your terminal and clone the HydroMesh repository:
 
 ```bash
@@ -361,7 +383,7 @@ cd HydroMesh
 
 ---
 
-### Step 2: Set Up the Python Backend
+### Step 3: Set Up the Python Backend
 
 1. Create a Python virtual environment:
    - **On Windows (PowerShell)**:
@@ -384,11 +406,11 @@ cd HydroMesh
    ```bash
    python -m uvicorn hydromesh.api.app:create_app --factory --host 127.0.0.1 --port 8000
    ```
-   *The backend will start and begin streaming live simulation data on `http://127.0.0.1:8000`.*
+   *The backend will start and begin streaming live simulation and agent telemetry on `http://127.0.0.1:8000`.*
 
 ---
 
-### Step 3: Set Up the Next.js Frontend
+### Step 4: Set Up the Next.js Frontend
 
 1. Open a new terminal window and navigate to the `web` folder:
    ```bash
@@ -408,16 +430,16 @@ cd HydroMesh
 
 ---
 
-### Step 4: Open the SCADA Cockpit
+### Step 5: Open the SCADA Cockpit
 Open your web browser and navigate to:
 ```
 http://127.0.0.1:3000/demo
 ```
-You can immediately interact with the full 25-station Himalayan fleet matrix, run predictive AI defense cycles, view real-time dual-trace river telemetry waveforms, and test hydraulic scenario injections.
+You can immediately interact with the full 25-station Himalayan fleet matrix, run live AI agent defense cycles powered by Ollama Qwen 2.5, view real-time dual-trace river telemetry waveforms, and test hydraulic scenario injections.
 
 ---
 
-### Step 5: Running Automated Verification Tests
+### Step 6: Running Automated Verification Tests
 HydroMesh maintains a strict automated test suite requiring at least 90% code coverage. To run the full test suite:
 
 ```bash
